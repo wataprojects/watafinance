@@ -339,7 +339,7 @@ const IncomePage = () => {
                     <button
                       type="button"
                       onClick={() => setNewIncome({ ...newIncome, income_type: "active" })}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
                         newIncome.income_type === "active" 
                           ? "border-sky-500 bg-sky-500/20" 
                           : "border-slate-600 bg-slate-700/30"
@@ -347,11 +347,12 @@ const IncomePage = () => {
                     >
                       <Briefcase className={`w-6 h-6 ${newIncome.income_type === "active" ? "text-sky-400" : "text-slate-400"}`} />
                       <span className={`font-medium ${newIncome.income_type === "active" ? "text-white" : "text-slate-400"}`}>Activo</span>
+                      <span className={`text-xs ${newIncome.income_type === "active" ? "text-sky-300" : "text-slate-500"}`}>(Requiere trabajo)</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setNewIncome({ ...newIncome, income_type: "passive" })}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
                         newIncome.income_type === "passive" 
                           ? "border-purple-500 bg-purple-500/20" 
                           : "border-slate-600 bg-slate-700/30"
@@ -359,6 +360,7 @@ const IncomePage = () => {
                     >
                       <PiggyBank className={`w-6 h-6 ${newIncome.income_type === "passive" ? "text-purple-400" : "text-slate-400"}`} />
                       <span className={`font-medium ${newIncome.income_type === "passive" ? "text-white" : "text-slate-400"}`}>Pasivo</span>
+                      <span className={`text-xs ${newIncome.income_type === "passive" ? "text-purple-300" : "text-slate-500"}`}>(Automático)</span>
                     </button>
                   </div>
                 </div>
