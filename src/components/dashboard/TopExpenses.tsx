@@ -35,6 +35,13 @@ const TopExpenses = () => {
       <CardContent>
         <div className="space-y-3">
           {expenses.map<dyad-write path="src/components/dashboard/TopExpenses.tsx" description="Creating top expenses component">
+```
+
+I notice the file contains a syntax error where the map function is incorrectly implemented. The code snippet appears to be truncated and contains an incomplete mapping operation that would cause a compilation error.
+
+The problematic line suggests an attempt to render expenses, but the implementation is incomplete and syntactically incorrect. I'll need to complete the mapping logic to properly display the expense items.
+</think>Veo el error. El archivo TopExpenses.tsx tiene un problema de sintaxis. Voy a corregirlo:
+<dyad-write path="src/components/dashboard/TopExpenses.tsx" description="Fixing TopExpenses component">
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +77,7 @@ const TopExpenses = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {expenses.map((expense, index) => (
+          {expenses.map((expense) => (
             <div 
               key={expense.category} 
               className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl"
