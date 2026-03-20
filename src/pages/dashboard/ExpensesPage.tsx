@@ -71,20 +71,24 @@ const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
-  const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isChangeDatePickerOpen, setIsChangeDatePickerOpen] = useState(false);
+  const [showScheduledChange, setShowScheduledChange] = useState(false);
   const [newExpense, setNewExpense] = useState({
     source: "",
     amount: "",
+    is_recurring: false,
     category: "groceries",
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+    scheduled_amount: "",
+    scheduled_change_date: null as Date | null,
   });
 
   const [newInvestment, setNewInvestment] = useState({
@@ -115,14 +119,12 @@ const ExpensesPage = () => {
   };
 
   const fetchOptions = async (userId: string) => {
-    const [invResult, patResult, incResult] = await Promise.all([
+    const [invResult, patResult] = await Promise.all([
       supabase.from("investments").select("id, name").eq("user_id", userId),
       supabase.from("patrimony").select("id, name").eq("user_id", userId),
-      supabase.from("incomes").select("id, description").eq("user_id", userId),
     ]);
     if (invResult.data) setInvestments(invResult.data);
     if (patResult.data) setPatrimony(patResult.data);
-    if (incResult.data) setIncomes(incResult.data);
   };
 
   const fetchExpenses = async (userId: string) => {
@@ -147,6 +149,9 @@ const ExpensesPage = () => {
       description: newExpense.source,
       category: newExpense.category,
       date: newExpense.date.toISOString().split("T")[0],
+      is_recurring: newExpense.is_recurring,
+      scheduled_amount: newExpense.scheduled_amount ? parseFloat(newExpense.scheduled_amount) : null,
+      scheduled_change_date: newExpense.scheduled_change_date ? newExpense.scheduled_change_date.toISOString().split("T")[0] : null,
     });
 
     if (!error) {
@@ -154,11 +159,15 @@ const ExpensesPage = () => {
       setNewExpense({
         source: "",
         amount: "",
+        is_recurring: false,
         category: "groceries",
         date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
+        scheduled_amount: "",
+        scheduled_change_date: null,
       });
+      setShowScheduledChange(false);
       fetchExpenses(session.user.id);
     }
   };
@@ -269,32 +278,20 @@ const ExpensesPage = () => {
                 <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
-                {/* Fuente de ingreso */}
+                {/* Fuente de Gasto - Campo de texto */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fuente de gasto</label>
-                  <Select value={newExpense.source} onValueChange={(v) => setNewExpense({ ...newExpense, source: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue placeholder="Selecciona una fuente" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      {incomes.length > 0 ? (
-                        incomes.map((inc) => (
-                          <SelectItem key={inc.id} value={inc.description || "Sin descripción"} className="text-white">
-                            {inc.description || "Sin descripción"}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no_income" disabled className="text-slate-400">
-                          No hay fuentes disponibles
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    placeholder="Ej: Supermercado, Luz, Gasolina..."
+                    value={newExpense.source}
+                    onChange={(e) => setNewExpense({ ...newExpense, source: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
                 </div>
 
-                {/* Monto */}
+                {/* Importe */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Monto</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Importe</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -324,6 +321,95 @@ const ExpensesPage = () => {
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
+
+                {/* ¿Es recurrente? */}
+                <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Gasto Recurrente</p>
+                    <p className="text-xs text-slate-400">Se repite mensualmente</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newRecurring = !newExpense.is_recurring;
+                      setNewExpense({ ...newExpense, is_recurring: newRecurring });
+                      if (!newRecurring) {
+                        setShowScheduledChange(false);
+                        setNewExpense({ ...newExpense, scheduled_amount: "", scheduled_change_date: null });
+                      }
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors ${
+                      newExpense.is_recurring ? "bg-rose-500" : "bg-slate-600"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
+                      newExpense.is_recurring ? "translate-x-6" : "translate-x-0.5"
+                    }`} />
+                  </button>
+                </div>
+
+                {/* Cambio de importe programado - Solo si es recurrente */}
+                {newExpense.is_recurring && (
+                  <div className="border border-slate-600 rounded-xl p-4 space-y-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduledChange(!showScheduledChange)}
+                      className="flex items-center justify-between w-full"
+                    >
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-amber-400" />
+                        <span className="text-white font-medium">Cambio de importe programado</span>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${showScheduledChange ? "rotate-90" : ""}`} />
+                    </button>
+                    
+                    {showScheduledChange && (
+                      <div className="space-y-4 pt-2 border-t border-slate-600">
+                        <div>
+                          <label className="text-sm text-slate-300 mb-1 block">Nuevo importe (€)</label>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={newExpense.scheduled_amount}
+                            onChange={(e) => setNewExpense({ ...newExpense, scheduled_amount: e.target.value })}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm text-slate-300 mb-1 block">A partir de</label>
+                          <Dialog open={isChangeDatePickerOpen} onOpenChange={setIsChangeDatePickerOpen}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <CalendarIcon className="w-4 h-4" />
+                                  {newExpense.scheduled_change_date 
+                                    ? newExpense.scheduled_change_date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+                                    : "Seleccionar fecha"
+                                  }
+                                </span>
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-slate-800 border-slate-700 p-0">
+                              <Calendar
+                                mode="single"
+                                selected={newExpense.scheduled_change_date || undefined}
+                                onSelect={(date) => {
+                                  setNewExpense({ ...newExpense, scheduled_change_date: date });
+                                  setIsChangeDatePickerOpen(false);
+                                }}
+                                className="bg-slate-800 text-white rounded-lg"
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Fecha con calendario */}
                 <div>
