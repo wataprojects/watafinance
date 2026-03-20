@@ -39,7 +39,7 @@ const Landing = () => {
         <div className="max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full mb-4">
             <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse"></span>
-            <span className="text-sky-300 text-xs">Para emprendedores y profesionales</span>
+            <span className="text-sky-300 text-xs">Para todos</span>
           </div>
           
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
@@ -124,7 +124,7 @@ const Landing = () => {
             ¿Listo para tomar control?
           </h2>
           <p className="text-white/80 text-sm mb-4">
-            Únete a miles de emprendedores.
+            Únete a miles de personas.
           </p>
           <Button 
             className="bg-white text-sky-600 hover:bg-slate-100 w-full"
