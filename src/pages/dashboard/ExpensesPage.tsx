@@ -12,7 +12,7 @@ import {
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
   ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
-  Train, UtensilsCrossed, Shirt, MoreHorizontal
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -54,7 +54,6 @@ const expenseCategories: CategoryOption[] = [
   { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20 text-sky-400" },
   { value: "restaurants", label: "Restaurantes / Comida", icon: UtensilsCrossed, color: "bg-orange-500/20 text-orange-400" },
   { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20 text-pink-400" },
-  { value: "other", label: "Otros", icon: MoreHorizontal, color: "bg-slate-500/20 text-slate-400" },
 ];
 
 // Icono personalizado para gotas de agua
@@ -66,7 +65,53 @@ function DropletsIcon({ className }: { className?: string }) {
   );
 }
 
-const ExpensesPage = () => {
+const iconOptions = [
+  { icon: Home, label: "Casa" },
+  { icon: Zap, label: "Luz" },
+  { icon: DropletsIcon, label: "Agua" },
+  { icon: Heart, label: "Salud" },
+  { icon: DollarSign, label: "Dinero" },
+  { icon: Shield, label: "Seguridad" },
+  { icon: Wifi, label: "Internet" },
+  { icon: Smartphone, label: "Móvil" },
+  { icon: Flame, label: "Gas" },
+  { icon: Sparkles, label: "Limpieza" },
+  { icon: Car, label: "Coche" },
+  { icon: ShoppingCart, label: "Compra" },
+  { icon: Film, label: "Ocio" },
+  { icon: Briefcase, label: "Trabajo" },
+  { icon: TrendingUp, label: "Inversión" },
+  { icon: Megaphone, label: "Publicidad" },
+  { icon: Train, label: "Transporte" },
+  { icon: UtensilsCrossed, label: "Comida" },
+  { icon: Shirt, label: "Ropa" },
+  { icon: MoreHorizontal, label: "Otros" },
+  { icon: CreditCard, label: "Tarjeta" },
+  { icon: Wallet, label: "Billetera" },
+  { icon: PiggyBank, label: "Ahorros" },
+  { icon: Building, label: "Banco" },
+];
+
+function Wallet({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+    </svg>
+  );
+}
+
+function PiggyBank({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" />
+      <path d="M2 9v1c0 1.1.9 2 2 2h1" />
+      <circle cx="16" cy="10" r="1" />
+    </svg>
+  );
+}
+
+function ExpensesPage() {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
@@ -77,6 +122,7 @@ const ExpensesPage = () => {
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [isChangeDatePickerOpen, setIsChangeDatePickerOpen] = useState(false);
   const [showScheduledChange, setShowScheduledChange] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -103,6 +149,9 @@ const ExpensesPage = () => {
     category: "real_estate",
     value: "",
   });
+
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingCart);
 
   useEffect(() => {
     checkAuth();
@@ -209,6 +258,24 @@ const ExpensesPage = () => {
       setIsNewPatrimonyOpen(false);
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
+  };
+
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) return;
+    
+    const newCat: CategoryOption = {
+      value: `custom_${Date.now()}`,
+      label: newCategoryName,
+      icon: selectedIcon,
+      color: "bg-rose-500/20 text-rose-400"
+    };
+    
+    expenseCategories.push(newCat);
+    setNewExpense({ ...newExpense, category: newCat.value });
+    setIsNewCategoryModalOpen(false);
+    setIsCategoryModalOpen(false);
+    setNewCategoryName("");
+    setSelectedIcon(ShoppingCart);
   };
 
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
@@ -546,8 +613,8 @@ const ExpensesPage = () => {
         {/* Modal de selección de categoría en grid */}
         <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
           <DialogContent className="bg-slate-800 border-slate-700 max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
+            <DialogHeader className="relative">
+              <DialogTitle className="text-white pr-8">Seleccionar Categoría</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
               {expenseCategories.map((cat) => {
@@ -573,6 +640,63 @@ const ExpensesPage = () => {
                   </button>
                 );
               })}
+              
+              {/* Botón añadir nueva categoría */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCategoryModalOpen(false);
+                  setIsNewCategoryModalOpen(true);
+                }}
+                className="p-4 rounded-xl flex flex-col items-center gap-2 transition-all bg-slate-700/30 border-2 border-dashed border-slate-600 hover:border-slate-500 hover:bg-slate-700"
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-500/20 text-emerald-400">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <span className="text-emerald-400 text-sm font-medium text-center">Añadir</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal para nueva categoría */}
+        <Dialog open={isNewCategoryModalOpen} onOpenChange={setIsNewCategoryModalOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700 max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Nombre de la categoría</label>
+                <Input
+                  placeholder="Ej: Gimnasio, Netflix..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">Seleccionar icono</label>
+                <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto">
+                  {iconOptions.map((opt, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedIcon(opt.icon)}
+                      className={`p-3 rounded-lg transition-colors flex items-center justify-center ${
+                        selectedIcon === opt.icon 
+                          ? "bg-sky-500/20 border-2 border-sky-500" 
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      <opt.icon className="w-5 h-5 text-white" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Button onClick={handleCreateCategory} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                Crear Categoría
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
