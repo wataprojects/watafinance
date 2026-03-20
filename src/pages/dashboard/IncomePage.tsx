@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
 import { 
   Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, 
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
-  ChevronRight, X, Check
+  ChevronRight, X, Check, Calendar as CalendarIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -73,6 +74,9 @@ const IncomePage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
+  const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [newIncome, setNewIncome] = useState({
@@ -81,9 +85,23 @@ const IncomePage = () => {
     is_recurring: false,
     income_type: "active" as "active" | "passive",
     category: "salary",
-    date: new Date().toISOString().split("T")[0],
+    date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+  });
+  
+  // Nuevas inversiones/patrimonio
+  const [newInvestment, setNewInvestment] = useState({
+    name: "",
+    type: "stocks",
+    initial_value: "",
+    current_value: "",
+  });
+  
+  const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
+    name: "",
+    category: "real_estate",
+    value: "",
   });
 
   useEffect(() => {
@@ -131,7 +149,7 @@ const IncomePage = () => {
       description: newIncome.source,
       category: newIncome.category,
       is_passive: newIncome.income_type === "passive",
-      date: newIncome.date,
+      date: newIncome.date.toISOString().split("T")[0],
     });
 
     if (!error) {
@@ -142,11 +160,50 @@ const IncomePage = () => {
         is_recurring: false,
         income_type: "active",
         category: "salary",
-        date: new Date().toISOString().split("T")[0],
+        date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
       });
       fetchIncomes(session.user.id);
+    }
+  };
+
+  const handleCreateInvestment = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+
+    const { data, error } = await supabase.from("investments").insert({
+      user_id: session.user.id,
+      name: newInvestment.name,
+      type: newInvestment.type,
+      initial_value: parseFloat(newInvestment.initial_value),
+      current_value: parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
+    }).select().single();
+
+    if (!error && data) {
+      setInvestments([...investments, { id: data.id, name: data.name }]);
+      setNewIncome({ ...newIncome, investment_id: data.id });
+      setIsNewInvestmentOpen(false);
+      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+    }
+  };
+
+  const handleCreatePatrimony = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
+
+    const { data, error } = await supabase.from("patrimony").insert({
+      user_id: session.user.id,
+      name: newPatrimonyAsset.name,
+      category: newPatrimonyAsset.category,
+      value: parseFloat(newPatrimonyAsset.value),
+    }).select().single();
+
+    if (!error && data) {
+      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
+      setNewIncome({ ...newIncome, patrimony_id: data.id });
+      setIsNewPatrimonyOpen(false);
+      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
   };
 
@@ -184,6 +241,24 @@ const IncomePage = () => {
   const getCategoryInfo = (categoryValue: string) => {
     return allCategories.find(c => c.value === categoryValue) || allCategories[allCategories.length - 1];
   };
+
+  const investmentTypes = [
+    { value: "stocks", label: "Acciones" },
+    { value: "etf", label: "ETF" },
+    { value: "crypto", label: "Criptomonedas" },
+    { value: "bonds", label: "Bonos" },
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "other", label: "Otros" },
+  ];
+
+  const patrimonyCategories = [
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "vehicle", label: "Vehículos" },
+    { value: "investments", label: "Inversiones" },
+    { value: "savings", label: "Ahorros" },
+    { value: "business", label: "Negocios" },
+    { value: "other", label: "Otros" },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
@@ -300,21 +375,47 @@ const IncomePage = () => {
                   </Button>
                 </div>
 
-                {/* Fecha */}
+                {/* Fecha con calendario */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                  <Input
-                    type="date"
-                    value={newIncome.date}
-                    onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
+                  <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                      >
+                        <span className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4" />
+                          {newIncome.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
+                        </span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
+                      <Calendar
+                        mode="single"
+                        selected={newIncome.date}
+                        onSelect={(date) => {
+                          if (date) {
+                            setNewIncome({ ...newIncome, date });
+                            setIsDatePickerOpen(false);
+                          }
+                        }}
+                        className="bg-slate-800 text-white rounded-lg"
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 {/* Asociar a inversión */}
-                <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Asociar a inversión (opcional)</label>
-                  <Select value={newIncome.investment_id} onValueChange={(v) => setNewIncome({ ...newIncome, investment_id: v })}>
+                <div className="space-y-2">
+                  <Select value={newIncome.investment_id} onValueChange={(v) => {
+                    if (v === "new") {
+                      setIsNewInvestmentOpen(true);
+                    } else {
+                      setNewIncome({ ...newIncome, investment_id: v });
+                    }
+                  }}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue placeholder="Seleccionar inversión..." />
                     </SelectTrigger>
@@ -323,14 +424,24 @@ const IncomePage = () => {
                       {investments.map((inv) => (
                         <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
                       ))}
+                      <SelectItem value="new" className="text-emerald-400 font-medium">
+                        <span className="flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Nueva inversión
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Asociar a patrimonio */}
-                <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Asociar a patrimonio (opcional)</label>
-                  <Select value={newIncome.patrimony_id} onValueChange={(v) => setNewIncome({ ...newIncome, patrimony_id: v })}>
+                <div className="space-y-2">
+                  <Select value={newIncome.patrimony_id} onValueChange={(v) => {
+                    if (v === "new") {
+                      setIsNewPatrimonyOpen(true);
+                    } else {
+                      setNewIncome({ ...newIncome, patrimony_id: v });
+                    }
+                  }}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue placeholder="Seleccionar patrimonio..." />
                     </SelectTrigger>
@@ -339,6 +450,11 @@ const IncomePage = () => {
                       {patrimony.map((pat) => (
                         <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
                       ))}
+                      <SelectItem value="new" className="text-emerald-400 font-medium">
+                        <span className="flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Nuevo patrimonio
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -350,6 +466,110 @@ const IncomePage = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Modal nueva inversión */}
+        <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nueva Inversión</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Nombre</label>
+                <Input
+                  placeholder="Nombre de la inversión"
+                  value={newInvestment.name}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Tipo</label>
+                <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {investmentTypes.map((t) => (
+                      <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Valor inicial</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newInvestment.initial_value}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Valor actual</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newInvestment.current_value}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                Crear Inversión
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal nuevo patrimonio */}
+        <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Nombre</label>
+                <Input
+                  placeholder="Nombre del activo"
+                  value={newPatrimonyAsset.name}
+                  onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
+                <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {patrimonyCategories.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Valor</label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={newPatrimonyAsset.value}
+                  onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <Button onClick={handleCreatePatrimony} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                Crear Patrimonio
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Modal de selección de categoría */}
         <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
