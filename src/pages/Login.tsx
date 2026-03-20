@@ -6,17 +6,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simular login - redirigir al dashboard
-    navigate("/dashboard");
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
+  const handleSignUp = async () => {
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate("/dashboard");
+    }
+    setLoading(false);
   };
 
   return (
@@ -32,9 +64,9 @@ const Login = () => {
 
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">Bienvenido de nuevo</CardTitle>
+            <CardTitle className="text-2xl text-white">Bienvenido</CardTitle>
             <CardDescription className="text-slate-300">
-              Inicia sesión para continuar
+              Inicia sesión o regístrate
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -72,31 +104,43 @@ const Login = () => {
                 </div>
               </div>
 
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6"
               >
-                Iniciar Sesión
+                {loading ? "Cargando..." : "Iniciar Sesión"}
               </Button>
             </form>
 
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSignUp}
+                disabled={loading}
+                className="w-full border-white/20 text-white hover:bg-white/10"
+              >
+                Crear Cuenta
+              </Button>
+            </div>
+
             <div className="mt-6 text-center">
-              <p className="text-slate-300 text-sm">
-                ¿No tienes cuenta?{" "}
-                <button 
-                  onClick={() => navigate("/dashboard")}
-                  className="text-emerald-400 hover:text-emerald-300 font-medium"
-                >
-                  Regístrate gratis
-                </button>
-              </p>
+              <button 
+                onClick={() => navigate("/dashboard")}
+                className="text-emerald-400 hover:text-emerald-300 text-sm"
+              >
+                Continuar sin iniciar sesión (demo)
+              </button>
             </div>
           </CardContent>
         </Card>
-
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Al iniciar sesión, aceptas nuestros términos y política de privacidad
-        </p>
       </div>
     </div>
   );
