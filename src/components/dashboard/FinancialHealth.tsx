@@ -1,16 +1,63 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const FinancialHealth = () => {
-  // Datos de ejemplo
-  const score = 78;
+  const [loading, setLoading] = useState(true);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      setLoading(false);
+      return;
+    }
+
+    const [incomesResult, expensesResult, investmentsResult, debtsResult] = await Promise.all([
+      supabase.from("incomes").select("amount, is_passive").eq("user_id", session.user.id),
+      supabase.from("expenses").select("amount").eq("user_id", session.user.id),
+      supabase.from("investments").select("current_value").eq("user_id", session.user.id),
+      supabase.from("debts").select("current_amount, initial_amount").eq("user_id", session.user.id)
+    ]);
+
+    if (incomesResult.data) setIncomes(incomesResult.data);
+    if (expensesResult.data) setExpenses(expensesResult.data);
+    if (investmentsResult.data) setInvestments(investmentsResult.data);
+    if (debtsResult.data) setDebts(debtsResult.data);
+    setLoading(false);
+  };
+
+  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  const totalInvestments = investments.reduce((sum, i) => sum + parseFloat(i.current_value || 0), 0);
+  const totalDebts = debts.reduce((sum, d) => sum + parseFloat(d.current_amount || 0), 0);
+  const totalInitialDebts = debts.reduce((sum, d) => sum + parseFloat(d.initial_amount || 0), 0);
+
+  // Calcular puntuación de salud financiera
+  const savingsScore = totalIncome > 0 ? Math.min(100, ((totalIncome - totalExpenses) / totalIncome) * 100 + 50) : 50;
+  const debtScore = totalInitialDebts > 0 ? Math.max(0, 100 - ((totalDebts / totalInitialDebts) * 100)) : 100;
+  const investmentScore = totalIncome > 0 ? Math.min(100, (totalInvestments / totalIncome) * 10) : 0;
+  const cashFlowScore = totalIncome > totalExpenses ? 90 : 50;
+
+  const score = Math.round((savingsScore + debtScore + investmentScore + cashFlowScore) / 4);
+
   const categories = [
-    { name: "Ahorro", score: 85, status: "excellent" },
-    { name: "Deuda", score: 72, status: "good" },
-    { name: "Inversiones", score: 65, status: "good" },
-    { name: "Flujo de caja", score: 90, status: "excellent" },
+    { name: "Ahorro", score: Math.round(savingsScore), status: savingsScore >= 80 ? "excellent" : savingsScore >= 60 ? "good" : "warning" },
+    { name: "Deuda", score: Math.round(debtScore), status: debtScore >= 80 ? "excellent" : debtScore >= 60 ? "good" : "warning" },
+    { name: "Inversiones", score: Math.round(investmentScore), status: investmentScore >= 60 ? "excellent" : investmentScore >= 40 ? "good" : "warning" },
+    { name: "Flujo de caja", score: Math.round(cashFlowScore), status: cashFlowScore >= 80 ? "excellent" : "good" },
   ];
 
   const getStatusColor = (status: string) => {
@@ -47,41 +94,39 @@ const FinancialHealth = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {categories.map((category) => (
-            <div key={category.name} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={getStatusColor(category.status)}>
-                    {getStatusIcon(category.status)}
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rose-500"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {categories.map((category) => (
+              <div key={category.name} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={getStatusColor(category.status)}>
+                      {getStatusIcon(category.status)}
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-white">{category.name}</span>
+                  </div>
+                  <span className={`font-bold ${getStatusColor(category.status)}`}>
+                    {category.score}
                   </span>
-                  <span className="font-medium text-slate-900 dark:text-white">{category.name}</span>
                 </div>
-                <span className={`font-bold ${getStatusColor(category.status)}`}>
-                  {category.score}
-                </span>
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${
+                      category.status === "excellent" ? "bg-emerald-500" :
+                      category.status === "good" ? "bg-blue-500" :
+                      category.status === "warning" ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${category.score}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${
-                    category.status === "excellent" ? "bg-emerald-500" :
-                    category.status === "good" ? "bg-blue-500" :
-                    category.status === "warning" ? "bg-yellow-500" : "bg-red-500"
-                  }`}
-                  style={{ width: `${category.score}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Recomendación */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>💡 Recomendación:</strong> Aumenta tus inversiones mensuales 
-            un 5% para mejorar tu puntuación de inversiones.
-          </p>
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

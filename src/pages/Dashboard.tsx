@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
@@ -10,9 +11,37 @@ import TopExpenses from "@/components/dashboard/TopExpenses";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
 import BottomNav from "@/components/dashboard/BottomNav";
 import { LogOut, Bell, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-24">
@@ -40,7 +69,7 @@ const Dashboard = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate("/")}
+                onClick={handleLogout}
               >
                 <LogOut className="w-5 h-5 text-slate-600 dark:text-slate-300" />
               </Button>
