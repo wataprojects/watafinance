@@ -82,8 +82,8 @@ const IncomePage = () => {
     income_type: "active" as "active" | "passive",
     category: "salary",
     date: new Date().toISOString().split("T")[0],
-    investment_id: "",
-    patrimony_id: "",
+    investment_id: "none",
+    patrimony_id: "none",
   });
 
   useEffect(() => {
@@ -125,8 +125,6 @@ const IncomePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const categoryData = [...defaultCategories, ...customCategories].find(c => c.value === newIncome.category);
-    
     const { error } = await supabase.from("incomes").insert({
       user_id: session.user.id,
       amount: parseFloat(newIncome.amount),
@@ -145,8 +143,8 @@ const IncomePage = () => {
         income_type: "active",
         category: "salary",
         date: new Date().toISOString().split("T")[0],
-        investment_id: "",
-        patrimony_id: "",
+        investment_id: "none",
+        patrimony_id: "none",
       });
       fetchIncomes(session.user.id);
     }
@@ -321,7 +319,7 @@ const IncomePage = () => {
                       <SelectValue placeholder="Seleccionar inversión..." />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="" className="text-slate-400">Ninguna</SelectItem>
+                      <SelectItem value="none" className="text-slate-400">Ninguna</SelectItem>
                       {investments.map((inv) => (
                         <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
                       ))}
@@ -337,7 +335,7 @@ const IncomePage = () => {
                       <SelectValue placeholder="Seleccionar patrimonio..." />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="" className="text-slate-400">Ninguno</SelectItem>
+                      <SelectItem value="none" className="text-slate-400">Ninguno</SelectItem>
                       {patrimony.map((pat) => (
                         <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
                       ))}
