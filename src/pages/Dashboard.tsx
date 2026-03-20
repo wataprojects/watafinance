@@ -16,7 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -24,8 +23,8 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setIsAuthenticated(true);
+    if (!session) {
+      navigate("/login");
     }
     setLoading(false);
   };
@@ -62,9 +61,6 @@ const Dashboard = () => {
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="w-5 h-5 text-white" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-sky-400 rounded-full"></span>
-              </Button>
-              <Button variant="ghost" size="icon">
-                <User className="w-5 h-5 text-white" />
               </Button>
               <Button 
                 variant="ghost" 
