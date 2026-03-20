@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -23,13 +24,33 @@ const formatCurrency = (amount: number) => {
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
+  const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [newExpense, setNewExpense] = useState({
     amount: "",
     description: "",
     category: "food",
-    date: new Date().toISOString().split("T")[0],
+    date: new Date(),
+    investment_id: "none",
+    patrimony_id: "none",
+  });
+
+  const [newInvestment, setNewInvestment] = useState({
+    name: "",
+    type: "stocks",
+    initial_value: "",
+    current_value: "",
+  });
+  
+  const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
+    name: "",
+    category: "real_estate",
+    value: "",
   });
 
   useEffect(() => {
@@ -42,7 +63,17 @@ const ExpensesPage = () => {
       navigate("/login");
     } else {
       fetchExpenses(session.user.id);
+      fetchOptions(session.user.id);
     }
+  };
+
+  const fetchOptions = async (userId: string) => {
+    const [invResult, patResult] = await Promise.all([
+      supabase.from("investments").select("id, name").eq("user_id", userId),
+      supabase.from("patrimony").select("id, name").eq("user_id", userId),
+    ]);
+    if (invResult.data) setInvestments(invResult.data);
+    if (patResult.data) setPatrimony(patResult.data);
   };
 
   const fetchExpenses = async (userId: string) => {
@@ -66,7 +97,7 @@ const ExpensesPage = () => {
       amount: parseFloat(newExpense.amount),
       description: newExpense.description,
       category: newExpense.category,
-      date: newExpense.date,
+      date: newExpense.date.toISOString().split("T")[0],
     });
 
     if (!error) {
@@ -75,9 +106,50 @@ const ExpensesPage = () => {
         amount: "",
         description: "",
         category: "food",
-        date: new Date().toISOString().split("T")[0],
+        date: new Date(),
+        investment_id: "none",
+        patrimony_id: "none",
       });
       fetchExpenses(session.user.id);
+    }
+  };
+
+  const handleCreateInvestment = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+
+    const { data, error } = await supabase.from("investments").insert({
+      user_id: session.user.id,
+      name: newInvestment.name,
+      type: newInvestment.type,
+      initial_value: parseFloat(newInvestment.initial_value),
+      current_value: parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
+    }).select().single();
+
+    if (!error && data) {
+      setInvestments([...investments, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, investment_id: data.id });
+      setIsNewInvestmentOpen(false);
+      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+    }
+  };
+
+  const handleCreatePatrimony = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
+
+    const { data, error } = await supabase.from("patrimony").insert({
+      user_id: session.user.id,
+      name: newPatrimonyAsset.name,
+      category: newPatrimonyAsset.category,
+      value: parseFloat(newPatrimonyAsset.value),
+    }).select().single();
+
+    if (!error && data) {
+      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, patrimony_id: data.id });
+      setIsNewPatrimonyOpen(false);
+      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
   };
 
@@ -119,6 +191,36 @@ const ExpensesPage = () => {
     { value: "other", label: "Otros" },
   ];
 
+  const investmentTypes = [
+    { value: "stocks", label: "Acciones" },
+    { value: "etf", label: "ETF" },
+    { value: "crypto", label: "Criptomonedas" },
+    { value: "bonds", label: "Bonos" },
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "other", label: "Otros" },
+  ];
+
+  const patrimonyCategories = [
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "vehicle", label: "Vehículos" },
+    { value: "investments", label: "Inversiones" },
+    { value: "savings", label: "Ahorros" },
+    { value: "business", label: "Negocios" },
+    { value: "other", label: "Otros" },
+  ];
+
+  const getInvestmentLabel = () => {
+    if (newExpense.investment_id === "none") return "Sin vincular";
+    const inv = investments.find(i => i.id === newExpense.investment_id);
+    return inv ? inv.name : "Sin vincular";
+  };
+
+  const getPatrimonyLabel = () => {
+    if (newExpense.patrimony_id === "none") return "Sin vincular";
+    const pat = patrimony.find(p => p.id === newExpense.patrimony_id);
+    return pat ? pat.name : "Sin vincular";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
       <div className="container mx-auto px-4 py-6">
@@ -135,13 +237,14 @@ const ExpensesPage = () => {
                 Nuevo Gasto
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
+                {/* Monto */}
                 <div>
-                  <label className="text-sm text-slate-300">Monto</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Monto</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -150,8 +253,10 @@ const ExpensesPage = () => {
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>
+
+                {/* Descripción */}
                 <div>
-                  <label className="text-sm text-slate-300">Descripción</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Descripción</label>
                   <Input
                     placeholder="Descripción del gasto"
                     value={newExpense.description}
@@ -159,10 +264,12 @@ const ExpensesPage = () => {
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>
+
+                {/* Categoría */}
                 <div>
-                  <label className="text-sm text-slate-300">Categoría</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
                   <Select value={newExpense.category} onValueChange={(v) => setNewExpense({ ...newExpense, category: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -172,6 +279,131 @@ const ExpensesPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Fecha con calendario */}
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
+                  <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                      >
+                        <span className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4" />
+                          {newExpense.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
+                        </span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
+                      <Calendar
+                        mode="single"
+                        selected={newExpense.date}
+                        onSelect={(date) => {
+                          if (date) {
+                            setNewExpense({ ...newExpense, date });
+                            setIsDatePickerOpen(false);
+                          }
+                        }}
+                        className="bg-slate-800 text-white rounded-lg"
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Asociar Inversión - Formato con label integrado */}
+                <div>
+                  <Select value={newExpense.investment_id} onValueChange={(v) => {
+                    if (v === "new") {
+                      setIsNewInvestmentOpen(true);
+                    } else {
+                      setNewExpense({ ...newExpense, investment_id: v });
+                    }
+                  }}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-400" />
+                          <span className="text-slate-300">Inversión:</span>
+                          <span className="text-white font-medium">{getInvestmentLabel()}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="none" className="text-slate-400">
+                        <span className="flex items-center gap-2">
+                          <TrendingDownIcon className="w-4 h-4" />
+                          Sin vincular
+                        </span>
+                      </SelectItem>
+                      {investments.length > 0 && (
+                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">INVERSIONES</div>
+                      )}
+                      {investments.map((inv) => (
+                        <SelectItem key={inv.id} value={inv.id} className="text-white">
+                          <span className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            {inv.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new" className="text-emerald-400 font-medium">
+                        <span className="flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Nueva inversión
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Asociar Patrimonio - Formato con label integrado */}
+                <div>
+                  <Select value={newExpense.patrimony_id} onValueChange={(v) => {
+                    if (v === "new") {
+                      setIsNewPatrimonyOpen(true);
+                    } else {
+                      setNewExpense({ ...newExpense, patrimony_id: v });
+                    }
+                  }}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-sky-400" />
+                          <span className="text-slate-300">Patrimonio:</span>
+                          <span className="text-white font-medium">{getPatrimonyLabel()}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="none" className="text-slate-400">
+                        <span className="flex items-center gap-2">
+                          <TrendingDownIcon className="w-4 h-4" />
+                          Sin vincular
+                        </span>
+                      </SelectItem>
+                      {patrimony.length > 0 && (
+                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">PATRIMONIO</div>
+                      )}
+                      {patrimony.map((pat) => (
+                        <SelectItem key={pat.id} value={pat.id} className="text-white">
+                          <span className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-sky-400" />
+                            {pat.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new" className="text-emerald-400 font-medium">
+                        <span className="flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Nuevo patrimonio
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button onClick={handleAddExpense} className="w-full bg-rose-500 hover:bg-rose-600">
                   Guardar
                 </Button>
@@ -179,6 +411,110 @@ const ExpensesPage = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Modal nueva inversión */}
+        <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nueva Inversión</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Nombre</label>
+                <Input
+                  placeholder="Nombre de la inversión"
+                  value={newInvestment.name}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Tipo</label>
+                <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {investmentTypes.map((t) => (
+                      <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Valor inicial</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newInvestment.initial_value}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Valor actual</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newInvestment.current_value}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                Crear Inversión
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal nuevo patrimonio */}
+        <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Nombre</label>
+                <Input
+                  placeholder="Nombre del activo"
+                  value={newPatrimonyAsset.name}
+                  onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
+                <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {patrimonyCategories.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Valor</label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={newPatrimonyAsset.value}
+                  onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <Button onClick={handleCreatePatrimony} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                Crear Patrimonio
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Stats */}
         <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-6">
