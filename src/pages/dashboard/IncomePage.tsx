@@ -12,7 +12,7 @@ import {
   Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, 
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
-  ChevronRight, X, Check, Calendar as CalendarIcon
+  ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -90,7 +90,6 @@ const IncomePage = () => {
     patrimony_id: "none",
   });
   
-  // Nuevas inversiones/patrimonio
   const [newInvestment, setNewInvestment] = useState({
     name: "",
     type: "stocks",
@@ -219,7 +218,6 @@ const IncomePage = () => {
     setIsNewCategoryModalOpen(false);
   };
 
-  // Filtrar ingresos según el tipo seleccionado
   const filteredIncomes = incomes.filter((income) => {
     if (filterType === "active") return !income.is_passive;
     if (filterType === "passive") return income.is_passive;
@@ -228,7 +226,6 @@ const IncomePage = () => {
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
 
-  // Agrupar por categoría
   const byCategory = filteredIncomes.reduce((acc, income) => {
     const cat = income.category;
     if (!acc[cat]) acc[cat] = 0;
@@ -259,6 +256,18 @@ const IncomePage = () => {
     { value: "business", label: "Negocios" },
     { value: "other", label: "Otros" },
   ];
+
+  const getInvestmentLabel = () => {
+    if (newIncome.investment_id === "none") return "Sin vincular";
+    const inv = investments.find(i => i.id === newIncome.investment_id);
+    return inv ? inv.name : "Sin vincular";
+  };
+
+  const getPatrimonyLabel = () => {
+    if (newIncome.patrimony_id === "none") return "Sin vincular";
+    const pat = patrimony.find(p => p.id === newIncome.patrimony_id);
+    return pat ? pat.name : "Sin vincular";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
@@ -354,7 +363,7 @@ const IncomePage = () => {
                   </div>
                 </div>
 
-                {/* Categoría - Selector que abre modal */}
+                {/* Categoría */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
                   <Button
@@ -407,8 +416,8 @@ const IncomePage = () => {
                   </Dialog>
                 </div>
 
-                {/* Asociar a inversión */}
-                <div className="space-y-2">
+                {/* Asociar Inversión - Formato con label integrado */}
+                <div>
                   <Select value={newIncome.investment_id} onValueChange={(v) => {
                     if (v === "new") {
                       setIsNewInvestmentOpen(true);
@@ -416,13 +425,33 @@ const IncomePage = () => {
                       setNewIncome({ ...newIncome, investment_id: v });
                     }
                   }}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue placeholder="Seleccionar inversión..." />
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-400" />
+                          <span className="text-slate-300">Inversión:</span>
+                          <span className="text-white font-medium">{getInvestmentLabel()}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">Ninguna</SelectItem>
+                      <SelectItem value="none" className="text-slate-400">
+                        <span className="flex items-center gap-2">
+                          <TrendingDown className="w-4 h-4" />
+                          Sin vincular
+                        </span>
+                      </SelectItem>
+                      {investments.length > 0 && (
+                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">INVERSIONES</div>
+                      )}
                       {investments.map((inv) => (
-                        <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
+                        <SelectItem key={inv.id} value={inv.id} className="text-white">
+                          <span className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            {inv.name}
+                          </span>
+                        </SelectItem>
                       ))}
                       <SelectItem value="new" className="text-emerald-400 font-medium">
                         <span className="flex items-center gap-2">
@@ -433,8 +462,8 @@ const IncomePage = () => {
                   </Select>
                 </div>
 
-                {/* Asociar a patrimonio */}
-                <div className="space-y-2">
+                {/* Asociar Patrimonio - Formato con label integrado */}
+                <div>
                   <Select value={newIncome.patrimony_id} onValueChange={(v) => {
                     if (v === "new") {
                       setIsNewPatrimonyOpen(true);
@@ -442,13 +471,33 @@ const IncomePage = () => {
                       setNewIncome({ ...newIncome, patrimony_id: v });
                     }
                   }}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue placeholder="Seleccionar patrimonio..." />
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-sky-400" />
+                          <span className="text-slate-300">Patrimonio:</span>
+                          <span className="text-white font-medium">{getPatrimonyLabel()}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">Ninguno</SelectItem>
+                      <SelectItem value="none" className="text-slate-400">
+                        <span className="flex items-center gap-2">
+                          <TrendingDown className="w-4 h-4" />
+                          Sin vincular
+                        </span>
+                      </SelectItem>
+                      {patrimony.length > 0 && (
+                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">PATRIMONIO</div>
+                      )}
                       {patrimony.map((pat) => (
-                        <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
+                        <SelectItem key={pat.id} value={pat.id} className="text-white">
+                          <span className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-sky-400" />
+                            {pat.name}
+                          </span>
+                        </SelectItem>
                       ))}
                       <SelectItem value="new" className="text-emerald-400 font-medium">
                         <span className="flex items-center gap-2">
@@ -603,7 +652,6 @@ const IncomePage = () => {
                 );
               })}
               
-              {/* Botón para nueva categoría */}
               <button
                 type="button"
                 onClick={() => {
