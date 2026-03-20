@@ -8,7 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon } from "lucide-react";
+import { 
+  Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
+  ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon,
+  Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
+  Train, UtensilsCrossed, Shirt, MoreHorizontal
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -21,20 +26,62 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+interface CategoryOption {
+  value: string;
+  label: string;
+  icon: any;
+  color: string;
+}
+
+const expenseCategories: CategoryOption[] = [
+  { value: "housing", label: "Casa / Alquiler", icon: Home, color: "bg-blue-500/20 text-blue-400" },
+  { value: "electricity", label: "Luz / Electricidad", icon: Zap, color: "bg-yellow-500/20 text-yellow-400" },
+  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20 text-cyan-400" },
+  { value: "health", label: "Médico / Salud", icon: Heart, color: "bg-rose-500/20 text-rose-400" },
+  { value: "loans", label: "Préstamos", icon: DollarSign, color: "bg-emerald-500/20 text-emerald-400" },
+  { value: "security", label: "Alarmas / Hogar", icon: Shield, color: "bg-slate-500/20 text-slate-400" },
+  { value: "insurance", label: "Seguros Vehículos", icon: Shield, color: "bg-indigo-500/20 text-indigo-400" },
+  { value: "internet", label: "Internet / Móvil", icon: Wifi, color: "bg-violet-500/20 text-violet-400" },
+  { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20 text-pink-400" },
+  { value: "gas", label: "Calefacción / Gas", icon: Flame, color: "bg-orange-500/20 text-orange-400" },
+  { value: "cleaning", label: "Limpieza / Hogar", icon: Sparkles, color: "bg-teal-500/20 text-teal-400" },
+  { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20 text-red-400" },
+  { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20 text-green-400" },
+  { value: "entertainment", label: "Ocio / Salidas", icon: Film, color: "bg-purple-500/20 text-purple-400" },
+  { value: "software", label: "Software / IA", icon: Briefcase, color: "bg-amber-500/20 text-amber-400" },
+  { value: "business_investment", label: "Inversión Negocio", icon: TrendingUp, color: "bg-emerald-500/20 text-emerald-400" },
+  { value: "advertising", label: "Publicidad / Ads", icon: Megaphone, color: "bg-rose-500/20 text-rose-400" },
+  { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20 text-sky-400" },
+  { value: "restaurants", label: "Restaurantes / Comida", icon: UtensilsCrossed, color: "bg-orange-500/20 text-orange-400" },
+  { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20 text-pink-400" },
+  { value: "other", label: "Otros", icon: MoreHorizontal, color: "bg-slate-500/20 text-slate-400" },
+];
+
+// Icono personalizado para gotas de agua
+function DropletsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+    </svg>
+  );
+}
+
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newExpense, setNewExpense] = useState({
+    source: "",
     amount: "",
-    description: "",
-    category: "food",
+    category: "groceries",
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
@@ -68,12 +115,14 @@ const ExpensesPage = () => {
   };
 
   const fetchOptions = async (userId: string) => {
-    const [invResult, patResult] = await Promise.all([
+    const [invResult, patResult, incResult] = await Promise.all([
       supabase.from("investments").select("id, name").eq("user_id", userId),
       supabase.from("patrimony").select("id, name").eq("user_id", userId),
+      supabase.from("incomes").select("id, description").eq("user_id", userId),
     ]);
     if (invResult.data) setInvestments(invResult.data);
     if (patResult.data) setPatrimony(patResult.data);
+    if (incResult.data) setIncomes(incResult.data);
   };
 
   const fetchExpenses = async (userId: string) => {
@@ -95,7 +144,7 @@ const ExpensesPage = () => {
     const { error } = await supabase.from("expenses").insert({
       user_id: session.user.id,
       amount: parseFloat(newExpense.amount),
-      description: newExpense.description,
+      description: newExpense.source,
       category: newExpense.category,
       date: newExpense.date.toISOString().split("T")[0],
     });
@@ -103,9 +152,9 @@ const ExpensesPage = () => {
     if (!error) {
       setIsDialogOpen(false);
       setNewExpense({
+        source: "",
         amount: "",
-        description: "",
-        category: "food",
+        category: "groceries",
         date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
@@ -155,41 +204,19 @@ const ExpensesPage = () => {
 
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
+  const getCategoryInfo = (categoryValue: string) => {
+    return expenseCategories.find(c => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
+  };
+
   const getCategoryIcon = (category: string) => {
-    const icons: Record<string, any> = {
-      food: Utensils,
-      transport: Car,
-      housing: Home,
-      utilities: Zap,
-      shopping: ShoppingCart,
-      entertainment: Film,
-      other: CreditCard,
-    };
-    return icons[category] || CreditCard;
+    const cat = getCategoryInfo(category);
+    return cat.icon;
   };
 
   const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      food: "bg-emerald-500/20 text-emerald-400",
-      transport: "bg-purple-500/20 text-purple-400",
-      housing: "bg-blue-500/20 text-blue-400",
-      utilities: "bg-yellow-500/20 text-yellow-400",
-      shopping: "bg-rose-500/20 text-rose-400",
-      entertainment: "bg-pink-500/20 text-pink-400",
-      other: "bg-slate-500/20 text-slate-400",
-    };
-    return colors[category] || "bg-slate-500/20 text-slate-400";
+    const cat = getCategoryInfo(category);
+    return cat.color;
   };
-
-  const categories = [
-    { value: "food", label: "Comida" },
-    { value: "transport", label: "Transporte" },
-    { value: "housing", label: "Vivienda" },
-    { value: "utilities", label: "Servicios" },
-    { value: "shopping", label: "Compras" },
-    { value: "entertainment", label: "Entretenimiento" },
-    { value: "other", label: "Otros" },
-  ];
 
   const investmentTypes = [
     { value: "stocks", label: "Acciones" },
@@ -242,6 +269,29 @@ const ExpensesPage = () => {
                 <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
+                {/* Fuente de ingreso */}
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Fuente de gasto</label>
+                  <Select value={newExpense.source} onValueChange={(v) => setNewExpense({ ...newExpense, source: v })}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Selecciona una fuente" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {incomes.length > 0 ? (
+                        incomes.map((inc) => (
+                          <SelectItem key={inc.id} value={inc.description || "Sin descripción"} className="text-white">
+                            {inc.description || "Sin descripción"}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no_income" disabled className="text-slate-400">
+                          No hay fuentes disponibles
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Monto */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Monto</label>
@@ -254,30 +304,25 @@ const ExpensesPage = () => {
                   />
                 </div>
 
-                {/* Descripción */}
-                <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Descripción</label>
-                  <Input
-                    placeholder="Descripción del gasto"
-                    value={newExpense.description}
-                    onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-
-                {/* Categoría */}
+                {/* Categoría - Modal visual en grid */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
-                  <Select value={newExpense.category} onValueChange={(v) => setNewExpense({ ...newExpense, category: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCategoryModalOpen(true)}
+                    className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                  >
+                    <span className="flex items-center gap-2">
+                      {(() => {
+                        const cat = getCategoryInfo(newExpense.category);
+                        const Icon = cat.icon;
+                        return <Icon className="w-4 h-4" />;
+                      })()}
+                      {getCategoryInfo(newExpense.category).label}
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
 
                 {/* Fecha con calendario */}
@@ -412,6 +457,40 @@ const ExpensesPage = () => {
           </Dialog>
         </div>
 
+        {/* Modal de selección de categoría en grid */}
+        <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700 max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+              {expenseCategories.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => {
+                      setNewExpense({ ...newExpense, category: cat.value });
+                      setIsCategoryModalOpen(false);
+                    }}
+                    className={`p-4 rounded-xl flex flex-col items-center gap-2 transition-all ${
+                      newExpense.category === cat.value
+                        ? "bg-sky-500/20 border-2 border-sky-500"
+                        : "bg-slate-700/50 border-2 border-transparent hover:bg-slate-700"
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${cat.color}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <span className="text-white text-sm font-medium text-center">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Modal nueva inversión */}
         <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
           <DialogContent className="bg-slate-800 border-slate-700">
@@ -541,15 +620,16 @@ const ExpensesPage = () => {
             ) : (
               <div className="space-y-3">
                 {expenses.map((expense) => {
-                  const Icon = getCategoryIcon(expense.category);
+                  const cat = getCategoryInfo(expense.category);
+                  const Icon = cat.icon;
                   return (
                     <div key={expense.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getCategoryColor(expense.category)}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
                           <Icon className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{expense.description || expense.category}</p>
+                          <p className="font-medium text-white">{expense.description || cat.label}</p>
                           <p className="text-xs text-slate-400">{new Date(expense.date).toLocaleDateString("es-ES")}</p>
                         </div>
                       </div>
