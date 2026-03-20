@@ -115,13 +115,13 @@ const IncomePage = () => {
   ];
 
   const inputCategories = [
-    { value: "salary", label: "Salario" },
+    { value: "salary", label: "Salary" },
     { value: "freelance", label: "Freelance" },
-    { value: "business", label: "Negocio" },
-    { value: "rental", label: "Alquiler" },
-    { value: "dividends", label: "Dividendos" },
-    { value: "interest", label: "Intereses" },
-    { value: "other", label: "Otros" },
+    { value: "business", label: "Business" },
+    { value: "rental", label: "Rental" },
+    { value: "dividends", label: "Dividends" },
+    { value: "interest", label: "Interest" },
+    { value: "other", label: "Other" },
   ];
 
   return (
@@ -142,52 +142,78 @@ const IncomePage = () => {
             </DialogTrigger>
             <DialogContent className="bg-slate-800 border-slate-700">
               <DialogHeader>
-                <DialogTitle className="text-white">Agregar Ingreso</DialogTitle>
+                <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
+                {/* Cantidad */}
                 <div>
-                  <label className="text-sm text-slate-300">Monto</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Cantidad</label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={newIncome.amount}
                     onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
+                    className="bg-slate-700 border-slate-600 text-white text-lg"
+                  />
+                </div>
+
+                {/* Fecha */}
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
+                  <Input
+                    type="date"
+                    value={newIncome.date}
+                    onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>
+
+                {/* Descripción */}
                 <div>
-                  <label className="text-sm text-slate-300">Descripción</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Descripción</label>
                   <Input
-                    placeholder="Descripción del ingreso"
+                    placeholder="Descripción"
                     value={newIncome.description}
                     onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>
+
+                {/* Categoría */}
                 <div>
-                  <label className="text-sm text-slate-300">Categoría</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
                   <Select value={newIncome.category} onValueChange={(v) => setNewIncome({ ...newIncome, category: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-slate-700">
                       {inputCategories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        <SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="is_passive"
-                    checked={newIncome.is_passive}
-                    onChange={(e) => setNewIncome({ ...newIncome, is_passive: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="is_passive" className="text-sm text-slate-300">Es ingreso pasivo</label>
+
+                {/* Ingreso Pasivo Toggle */}
+                <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Ingreso Pasivo</p>
+                    <p className="text-xs text-slate-400">Marcar si es un ingreso pasivo</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewIncome({ ...newIncome, is_passive: !newIncome.is_passive })}
+                    className={`w-12 h-6 rounded-full transition-colors ${
+                      newIncome.is_passive ? "bg-emerald-500" : "bg-slate-600"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
+                      newIncome.is_passive ? "translate-x-6" : "translate-x-0.5"
+                    }`} />
+                  </button>
                 </div>
-                <Button onClick={handleAddIncome} className="w-full bg-emerald-500 hover:bg-emerald-600">
+
+                <Button onClick={handleAddIncome} className="w-full bg-emerald-500 hover:bg-emerald-600 py-6">
                   Guardar
                 </Button>
               </div>
