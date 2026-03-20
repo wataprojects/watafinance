@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, ArrowDownRight, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -20,11 +20,14 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+type FilterType = "all" | "active" | "passive";
+
 const IncomePage = () => {
   const navigate = useNavigate();
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>("all");
   const [newIncome, setNewIncome] = useState({
     amount: "",
     description: "",
@@ -84,11 +87,34 @@ const IncomePage = () => {
     }
   };
 
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
-  const activeIncome = incomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
-  const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
+  // Filtrar ingresos según el tipo seleccionado
+  const filteredIncomes = incomes.filter((income) => {
+    if (filterType === "active") return !income.is_passive;
+    if (filterType === "passive") return income.is_passive;
+    return true;
+  });
+
+  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
+
+  // Agrupar por categoría
+  const byCategory = filteredIncomes.reduce((acc, income) => {
+    const cat = income.category;
+    if (!acc[cat]) acc[cat] = 0;
+    acc[cat] += parseFloat(income.amount);
+    return acc;
+  }, {} as Record<string, number>);
 
   const categories = [
+    { value: "salary", label: "Salario", icon: Briefcase, color: "bg-blue-500/20 text-blue-400" },
+    { value: "freelance", label: "Freelance", icon: DollarSign, color: "bg-purple-500/20 text-purple-400" },
+    { value: "business", label: "Negocio", icon: TrendingUp, color: "bg-emerald-500/20 text-emerald-400" },
+    { value: "rental", label: "Alquiler", icon: Home, color: "bg-amber-500/20 text-amber-400" },
+    { value: "dividends", label: "Dividendos", icon: ArrowUpRight, color: "bg-cyan-500/20 text-cyan-400" },
+    { value: "interest", label: "Intereses", icon: DollarSign, color: "bg-rose-500/20 text-rose-400" },
+    { value: "other", label: "Otros", icon: DollarSign, color: "bg-slate-500/20 text-slate-400" },
+  ];
+
+  const inputCategories = [
     { value: "salary", label: "Salario" },
     { value: "freelance", label: "Freelance" },
     { value: "business", label: "Negocio" },
@@ -111,7 +137,7 @@ const IncomePage = () => {
             <DialogTrigger asChild>
               <Button className="bg-emerald-500 hover:bg-emerald-600">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Ingreso
+                Nuevo
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-slate-800 border-slate-700">
@@ -145,7 +171,7 @@ const IncomePage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
+                      {inputCategories.map((cat) => (
                         <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -169,29 +195,68 @@ const IncomePage = () => {
           </Dialog>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <DollarSign className="w-6 h-6 mx-auto mb-2 text-emerald-400" />
-              <p className="text-2xl font-bold text-white">{formatCurrency(totalIncome)}</p>
-              <p className="text-xs text-slate-400">Total</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <Briefcase className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-              <p className="text-2xl font-bold text-white">{formatCurrency(activeIncome)}</p>
-              <p className="text-xs text-slate-400">Activos</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <Home className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-white">{formatCurrency(passiveIncome)}</p>
-              <p className="text-xs text-slate-400">Pasivos</p>
-            </CardContent>
-          </Card>
+        {/* Filtro */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setFilterType("all")}
+            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+              filterType === "all"
+                ? "bg-sky-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFilterType("passive")}
+            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+              filterType === "passive"
+                ? "bg-purple-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            Pasivos
+          </button>
+          <button
+            onClick={() => setFilterType("active")}
+            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+              filterType === "active"
+                ? "bg-blue-500 text-white"
+                : "bg-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            Activos
+          </button>
+        </div>
+
+        {/* Total */}
+        <Card className="bg-gradient-to-r from-emerald-600 to-teal-600 mb-6">
+          <CardContent className="p-6 text-center">
+            <p className="text-white/80 text-sm mb-1">Total Ingresos</p>
+            <p className="text-4xl font-bold text-white">{formatCurrency(totalIncome)}</p>
+          </CardContent>
+        </Card>
+
+        {/* Por categoría */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {categories.map((cat) => {
+            const value = byCategory[cat.value] || 0;
+            if (value === 0) return null;
+            const Icon = cat.icon;
+            return (
+              <Card key={cat.value} className="bg-white/10 backdrop-blur-sm border-white/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs text-slate-300">{cat.label}</span>
+                  </div>
+                  <p className="text-lg font-bold text-white">{formatCurrency(value)}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Lista de ingresos */}
@@ -199,37 +264,37 @@ const IncomePage = () => {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-400" />
-              Historial de Ingresos
+              Historial
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-slate-400 text-center">Cargando...</p>
-            ) : incomes.length === 0 ? (
+            ) : filteredIncomes.length === 0 ? (
               <p className="text-slate-400 text-center">No hay ingresos registrados</p>
             ) : (
               <div className="space-y-3">
-                {incomes.map((income) => (
-                  <div key={income.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${income.is_passive ? "bg-purple-500/20" : "bg-blue-500/20"}`}>
-                        {income.is_passive ? (
-                          <Home className="w-5 h-5 text-purple-400" />
-                        ) : (
-                          <Briefcase className="w-5 h-5 text-blue-400" />
-                        )}
+                {filteredIncomes.map((income) => {
+                  const cat = categories.find(c => c.value === income.category) || categories[categories.length - 1];
+                  const Icon = cat.icon;
+                  return (
+                    <div key={income.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{income.description || cat.label}</p>
+                          <p className="text-xs text-slate-400">{new Date(income.date).toLocaleDateString("es-ES")}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-white">{income.description || income.category}</p>
-                        <p className="text-xs text-slate-400">{new Date(income.date).toLocaleDateString("es-ES")}</p>
+                      <div className="text-right">
+                        <p className="font-bold text-emerald-400">+{formatCurrency(income.amount)}</p>
+                        <p className="text-xs text-slate-400">{income.is_passive ? "Pasivo" : "Activo"}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-emerald-400">+{formatCurrency(income.amount)}</p>
-                      <p className="text-xs text-slate-400">{income.is_passive ? "Pasivo" : "Activo"}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
