@@ -64,17 +64,17 @@ const IncomeExpenseChart = () => {
   const maxValue = Math.max(...incomeData, ...expenseData, 1000);
 
   return (
-    <Card className="bg-white dark:bg-slate-800 shadow-lg">
+    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-500" />
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+          <BarChart3 className="w-5 h-5 text-sky-400" />
           Ingresos vs Gastos
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
           </div>
         ) : (
           <>
@@ -84,7 +84,7 @@ const IncomeExpenseChart = () => {
                   <div className="w-full flex gap-1 h-48">
                     {/* Ingresos */}
                     <div 
-                      className="flex-1 bg-emerald-500 rounded-t-lg transition-all hover:bg-emerald-600 relative group"
+                      className="flex-1 bg-sky-500 rounded-t-lg transition-all hover:bg-sky-400 relative group"
                       style={{ height: `${maxValue > 0 ? (incomeData[index] / maxValue) * 100 : 0}%` }}
                     >
                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -93,7 +93,7 @@ const IncomeExpenseChart = () => {
                     </div>
                     {/* Gastos */}
                     <div 
-                      className="flex-1 bg-rose-400 rounded-t-lg transition-all hover:bg-rose-500 relative group"
+                      className="flex-1 bg-rose-500 rounded-t-lg transition-all hover:bg-rose-400 relative group"
                       style={{ height: `${maxValue > 0 ? (expenseData[index] / maxValue) * 100 : 0}%` }}
                     >
                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -101,20 +101,20 @@ const IncomeExpenseChart = () => {
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-slate-500">{month.label}</span>
+                  <span className="text-xs text-sky-200">{month.label}</span>
                 </div>
               ))}
             </div>
 
             {/* Leyenda */}
-            <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-white/20">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                <span className="text-sm text-slate-600 dark:text-slate-400">Ingresos</span>
+                <div className="w-3 h-3 bg-sky-500 rounded-full"></div>
+                <span className="text-sm text-sky-200">Ingresos</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-rose-400 rounded-full"></div>
-                <span className="text-sm text-slate-600 dark:text-slate-400">Gastos</span>
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm text-sky-200">Gastos</span>
               </div>
             </div>
           </>

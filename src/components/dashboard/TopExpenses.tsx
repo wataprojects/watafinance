@@ -48,7 +48,7 @@ const TopExpenses = () => {
     const colors: Record<string, string> = {
       food: "bg-emerald-500",
       transport: "bg-purple-500",
-      housing: "bg-blue-500",
+      housing: "bg-sky-500",
       utilities: "bg-yellow-500",
       shopping: "bg-rose-500",
       entertainment: "bg-pink-500",
@@ -71,20 +71,20 @@ const TopExpenses = () => {
   };
 
   return (
-    <Card className="bg-white dark:bg-slate-800 shadow-lg">
+    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-rose-500" />
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+          <CreditCard className="w-5 h-5 text-sky-400" />
           Principales Gastos
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rose-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
           </div>
         ) : expenses.length === 0 ? (
-          <p className="text-slate-500 text-center py-8">No hay gastos registrados</p>
+          <p className="text-sky-200 text-center py-8">No hay gastos registrados</p>
         ) : (
           <>
             <div className="space-y-3">
@@ -92,15 +92,15 @@ const TopExpenses = () => {
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${getCategoryColor(expense.category)}`}></div>
-                    <span className="font-medium text-slate-900 dark:text-white">
+                    <span className="font-medium text-white">
                       {getCategoryLabel(expense.category)}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold text-slate-900 dark:text-white">
+                    <span className="font-semibold text-white">
                       {formatCurrency(expense.amount)}
                     </span>
-                    <span className="text-xs text-slate-500 ml-2">
+                    <span className="text-xs text-sky-200 ml-2">
                       ({total > 0 ? Math.round((expense.amount / total) * 100) : 0}%)
                     </span>
                   </div>
@@ -108,12 +108,12 @@ const TopExpenses = () => {
               ))}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="mt-4 pt-4 border-t border-white/20">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                <span className="text-sm font-medium text-sky-200">
                   Total
                 </span>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
+                <span className="text-lg font-bold text-white">
                   {formatCurrency(total)}
                 </span>
               </div>

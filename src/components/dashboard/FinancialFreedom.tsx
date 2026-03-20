@@ -56,7 +56,7 @@ const FinancialFreedom = () => {
   const yearsToFire = Math.ceil((fireNumber - currentNetWorth) / 15000);
 
   return (
-    <Card className="bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-lg">
+    <Card className="bg-gradient-to-r from-sky-600 to-sky-800 text-white shadow-lg">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">

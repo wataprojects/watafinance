@@ -37,41 +37,41 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-sky-900 to-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-sky-900 to-slate-900 pb-24">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+      <header className="bg-white/10 backdrop-blur-xl border-b border-white/20 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold">F</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">FinPro</h1>
-                <p className="text-xs text-slate-500">Bienvenido de nuevo</p>
+                <h1 className="text-xl font-bold text-white">FinPro</h1>
+                <p className="text-xs text-sky-200">Bienvenido de nuevo</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <Bell className="w-5 h-5 text-white" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-sky-400 rounded-full"></span>
               </Button>
               <Button variant="ghost" size="icon">
-                <User className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <User className="w-5 h-5 text-white" />
               </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={handleLogout}
               >
-                <LogOut className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <LogOut className="w-5 h-5 text-white" />
               </Button>
             </div>
           </div>

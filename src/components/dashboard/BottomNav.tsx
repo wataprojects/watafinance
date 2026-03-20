@@ -20,12 +20,18 @@ const BottomNav = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 shadow-2xl z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-sky-200/50 dark:border-slate-700/50 shadow-2xl z-50">
       {/* Navegación con scroll horizontal */}
       <div
         ref={scrollContainerRef}
-        className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+        className="flex overflow-x-auto scrollbar-hide px-2 py-2 gap-1"
+        style={{ 
+          scrollbarWidth: "none", 
+          msOverflowStyle: "none", 
+          WebkitOverflowScrolling: "touch",
+          paddingLeft: "0.5rem",
+          paddingRight: "0.5rem"
+        }}
       >
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -34,15 +40,15 @@ const BottomNav = () => {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`
-                flex flex-col items-center gap-1.5 px-5 py-2.5 rounded-2xl min-w-[80px] transition-all duration-300
+                flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] transition-all duration-300
                 ${isActive 
-                  ? "bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/25 scale-105" 
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
+                  ? "bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-lg shadow-sky-500/25" 
+                  : "text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-300"
                 }
               `}
             >
-              <item.icon className={`w-6 h-6 ${isActive ? "text-white" : ""}`} />
-              <span className={`text-xs font-semibold ${isActive ? "text-white" : ""}`}>
+              <item.icon className={`w-4 h-4 ${isActive ? "text-white" : ""}`} />
+              <span className={`text-[10px] font-medium ${isActive ? "text-white" : ""}`}>
                 {item.label}
               </span>
             </button>

@@ -62,11 +62,11 @@ const FinancialHealth = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "excellent": return "text-emerald-500";
-      case "good": return "text-blue-500";
-      case "warning": return "text-yellow-500";
-      case "poor": return "text-red-500";
-      default: return "text-slate-500";
+      case "excellent": return "text-emerald-400";
+      case "good": return "text-sky-400";
+      case "warning": return "text-yellow-400";
+      case "poor": return "text-red-400";
+      default: return "text-slate-400";
     }
   };
 
@@ -80,23 +80,23 @@ const FinancialHealth = () => {
   };
 
   return (
-    <Card className="bg-white dark:bg-slate-800 shadow-lg">
+    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Heart className="w-5 h-5 text-rose-500" />
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+            <Heart className="w-5 h-5 text-sky-400" />
             Salud Financiera
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-rose-500">{score}</span>
-            <span className="text-sm text-slate-500">/ 100</span>
+            <span className="text-3xl font-bold text-sky-400">{score}</span>
+            <span className="text-sm text-sky-200">/ 100</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rose-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -107,17 +107,17 @@ const FinancialHealth = () => {
                     <span className={getStatusColor(category.status)}>
                       {getStatusIcon(category.status)}
                     </span>
-                    <span className="font-medium text-slate-900 dark:text-white">{category.name}</span>
+                    <span className="font-medium text-white">{category.name}</span>
                   </div>
                   <span className={`font-bold ${getStatusColor(category.status)}`}>
                     {category.score}
                   </span>
                 </div>
-                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all ${
                       category.status === "excellent" ? "bg-emerald-500" :
-                      category.status === "good" ? "bg-blue-500" :
+                      category.status === "good" ? "bg-sky-500" :
                       category.status === "warning" ? "bg-yellow-500" : "bg-red-500"
                     }`}
                     style={{ width: `${category.score}%` }}
