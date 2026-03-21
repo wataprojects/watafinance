@@ -384,6 +384,34 @@ const IncomePage = () => {
                     className="bg-zinc-800 border-zinc-700 text-white text-lg"
                   />
                 </div>
+                
+                {/* Selector de Categoría */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {defaultCategories.map((cat) => {
+                      const Icon = cat.icon;
+                      return (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => setNewIncome({ ...newIncome, category: cat.value })}
+                          className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                            newIncome.category === cat.value
+                              ? "border-green-500 bg-green-500/20"
+                              : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                          }`}
+                        >
+                          <Icon className={`w-5 h-5 ${newIncome.category === cat.value ? "text-green-400" : "text-zinc-400"}`} />
+                          <span className={`text-xs font-medium ${newIncome.category === cat.value ? "text-white" : "text-zinc-400"}`}>
+                            {cat.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-sm text-zinc-400 mb-2 block">Tipo de ingreso</label>
                   <div className="grid grid-cols-2 gap-3">

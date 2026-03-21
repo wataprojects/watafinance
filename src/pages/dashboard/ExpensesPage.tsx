@@ -41,23 +41,23 @@ interface CategoryOption {
 }
 
 const expenseCategories: CategoryOption[] = [
-  { value: "housing", label: "Casa / Alquiler", icon: Home, color: "bg-blue-500/20 text-blue-400" },
-  { value: "electricity", label: "Luz / Electricidad", icon: Zap, color: "bg-yellow-500/20 text-yellow-400" },
+  { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20 text-blue-400" },
+  { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20 text-yellow-400" },
   { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20 text-cyan-400" },
-  { value: "health", label: "Médico / Salud", icon: Heart, color: "bg-rose-500/20 text-rose-400" },
-  { value: "security", label: "Alarmas / Hogar", icon: Shield, color: "bg-slate-500/20 text-slate-400" },
-  { value: "insurance", label: "Seguros Vehículos", icon: Shield, color: "bg-indigo-500/20 text-indigo-400" },
-  { value: "internet", label: "Internet / Móvil", icon: Wifi, color: "bg-violet-500/20 text-violet-400" },
+  { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20 text-rose-400" },
+  { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20 text-slate-400" },
+  { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20 text-indigo-400" },
+  { value: "internet", label: "Internet", icon: Wifi, color: "bg-violet-500/20 text-violet-400" },
   { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20 text-pink-400" },
-  { value: "gas", label: "Calefacción / Gas", icon: Flame, color: "bg-orange-500/20 text-orange-400" },
-  { value: "cleaning", label: "Limpieza / Hogar", icon: Sparkles, color: "bg-teal-500/20 text-teal-400" },
+  { value: "gas", label: "Gas", icon: Flame, color: "bg-orange-500/20 text-orange-400" },
+  { value: "cleaning", label: "Limpieza", icon: Sparkles, color: "bg-teal-500/20 text-teal-400" },
   { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20 text-red-400" },
   { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20 text-green-400" },
-  { value: "entertainment", label: "Ocio / Salidas", icon: Film, color: "bg-purple-500/20 text-purple-400" },
-  { value: "business_investment", label: "Inversión Negocio", icon: TrendingUp, color: "bg-emerald-500/20 text-emerald-400" },
-  { value: "advertising", label: "Publicidad / Ads", icon: Megaphone, color: "bg-rose-500/20 text-rose-400" },
+  { value: "entertainment", label: "Ocio", icon: Film, color: "bg-purple-500/20 text-purple-400" },
+  { value: "business_investment", label: "Inversión", icon: TrendingUp, color: "bg-emerald-500/20 text-emerald-400" },
+  { value: "advertising", label: "Publicidad", icon: Megaphone, color: "bg-rose-500/20 text-rose-400" },
   { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20 text-sky-400" },
-  { value: "restaurants", label: "Restaurantes / Comida", icon: UtensilsCrossed, color: "bg-orange-500/20 text-orange-400" },
+  { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed, color: "bg-orange-500/20 text-orange-400" },
   { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20 text-pink-400" },
 ];
 
@@ -323,6 +323,33 @@ const ExpensesPage = () => {
                     onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                     className="bg-zinc-800 border-zinc-700 text-white"
                   />
+                </div>
+
+                {/* Selector de Categoría */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {expenseCategories.map((cat) => {
+                      const Icon = cat.icon;
+                      return (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => setNewExpense({ ...newExpense, category: cat.value })}
+                          className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                            newExpense.category === cat.value
+                              ? "border-red-500 bg-red-500/20"
+                              : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${newExpense.category === cat.value ? "text-red-400" : "text-zinc-400"}`} />
+                          <span className={`text-xs font-medium ${newExpense.category === cat.value ? "text-white" : "text-zinc-400"}`}>
+                            {cat.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div>
