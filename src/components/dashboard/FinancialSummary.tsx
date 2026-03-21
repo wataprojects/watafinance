@@ -6,12 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const months2026 = [
-  { value: "01", label: "Enero 2026" },
-  { value: "02", label: "Febrero 2026" },
-  { value: "03", label: "Marzo 2026" },
-];
-
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
@@ -22,10 +16,28 @@ const formatCurrency = (amount: number) => {
 };
 
 const FinancialSummary = () => {
-  const [selectedMonth, setSelectedMonth] = useState("03");
+  const [selectedMonth, setSelectedMonth] = useState("01");
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const currentYear = new Date().getFullYear();
+  
+  // Generar meses dinámicamente para el año actual
+  const months = [
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
 
   useEffect(() => {
     fetchData();
@@ -40,7 +52,7 @@ const FinancialSummary = () => {
       return;
     }
 
-    const year = 2026;
+    const year = currentYear;
     const startDate = `${year}-${selectedMonth}-01`;
     const endDate = `${year}-${selectedMonth}-31`;
 
@@ -69,6 +81,8 @@ const FinancialSummary = () => {
   const balance = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
 
+  const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
+
   return (
     <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
       <CardHeader className="pb-2">
@@ -76,12 +90,12 @@ const FinancialSummary = () => {
           <CardTitle className="text-lg font-semibold text-white">Resumen Financiero</CardTitle>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px] bg-sky-500/20 border-sky-500/40 text-white">
-              <SelectValue />
+              <SelectValue placeholder="Seleccionar mes" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700">
-              {months2026.map((month) => (
+              {months.map((month) => (
                 <SelectItem key={month.value} value={month.value} className="text-white">
-                  {month.label}
+                  {month.label} {currentYear}
                 </SelectItem>
               ))}
             </SelectContent>
