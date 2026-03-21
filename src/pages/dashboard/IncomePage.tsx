@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { 
   Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, 
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
@@ -535,33 +535,10 @@ const IncomePage = () => {
                 {/* Fecha con calendario */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                  <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4" />
-                          {newIncome.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
-                        </span>
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                      <Calendar
-                        mode="single"
-                        selected={newIncome.date}
-                        onSelect={(date) => {
-                          if (date) {
-                            setNewIncome({ ...newIncome, date });
-                            setIsDatePickerOpen(false);
-                          }
-                        }}
-                        className="bg-slate-800 text-white rounded-lg"
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <DatePicker
+                    date={newIncome.date}
+                    onDateChange={(date) => setNewIncome({ ...newIncome, date })}
+                  />
                 </div>
 
                 {/* Asociar Inversión */}
@@ -907,33 +884,10 @@ const IncomePage = () => {
               {/* Fecha con calendario en edición */}
               <div>
                 <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                <Dialog open={isEditDatePickerOpen} onOpenChange={setIsEditDatePickerOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                    >
-                      <span className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        {editIncome.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
-                      </span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                    <Calendar
-                      mode="single"
-                      selected={editIncome.date}
-                      onSelect={(date) => {
-                        if (date) {
-                          setEditIncome({ ...editIncome, date });
-                          setIsEditDatePickerOpen(false);
-                        }
-                      }}
-                      className="bg-slate-800 text-white rounded-lg"
-                    />
-                  </DialogContent>
-                </Dialog>
+                <DatePicker
+                  date={editIncome.date}
+                  onDateChange={(date) => setEditIncome({ ...editIncome, date })}
+                />
               </div>
 
               {/* Asociar Inversión en edición */}

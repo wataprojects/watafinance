@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Banknote, User, Calendar as CalendarIcon, ChevronRight, TrendingUp, Building, TrendingDown as TrendingDownIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -321,66 +321,20 @@ const DebtsPage = () => {
                 {/* Fecha */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                  <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4" />
-                          {newDebt.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
-                        </span>
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                      <Calendar
-                        mode="single"
-                        selected={newDebt.date}
-                        onSelect={(date) => {
-                          if (date) {
-                            setNewDebt({ ...newDebt, date });
-                            setIsDatePickerOpen(false);
-                          }
-                        }}
-                        className="bg-slate-800 text-white rounded-lg"
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <DatePicker
+                    date={newDebt.date}
+                    onDateChange={(date) => setNewDebt({ ...newDebt, date })}
+                  />
                 </div>
 
                 {/* Vence (opcional) */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Vence (opcional)</label>
-                  <Dialog open={isDueDatePickerOpen} onOpenChange={setIsDueDatePickerOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4" />
-                          {newDebt.due_date 
-                            ? newDebt.due_date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
-                            : "Seleccionar fecha"
-                          }
-                        </span>
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                      <Calendar
-                        mode="single"
-                        selected={newDebt.due_date || undefined}
-                        onSelect={(date) => {
-                          setNewDebt({ ...newDebt, due_date: date });
-                          setIsDueDatePickerOpen(false);
-                        }}
-                        className="bg-slate-800 text-white rounded-lg"
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <DatePicker
+                    date={newDebt.due_date || new Date()}
+                    onDateChange={(date) => setNewDebt({ ...newDebt, due_date: date })}
+                    placeholder="Seleccionar fecha"
+                  />
                 </div>
 
                 {/* Notas (opcional) */}

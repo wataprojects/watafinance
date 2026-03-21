@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { 
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
   ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon,
@@ -505,34 +505,11 @@ function ExpensesPage() {
                         </div>
                         <div>
                           <label className="text-sm text-slate-300 mb-1 block">A partir de</label>
-                          <Dialog open={isChangeDatePickerOpen} onOpenChange={setIsChangeDatePickerOpen}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                              >
-                                <span className="flex items-center gap-2">
-                                  <CalendarIcon className="w-4 h-4" />
-                                  {newExpense.scheduled_change_date 
-                                    ? newExpense.scheduled_change_date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
-                                    : "Seleccionar fecha"
-                                  }
-                                </span>
-                                <ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                              <Calendar
-                                mode="single"
-                                selected={newExpense.scheduled_change_date || undefined}
-                                onSelect={(date) => {
-                                  setNewExpense({ ...newExpense, scheduled_change_date: date });
-                                  setIsChangeDatePickerOpen(false);
-                                }}
-                                className="bg-slate-800 text-white rounded-lg"
-                              />
-                            </DialogContent>
-                          </Dialog>
+                          <DatePicker
+                            date={newExpense.scheduled_change_date || new Date()}
+                            onDateChange={(date) => setNewExpense({ ...newExpense, scheduled_change_date: date })}
+                            placeholder="Seleccionar fecha"
+                          />
                         </div>
                       </div>
                     )}
@@ -542,33 +519,10 @@ function ExpensesPage() {
                 {/* Fecha con calendario */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                  <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4" />
-                          {newExpense.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
-                        </span>
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                      <Calendar
-                        mode="single"
-                        selected={newExpense.date}
-                        onSelect={(date) => {
-                          if (date) {
-                            setNewExpense({ ...newExpense, date });
-                            setIsDatePickerOpen(false);
-                          }
-                        }}
-                        className="bg-slate-800 text-white rounded-lg"
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <DatePicker
+                    date={newExpense.date}
+                    onDateChange={(date) => setNewExpense({ ...newExpense, date })}
+                  />
                 </div>
 
                 {/* Asociar Inversión - Formato con label integrado */}

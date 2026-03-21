@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -282,31 +282,18 @@ const LoansPage = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
-                    <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600">
-                          <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4" />{newLoan.start_date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                        <Calendar mode="single" selected={newLoan.start_date} onSelect={(date) => { if (date) { setNewLoan({ ...newLoan, start_date: date }); setIsDatePickerOpen(false); } }} className="bg-slate-800 text-white rounded-lg" />
-                      </DialogContent>
-                    </Dialog>
+                    <DatePicker
+                      date={newLoan.start_date}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
+                    />
                   </div>
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
-                    <Dialog open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600">
-                          <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4" />{newLoan.end_date ? newLoan.end_date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Sin fecha"}</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 border-slate-700 p-0">
-                        <Calendar mode="single" selected={newLoan.end_date || undefined} onSelect={(date) => { setNewLoan({ ...newLoan, end_date: date }); setIsEndDatePickerOpen(false); }} className="bg-slate-800 text-white rounded-lg" />
-                      </DialogContent>
-                    </Dialog>
+                    <DatePicker
+                      date={newLoan.end_date || new Date()}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
+                      placeholder="Sin fecha"
+                    />
                   </div>
                 </div>
 
