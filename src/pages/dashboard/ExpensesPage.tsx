@@ -13,7 +13,7 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
-  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight
+  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -115,6 +115,8 @@ const ExpensesPage = () => {
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
+  const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   
@@ -308,34 +310,16 @@ const ExpensesPage = () => {
     return allCategories.find(c => c.value === categoryValue) || expenseCategories.find(c => c.value === categoryValue) || expenseCategories[0];
   };
 
-  const investmentTypes = [
-    { value: "stocks", label: "Acciones" },
-    { value: "etf", label: "ETF" },
-    { value: "crypto", label: "Criptomonedas" },
-    { value: "bonds", label: "Bonos" },
-    { value: "real_estate", label: "Bienes Raíces" },
-    { value: "other", label: "Otros" },
-  ];
-
-  const patrimonyCategories = [
-    { value: "real_estate", label: "Bienes Raíces" },
-    { value: "vehicle", label: "Vehículos" },
-    { value: "investments", label: "Inversiones" },
-    { value: "savings", label: "Ahorros" },
-    { value: "business", label: "Negocios" },
-    { value: "other", label: "Otros" },
-  ];
-
   const getInvestmentLabel = () => {
-    if (newExpense.investment_id === "none") return "Sin vincular";
+    if (newExpense.investment_id === "none") return "Vincular a inversión";
     const inv = investments.find(i => i.id === newExpense.investment_id);
-    return inv ? inv.name : "Sin vincular";
+    return inv ? inv.name : "Vincular a inversión";
   };
 
   const getPatrimonyLabel = () => {
-    if (newExpense.patrimony_id === "none") return "Sin vincular";
+    if (newExpense.patrimony_id === "none") return "Vincular a patrimonio";
     const pat = patrimony.find(p => p.id === newExpense.patrimony_id);
-    return pat ? pat.name : "Sin vincular";
+    return pat ? pat.name : "Vincular a patrimonio";
   };
 
   const handleCreateInvestment = async () => {
@@ -367,6 +351,24 @@ const ExpensesPage = () => {
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
   };
+
+  const investmentTypes = [
+    { value: "stocks", label: "Acciones" },
+    { value: "etf", label: "ETF" },
+    { value: "crypto", label: "Criptomonedas" },
+    { value: "bonds", label: "Bonos" },
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "other", label: "Otros" },
+  ];
+
+  const patrimonyCategories = [
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "vehicle", label: "Vehículos" },
+    { value: "investments", label: "Inversiones" },
+    { value: "savings", label: "Ahorros" },
+    { value: "business", label: "Negocios" },
+    { value: "other", label: "Otros" },
+  ];
 
   return (
     <div className="min-h-screen bg-black pb-28">
@@ -535,34 +537,194 @@ const ExpensesPage = () => {
                   />
                 </div>
 
-                {/* Vinculación a Inversión */}
+                {/* Vinculación a Inversión - Botón estilo selector */}
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Inversión</label>
-                  <Select value={newExpense.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setNewExpense({ ...newExpense, investment_id: v }); }}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue placeholder="Sin vincular" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
-                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
-                      {investments.map((inv) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
-                      <SelectItem value="new" className="text-green-400 font-medium">+ Nueva inversión</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
+                  <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                          newExpense.investment_id !== "none" 
+                            ? "border-emerald-500/50 bg-emerald-500/10" 
+                            : "border-zinc-700 hover:border-zinc-600"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          newExpense.investment_id !== "none" 
+                            ? "bg-emerald-500/20" 
+                            : "bg-zinc-700"
+                        }`}>
+                          <TrendingUp className={`w-4 h-4 ${newExpense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+                        </div>
+                        <span className={`font-medium ${newExpense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                          {getInvestmentLabel()}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsInvestmentDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        {/* Opción sin vincular */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewExpense({ ...newExpense, investment_id: "none" });
+                            setIsInvestmentDialogOpen(false);
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                            newExpense.investment_id === "none"
+                              ? "border-zinc-500 bg-zinc-800"
+                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                            <Link2 className="w-4 h-4 text-zinc-400" />
+                          </div>
+                          <span className="text-zinc-400 font-medium">Sin vincular</span>
+                        </button>
+
+                        {/* Lista de inversiones existentes */}
+                        {investments.map((inv) => (
+                          <button
+                            key={inv.id}
+                            type="button"
+                            onClick={() => {
+                              setNewExpense({ ...newExpense, investment_id: inv.id });
+                              setIsInvestmentDialogOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                              newExpense.investment_id === inv.id
+                                ? "border-emerald-500 bg-emerald-500/20"
+                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                              <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <span className="text-white font-medium">{inv.name}</span>
+                          </button>
+                        ))}
+
+                        {/* Botón crear nueva inversión */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsInvestmentDialogOpen(false);
+                            setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                          }}
+                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
-                {/* Vinculación a Patrimonio */}
+                {/* Vinculación a Patrimonio - Botón estilo selector */}
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
-                  <Select value={newExpense.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setNewExpense({ ...newExpense, patrimony_id: v }); }}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue placeholder="Sin vincular" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
-                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
-                      {patrimony.map((pat) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
-                      <SelectItem value="new" className="text-green-400 font-medium">+ Nuevo patrimonio</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
+                  <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                          newExpense.patrimony_id !== "none" 
+                            ? "border-sky-500/50 bg-sky-500/10" 
+                            : "border-zinc-700 hover:border-zinc-600"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          newExpense.patrimony_id !== "none" 
+                            ? "bg-sky-500/20" 
+                            : "bg-zinc-700"
+                        }`}>
+                          <Building className={`w-4 h-4 ${newExpense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+                        </div>
+                        <span className={`font-medium ${newExpense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                          {getPatrimonyLabel()}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsPatrimonyDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        {/* Opción sin vincular */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewExpense({ ...newExpense, patrimony_id: "none" });
+                            setIsPatrimonyDialogOpen(false);
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                            newExpense.patrimony_id === "none"
+                              ? "border-zinc-500 bg-zinc-800"
+                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                            <Link2 className="w-4 h-4 text-zinc-400" />
+                          </div>
+                          <span className="text-zinc-400 font-medium">Sin vincular</span>
+                        </button>
+
+                        {/* Lista de patrimonio existente */}
+                        {patrimony.map((pat) => (
+                          <button
+                            key={pat.id}
+                            type="button"
+                            onClick={() => {
+                              setNewExpense({ ...newExpense, patrimony_id: pat.id });
+                              setIsPatrimonyDialogOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                              newExpense.patrimony_id === pat.id
+                                ? "border-sky-500 bg-sky-500/20"
+                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-sky-400" />
+                            </div>
+                            <span className="text-white font-medium">{pat.name}</span>
+                          </button>
+                        ))}
+
+                        {/* Botón crear nuevo patrimonio */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPatrimonyDialogOpen(false);
+                            setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                          }}
+                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-sky-400" />
+                          <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <Button 
@@ -676,7 +838,7 @@ const ExpensesPage = () => {
               <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
               <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             </div>
-            <Button onClick={handleCreateInvestment} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black">Crear</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -700,7 +862,7 @@ const ExpensesPage = () => {
               </Select>
             </div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-            <Button onClick={handleCreatePatrimony} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+            <Button onClick={handleCreatePatrimony} className="w-full bg-sky-500 hover:bg-sky-600 text-white">Crear</Button>
           </div>
         </DialogContent>
       </Dialog>
