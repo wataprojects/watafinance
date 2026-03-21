@@ -57,7 +57,6 @@ const specificFees: Record<LoanType, { key: string; label: string; placeholder: 
   other: [],
 };
 
-// Helper function to safely parse dates
 const safeParseDate = (dateStr: string | null | undefined): Date => {
   if (!dateStr) return new Date();
   try {
@@ -368,21 +367,21 @@ const LoansPage = () => {
   const getLoanTypeInfo = (type: string) => loanTypes.find(t => t.value === type) || loanTypes[loanTypes.length - 1];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-black pb-24">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Préstamos</h1>
-            <p className="text-slate-500">Gestiona tus préstamos y créditos</p>
+            <h1 className="text-2xl font-bold text-white">Préstamos</h1>
+            <p className="text-cyan-400 text-sm">Gestiona tus préstamos y créditos</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-cyan-500 hover:bg-cyan-600"><Plus className="w-4 h-4 mr-2" />Nuevo Préstamo</Button>
+              <Button className="bg-cyan-500 hover:bg-cyan-600 text-black"><Plus className="w-4 h-4 mr-2" />Nuevo Préstamo</Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-white">Nuevo Préstamo</DialogTitle>
-                <p className="text-slate-400 text-sm">Registra las condiciones del préstamo</p>
+                <p className="text-zinc-400 text-sm">Registra las condiciones del préstamo</p>
               </DialogHeader>
               <LoanForm 
                 loan={newLoan} 
@@ -438,7 +437,7 @@ const LoansPage = () => {
         </div>
 
         {/* Lista de préstamos activos */}
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-6">
+        <Card className="bg-zinc-900 border-zinc-800 mb-6">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Landmark className="w-5 h-5 text-cyan-400" />
@@ -446,14 +445,14 @@ const LoansPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (<p className="text-slate-400 text-center">Cargando...</p>) : activeLoans.length === 0 ? (<p className="text-slate-400 text-center">No hay préstamos activos</p>) : (
+            {loading ? (<p className="text-zinc-500 text-center">Cargando...</p>) : activeLoans.length === 0 ? (<p className="text-zinc-500 text-center">No hay préstamos activos</p>) : (
               <div className="space-y-3">
                 {activeLoans.map((loan) => {
                   const progress = ((parseFloat(loan.initial_amount) - parseFloat(loan.current_amount)) / parseFloat(loan.initial_amount)) * 100;
                   const typeInfo = getLoanTypeInfo(loan.loan_type);
                   const Icon = typeInfo.icon;
                   return (
-                    <div key={loan.id} className="p-4 bg-white/5 rounded-xl">
+                    <div key={loan.id} className="p-4 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeInfo.color}`}>
@@ -461,12 +460,12 @@ const LoansPage = () => {
                           </div>
                           <div>
                             <p className="font-medium text-white">{loan.borrower_name}</p>
-                            <p className="text-xs text-slate-400">{loan.bank} • {typeInfo.label}</p>
+                            <p className="text-xs text-zinc-500">{loan.bank} • {typeInfo.label}</p>
                           </div>
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => openEditDialog(loan)} className="p-2 rounded-lg hover:bg-slate-700 transition-colors">
-                            <Pencil className="w-4 h-4 text-slate-400" />
+                          <button onClick={() => openEditDialog(loan)} className="p-2 rounded-lg hover:bg-zinc-700 transition-colors">
+                            <Pencil className="w-4 h-4 text-zinc-400" />
                           </button>
                           <button onClick={() => openDeleteDialog(loan)} className="p-2 rounded-lg hover:bg-red-500/20 transition-colors">
                             <Trash2 className="w-4 h-4 text-red-400" />
@@ -474,15 +473,15 @@ const LoansPage = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mb-2">
-                        <div><p className="text-xs text-slate-400">Pendiente</p><p className="font-bold text-cyan-400">{formatCurrency(loan.current_amount)}</p></div>
-                        <div className="text-right"><p className="text-xs text-slate-400">de {formatCurrency(loan.initial_amount)}</p><p className="text-xs text-emerald-400">Cuota: {formatCurrency(loan.monthly_payment)}/mes</p></div>
+                        <div><p className="text-xs text-zinc-500">Pendiente</p><p className="font-bold text-cyan-400">{formatCurrency(loan.current_amount)}</p></div>
+                        <div className="text-right"><p className="text-xs text-zinc-500">de {formatCurrency(loan.initial_amount)}</p><p className="text-xs text-emerald-400">Cuota: {formatCurrency(loan.monthly_payment)}/mes</p></div>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                       <div className="flex justify-between mt-1">
-                        <p className="text-xs text-slate-500">{progress.toFixed(1)}% pagado</p>
-                        {loan.end_date && <p className="text-xs text-slate-500">Fin: {new Date(loan.end_date).toLocaleDateString('es-ES')}</p>}
+                        <p className="text-xs text-zinc-500">{progress.toFixed(1)}% pagado</p>
+                        {loan.end_date && <p className="text-xs text-zinc-500">Fin: {new Date(loan.end_date).toLocaleDateString('es-ES')}</p>}
                       </div>
                     </div>
                   );
@@ -494,10 +493,10 @@ const LoansPage = () => {
 
         {/* Préstamos saldados */}
         {settledLoans.length > 0 && (
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <TrendingDownIcon className="w-4 h-4 text-slate-400" />
+                <TrendingDownIcon className="w-4 h-4 text-zinc-400" />
                 Préstamos Saldados ({settledLoans.length})
               </CardTitle>
             </CardHeader>
@@ -507,14 +506,14 @@ const LoansPage = () => {
                   const typeInfo = getLoanTypeInfo(loan.loan_type);
                   const Icon = typeInfo.icon;
                   return (
-                    <div key={loan.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl opacity-60">
+                    <div key={loan.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl opacity-60">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="font-medium text-white text-sm">{loan.borrower_name}</p>
-                          <p className="text-xs text-slate-400">{loan.bank}</p>
+                          <p className="text-xs text-zinc-500">{loan.bank}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -531,7 +530,7 @@ const LoansPage = () => {
 
       {/* Modal de edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Editar Préstamo</DialogTitle>
           </DialogHeader>
@@ -571,22 +570,22 @@ const LoansPage = () => {
 
       {/* Modal de eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700">
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
             <DialogTitle className="text-white">Eliminar Préstamo</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <p className="text-slate-300">
+            <p className="text-zinc-300">
               ¿Estás seguro de que quieres eliminar este préstamo? Esta acción no se puede deshacer.
             </p>
             {selectedLoan && (
-              <div className="p-4 bg-slate-700/50 rounded-xl">
+              <div className="p-4 bg-zinc-800/50 rounded-xl">
                 <p className="text-white font-medium">{selectedLoan.borrower_name}</p>
                 <p className="text-cyan-400 font-bold">{formatCurrency(selectedLoan.current_amount)}</p>
               </div>
             )}
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-slate-600 text-white hover:bg-slate-700">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">
                 Cancelar
               </Button>
               <Button onClick={handleDeleteLoan} className="flex-1 bg-red-500 hover:bg-red-600">
@@ -599,19 +598,19 @@ const LoansPage = () => {
 
       {/* Modal nueva inversión */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700">
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-slate-300 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Tipo</label>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
               <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm text-slate-300 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-              <div><label className="text-sm text-slate-300 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             </div>
             <Button onClick={() => handleCreateInvestment(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">Crear</Button>
           </div>
@@ -620,17 +619,17 @@ const LoansPage = () => {
 
       {/* Modal nuevo patrimonio */}
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700">
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-slate-300 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Categoría</label>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
               <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <Button onClick={() => handleCreatePatrimony(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">Crear</Button>
           </div>
         </DialogContent>
@@ -648,7 +647,6 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
   const getInvestmentLabel = () => loan.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === loan.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabel = () => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === loan.patrimony_id)?.name || "Sin vincular";
 
-  // Safe date handlers for DatePicker
   const handleStartDateChange = (date: Date | undefined) => {
     setLoan({ ...loan, start_date: date || new Date() });
   };
@@ -661,15 +659,15 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
     <div className="space-y-4 mt-2">
       {/* Tipo de préstamo */}
       <div>
-        <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
+        <label className="text-sm text-zinc-400 mb-2 block">Tipo de préstamo</label>
         <div className="grid grid-cols-5 gap-2">
           {loanTypes.map((type: any) => {
             const Icon = type.icon;
             return (
               <button key={type.value} type="button" onClick={() => { setLoan({ ...loan, loan_type: type.value }); setShowSpecificFees(true); }}
-                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-slate-600 bg-slate-700/30 hover:border-slate-500"}`}>
-                <Icon className={`w-5 h-5 ${loan.loan_type === type.value ? "text-cyan-400" : "text-slate-400"}`} />
-                <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-slate-400"}`}>{type.label}</span>
+                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"}`}>
+                <Icon className={`w-5 h-5 ${loan.loan_type === type.value ? "text-cyan-400" : "text-zinc-400"}`} />
+                <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-zinc-400"}`}>{type.label}</span>
               </button>
             );
           })}
@@ -679,45 +677,45 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       {/* Nombre y Banco */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Nombre *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
           <Input placeholder="Ej: Hipoteca casa" value={loan.name} onChange={(e) => setLoan({ ...loan, name: e.target.value })}
-            className={`bg-slate-700 border-slate-600 text-white ${errors.name ? "border-red-500" : ""}`} />
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.name ? "border-red-500" : ""}`} />
         </div>
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Banco *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Banco *</label>
           <Input placeholder="Ej: BBVA, Santander" value={loan.bank} onChange={(e) => setLoan({ ...loan, bank: e.target.value })}
-            className={`bg-slate-700 border-slate-600 text-white ${errors.bank ? "border-red-500" : ""}`} />
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.bank ? "border-red-500" : ""}`} />
         </div>
       </div>
 
       {/* Importe y Capital pendiente */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Importe total (€) *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Importe total (€) *</label>
           <Input type="number" placeholder="€ 0.00" value={loan.total_amount} onChange={(e) => setLoan({ ...loan, total_amount: e.target.value })}
-            className={`bg-slate-700 border-slate-600 text-white ${errors.total_amount ? "border-red-500" : ""}`} />
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.total_amount ? "border-red-500" : ""}`} />
         </div>
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Capital pendiente (€) *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Capital pendiente (€) *</label>
           <Input type="number" placeholder="€ 0.00" value={loan.pending_amount} onChange={(e) => setLoan({ ...loan, pending_amount: e.target.value })}
-            className={`bg-slate-700 border-slate-600 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />
         </div>
       </div>
 
       {/* Cuota y Día de cobro */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Cuota mensual (€) *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Cuota mensual (€) *</label>
           <Input type="number" placeholder="€ 0.00" value={loan.monthly_payment} onChange={(e) => setLoan({ ...loan, monthly_payment: e.target.value })}
-            className={`bg-slate-700 border-slate-600 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />
         </div>
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Día de cobro *</label>
+          <label className="text-sm text-zinc-400 mb-1 block">Día de cobro *</label>
           <Select value={loan.collection_day} onValueChange={(v) => setLoan({ ...loan, collection_day: v })}>
-            <SelectTrigger className={`bg-slate-700 border-slate-600 text-white ${errors.collection_day ? "border-red-500" : ""}`}>
+            <SelectTrigger className={`bg-zinc-800 border-zinc-700 text-white ${errors.collection_day ? "border-red-500" : ""}`}>
               <SelectValue placeholder="Selecciona" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectContent className="bg-zinc-800 border-zinc-700">
               {collectionDays.map((day: number) => (<SelectItem key={day} value={day.toString()} className="text-white">{day}</SelectItem>))}
             </SelectContent>
           </Select>
@@ -727,62 +725,51 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       {/* Fechas */}
       <div className="space-y-3">
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
-          <DatePicker 
-            date={loan.start_date} 
-            onDateChange={handleStartDateChange} 
-          />
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha inicio</label>
+          <DatePicker date={loan.start_date} onDateChange={handleStartDateChange} />
         </div>
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Fecha fin (opcional)</label>
-          <DatePicker 
-            date={loan.end_date || undefined} 
-            onDateChange={handleEndDateChange} 
-            placeholder="Sin fecha fin" 
-          />
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha fin (opcional)</label>
+          <DatePicker date={loan.end_date || undefined} onDateChange={handleEndDateChange} placeholder="Sin fecha fin" />
         </div>
       </div>
 
-      {/* Comisiones - Todo junto en un solo bloque */}
-      <div className="border border-slate-600 rounded-xl p-3">
-        <p className="text-sm text-slate-300 font-medium mb-3">Comisiones</p>
+      {/* Comisiones */}
+      <div className="border border-zinc-700 rounded-xl p-3">
+        <p className="text-sm text-zinc-400 font-medium mb-3">Comisiones</p>
         
-        {/* Comisiones universales */}
         <div className="grid grid-cols-2 gap-3">
           {universalFees.map((fee: any) => (
             <div key={fee.key}>
-              <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-              <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
+              <label className="text-xs text-zinc-500 mb-1 block">{fee.label}</label>
+              <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" />
             </div>
           ))}
         </div>
         
-        {/* Más opciones - incluye comisiones adicionales Y específicas */}
         <button type="button" onClick={() => setShowAdditionalFees(!showAdditionalFees)} className="flex items-center gap-2 mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
           {showAdditionalFees ? (<>Ocultar opciones <ChevronDown className="w-4 h-4 rotate-180" /></>) : (<>+ Más opciones <ChevronDown className="w-4 h-4" /></>)}
         </button>
         
         {showAdditionalFees && (
-          <div className="space-y-3 mt-3 pt-3 border-t border-slate-600">
-            {/* Comisiones adicionales */}
+          <div className="space-y-3 mt-3 pt-3 border-t border-zinc-700">
             <div className="grid grid-cols-2 gap-3">
               {additionalFees.map((fee: any) => (
                 <div key={fee.key}>
-                  <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                  <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
+                  <label className="text-xs text-zinc-500 mb-1 block">{fee.label}</label>
+                  <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" />
                 </div>
               ))}
             </div>
 
-            {/* Comisiones específicas por tipo de préstamo */}
             {currentSpecificFees.length > 0 && (
-              <div className="pt-3 border-t border-slate-600">
+              <div className="pt-3 border-t border-zinc-700">
                 <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find((t: any) => t.value === loan.loan_type)?.label}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {currentSpecificFees.map((fee: any) => (
                     <div key={fee.key}>
-                      <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                      <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
+                      <label className="text-xs text-zinc-500 mb-1 block">{fee.label}</label>
+                      <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" />
                     </div>
                   ))}
                 </div>
@@ -795,30 +782,30 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       {/* Inversión y Patrimonio */}
       <div className="space-y-3">
         <Select value={loan.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setLoan({ ...loan, investment_id: v }); }}>
-          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
             <div className="flex items-center gap-2 w-full">
               <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span className="text-slate-300 text-sm">Inversión:</span>
+              <span className="text-zinc-400 text-sm">Inversión:</span>
               <span className="text-white text-sm font-medium truncate">{getInvestmentLabel()}</span>
             </div>
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
+          <SelectContent className="bg-zinc-800 border-zinc-700">
+            <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
             {investments.map((inv: any) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
             <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
           </SelectContent>
         </Select>
         
         <Select value={loan.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setLoan({ ...loan, patrimony_id: v }); }}>
-          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
             <div className="flex items-center gap-2 w-full">
               <Building className="w-4 h-4 text-sky-400 flex-shrink-0" />
-              <span className="text-slate-300 text-sm">Patrimonio:</span>
+              <span className="text-zinc-400 text-sm">Patrimonio:</span>
               <span className="text-white text-sm font-medium truncate">{getPatrimonyLabel()}</span>
             </div>
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
+          <SelectContent className="bg-zinc-800 border-zinc-700">
+            <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
             {patrimony.map((pat: any) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
             <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
           </SelectContent>
@@ -827,11 +814,11 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
 
       {/* Notas */}
       <div>
-        <label className="text-sm text-slate-300 mb-1 block">Notas (opcional)</label>
-        <Textarea placeholder="Condiciones especiales..." value={loan.notes} onChange={(e) => setLoan({ ...loan, notes: e.target.value })} className="bg-slate-700 border-slate-600 text-white" rows={2} />
+        <label className="text-sm text-zinc-400 mb-1 block">Notas (opcional)</label>
+        <Textarea placeholder="Condiciones especiales..." value={loan.notes} onChange={(e) => setLoan({ ...loan, notes: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" rows={2} />
       </div>
 
-      <Button onClick={onSubmit} className="w-full bg-cyan-500 hover:bg-cyan-600 py-5" disabled={isSaving}>
+      <Button onClick={onSubmit} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black py-5" disabled={isSaving}>
         {isSaving ? "Guardando..." : isNew ? "Registrar préstamo" : "Guardar cambios"}
       </Button>
     </div>
