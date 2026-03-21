@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { format } from "date-fns"
+import { format, setMonth } from "date-fns"
 import { es } from "date-fns/locale"
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,21 @@ interface DatePickerProps {
   placeholder?: string
 }
 
+const months = [
+  { value: 0, label: "Enero" },
+  { value: 1, label: "Febrero" },
+  { value: 2, label: "Marzo" },
+  { value: 3, label: "Abril" },
+  { value: 4, label: "Mayo" },
+  { value: 5, label: "Junio" },
+  { value: 6, label: "Julio" },
+  { value: 7, label: "Agosto" },
+  { value: 8, label: "Septiembre" },
+  { value: 9, label: "Octubre" },
+  { value: 10, label: "Noviembre" },
+  { value: 11, label: "Diciembre" },
+]
+
 export function DatePicker({
   date,
   onDateChange,
@@ -29,6 +44,7 @@ export function DatePicker({
   const [currentMonth, setCurrentMonth] = React.useState(date)
   const [selectedYear, setSelectedYear] = React.useState(date.getFullYear())
   const [showYearPicker, setShowYearPicker] = React.useState(false)
+  const [showMonthPicker, setShowMonthPicker] = React.useState(false)
 
   const years = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i)
 
@@ -37,6 +53,7 @@ export function DatePicker({
       onDateChange(selectedDate)
       setIsOpen(false)
       setShowYearPicker(false)
+      setShowMonthPicker(false)
     }
   }
 
@@ -46,6 +63,12 @@ export function DatePicker({
     newDate.setFullYear(year)
     setCurrentMonth(newDate)
     setShowYearPicker(false)
+  }
+
+  const handleMonthSelect = (monthIndex: number) => {
+    const newDate = setMonth(currentMonth, monthIndex)
+    setCurrentMonth(newDate)
+    setShowMonthPicker(false)
   }
 
   const handleMonthChange = (direction: 'prev' | 'next') => {
@@ -66,6 +89,18 @@ export function DatePicker({
     setIsOpen(open)
     if (!open) {
       setShowYearPicker(false)
+      setShowMonthPicker(false)
+    }
+  }
+
+  const togglePicker = () => {
+    if (showYearPicker) {
+      setShowYearPicker(false)
+      setShowMonthPicker(true)
+    } else if (showMonthPicker) {
+      setShowMonthPicker(false)
+    } else {
+      setShowYearPicker(true)
     }
   }
 
@@ -122,14 +157,14 @@ export function DatePicker({
             
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowYearPicker(!showYearPicker)}
+                onClick={togglePicker}
                 className="px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-colors text-sm font-semibold text-white"
               >
                 {format(currentMonth, "yyyy", { locale: es })}
               </button>
               <span className="text-slate-500">|</span>
               <button
-                onClick={() => setShowYearPicker(!showYearPicker)}
+                onClick={togglePicker}
                 className="px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-colors text-sm font-semibold text-white capitalize"
               >
                 {format(currentMonth, "MMMM", { locale: es })}
@@ -147,6 +182,7 @@ export function DatePicker({
           {/* Selector de año */}
           {showYearPicker && (
             <div className="p-4 border-b border-slate-700 bg-slate-800">
+              <p className="text-xs text-slate-500 mb-2 font-medium">SELECCIONAR AÑO</p>
               <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto">
                 {years.map((year) => (
                   <button
@@ -166,38 +202,63 @@ export function DatePicker({
             </div>
           )}
 
+          {/* Selector de mes */}
+          {showMonthPicker && (
+            <div className="p-4 border-b border-slate-700 bg-slate-800">
+              <p className="text-xs text-slate-500 mb-2 font-medium">SELECCIONAR MES</p>
+              <div className="grid grid-cols-4 gap-2">
+                {months.map((month) => (
+                  <button
+                    key={month.value}
+                    onClick={() => handleMonthSelect(month.value)}
+                    className={cn(
+                      "p-2 rounded-lg text-sm font-medium transition-colors capitalize",
+                      currentMonth.getMonth() === month.value 
+                        ? "bg-indigo-600 text-white" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    )}
+                  >
+                    {month.label.substring(0, 3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Calendario */}
-          <div className="p-2 bg-slate-800">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleSelect}
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              className="bg-slate-800 text-white rounded-lg"
-              classNames={{
-                months: "flex flex-col space-y-4",
-                month: "space-y-4",
-                caption: "flex justify-center pt-1 relative items-center",
-                caption_label: "text-sm font-medium text-white",
-                nav: "space-x-1 flex items-center",
-                nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-slate-700 rounded-lg transition-all",
-                nav_button_previous: "absolute left-2",
-                nav_button_next: "absolute right-2",
-                table: "w-full border-collapse space-y-1",
-                head_row: "flex",
-                head_cell: "text-slate-500 rounded-md w-9 font-normal text-[0.75rem]",
-                row: "flex w-full mt-2",
-                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-700 rounded-lg transition-all text-slate-300 hover:text-white",
-                day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white rounded-lg font-semibold",
-                day_today: "bg-slate-700 text-white rounded-lg font-semibold",
-                day_outside: "text-slate-600 opacity-40",
-                day_disabled: "text-slate-600 opacity-40",
-                day_hidden: "invisible",
-              }}
-            />
-          </div>
+          {!showYearPicker && !showMonthPicker && (
+            <div className="p-2 bg-slate-800">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={handleSelect}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                className="bg-slate-800 text-white rounded-lg"
+                classNames={{
+                  months: "flex flex-col space-y-4",
+                  month: "space-y-4",
+                  caption: "flex justify-center pt-1 relative items-center",
+                  caption_label: "text-sm font-medium text-white",
+                  nav: "space-x-1 flex items-center",
+                  nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-slate-700 rounded-lg transition-all",
+                  nav_button_previous: "absolute left-2",
+                  nav_button_next: "absolute right-2",
+                  table: "w-full border-collapse space-y-1",
+                  head_row: "flex",
+                  head_cell: "text-slate-500 rounded-md w-9 font-normal text-[0.75rem]",
+                  row: "flex w-full mt-2",
+                  cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-700 rounded-lg transition-all text-slate-300 hover:text-white",
+                  day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white rounded-lg font-semibold",
+                  day_today: "bg-slate-700 text-white rounded-lg font-semibold",
+                  day_outside: "text-slate-600 opacity-40",
+                  day_disabled: "text-slate-600 opacity-40",
+                  day_hidden: "invisible",
+                }}
+              />
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-between gap-2 p-4 border-t border-slate-700 bg-slate-800 rounded-b-2xl">
@@ -207,6 +268,7 @@ export function DatePicker({
                 onDateChange(today)
                 setIsOpen(false)
                 setShowYearPicker(false)
+                setShowMonthPicker(false)
               }}
               className="flex-1 text-slate-400 hover:text-white hover:bg-slate-700"
             >
@@ -217,6 +279,7 @@ export function DatePicker({
               onClick={() => {
                 setIsOpen(false)
                 setShowYearPicker(false)
+                setShowMonthPicker(false)
               }}
               className="flex-1 text-slate-400 hover:text-white hover:bg-slate-700"
             >
