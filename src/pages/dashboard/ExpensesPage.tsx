@@ -39,6 +39,7 @@ interface CategoryOption {
   label: string;
   icon: any;
   color: string;
+  textColor: string;
 }
 
 // Iconos disponibles para categorías personalizadas
@@ -74,24 +75,24 @@ const availableIcons = [
 
 // Categorías para gastos - usando los mismos iconos que en la home
 const expenseCategories: CategoryOption[] = [
-  { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20 text-blue-400" },
-  { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20 text-yellow-400" },
-  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20 text-cyan-400" },
-  { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20 text-rose-400" },
-  { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20 text-slate-400" },
-  { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20 text-indigo-400" },
-  { value: "internet", label: "Internet", icon: Wifi, color: "bg-violet-500/20 text-violet-400" },
-  { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20 text-pink-400" },
-  { value: "gas", label: "Gas", icon: Flame, color: "bg-orange-500/20 text-orange-400" },
-  { value: "cleaning", label: "Limpieza", icon: Sparkles, color: "bg-teal-500/20 text-teal-400" },
-  { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20 text-red-400" },
-  { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20 text-green-400" },
-  { value: "entertainment", label: "Ocio", icon: Film, color: "bg-purple-500/20 text-purple-400" },
-  { value: "business_investment", label: "Inversión", icon: TrendingUp, color: "bg-emerald-500/20 text-emerald-400" },
-  { value: "advertising", label: "Publicidad", icon: Megaphone, color: "bg-rose-500/20 text-rose-400" },
-  { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20 text-sky-400" },
-  { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed, color: "bg-orange-500/20 text-orange-400" },
-  { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20 text-pink-400" },
+  { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20", textColor: "text-blue-400" },
+  { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
+  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
+  { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20", textColor: "text-rose-400" },
+  { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20", textColor: "text-slate-400" },
+  { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20", textColor: "text-indigo-400" },
+  { value: "internet", label: "Internet", icon: Wifi, color: "bg-violet-500/20", textColor: "text-violet-400" },
+  { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20", textColor: "text-pink-400" },
+  { value: "gas", label: "Gas", icon: Flame, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "cleaning", label: "Limpieza", icon: Sparkles, color: "bg-teal-500/20", textColor: "text-teal-400" },
+  { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20", textColor: "text-red-400" },
+  { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20", textColor: "text-green-400" },
+  { value: "entertainment", label: "Ocio", icon: Film, color: "bg-purple-500/20", textColor: "text-purple-400" },
+  { value: "business_investment", label: "Inversión", icon: TrendingUp, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
+  { value: "advertising", label: "Publicidad", icon: Megaphone, color: "bg-rose-500/20", textColor: "text-rose-400" },
+  { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20", textColor: "text-sky-400" },
+  { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20", textColor: "text-pink-400" },
 ];
 
 function DropletsIcon({ className }: { className?: string }) {
@@ -148,7 +149,8 @@ const ExpensesPage = () => {
   const [newCustomCategory, setNewCustomCategory] = useState({
     name: "",
     icon: "ShoppingCart",
-    color: "bg-green-500/20 text-green-400",
+    color: "bg-green-500/20",
+    textColor: "text-green-400",
   });
 
   const years = [2024, 2025, 2026, 2027, 2028];
@@ -169,16 +171,16 @@ const ExpensesPage = () => {
   ];
 
   const categoryColors = [
-    { value: "bg-blue-500/20 text-blue-400", label: "Azul" },
-    { value: "bg-emerald-500/20 text-emerald-400", label: "Verde" },
-    { value: "bg-purple-500/20 text-purple-400", label: "Morado" },
-    { value: "bg-cyan-500/20 text-cyan-400", label: "Cian" },
-    { value: "bg-amber-500/20 text-amber-400", label: "Ámbar" },
-    { value: "bg-green-500/20 text-green-400", label: "Verde claro" },
-    { value: "bg-slate-500/20 text-slate-400", label: "Gris" },
-    { value: "bg-pink-500/20 text-pink-400", label: "Rosa" },
-    { value: "bg-orange-500/20 text-orange-400", label: "Naranja" },
-    { value: "bg-red-500/20 text-red-400", label: "Rojo" },
+    { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
+    { value: "bg-emerald-500/20", textColor: "text-emerald-400", label: "Verde" },
+    { value: "bg-purple-500/20", textColor: "text-purple-400", label: "Morado" },
+    { value: "bg-cyan-500/20", textColor: "text-cyan-400", label: "Cian" },
+    { value: "bg-amber-500/20", textColor: "text-amber-400", label: "Ámbar" },
+    { value: "bg-green-500/20", textColor: "text-green-400", label: "Verde claro" },
+    { value: "bg-slate-500/20", textColor: "text-slate-400", label: "Gris" },
+    { value: "bg-pink-500/20", textColor: "text-pink-400", label: "Rosa" },
+    { value: "bg-orange-500/20", textColor: "text-orange-400", label: "Naranja" },
+    { value: "bg-red-500/20", textColor: "text-red-400", label: "Rojo" },
   ];
 
   useEffect(() => {
@@ -273,12 +275,13 @@ const ExpensesPage = () => {
       label: newCustomCategory.name,
       icon: iconData?.icon || ShoppingCart,
       color: newCustomCategory.color,
+      textColor: newCustomCategory.textColor,
     };
     
     setCustomCategories([...customCategories, newCategory]);
     setNewExpense({ ...newExpense, category: categoryValue });
     setIsCreateCategoryDialogOpen(false);
-    setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20 text-green-400" });
+    setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20", textColor: "text-green-400" });
   };
 
   const filteredExpenses = expenses.filter((expense) => {
@@ -426,7 +429,7 @@ const ExpensesPage = () => {
                           return (
                             <>
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                                <Icon className="w-5 h-5" />
+                                <Icon className={`w-5 h-5 ${cat.textColor}`} />
                               </div>
                               <span className="text-white font-medium">{cat.label}</span>
                               <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
@@ -449,6 +452,7 @@ const ExpensesPage = () => {
                         <div className="grid grid-cols-3 gap-2">
                           {expenseCategories.map((cat) => {
                             const Icon = cat.icon;
+                            const isSelected = newExpense.category === cat.value;
                             return (
                               <button
                                 key={cat.value}
@@ -458,13 +462,15 @@ const ExpensesPage = () => {
                                   setIsCategoryDialogOpen(false);
                                 }}
                                 className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                                  newExpense.category === cat.value
+                                  isSelected
                                     ? "border-red-500 bg-red-500/20"
                                     : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
                                 }`}
                               >
-                                <Icon className={`w-5 h-5 ${newExpense.category === cat.value ? "text-red-400" : "text-zinc-400"}`} />
-                                <span className={`text-xs font-medium ${newExpense.category === cat.value ? "text-white" : "text-zinc-400"}`}>
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                                  <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                                </div>
+                                <span className={`text-xs font-medium ${isSelected ? "text-white" : "text-zinc-400"}`}>
                                   {cat.label}
                                 </span>
                               </button>
@@ -628,8 +634,8 @@ const ExpensesPage = () => {
                   return (
                     <div key={expense.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
-                          <Icon className="w-5 h-5" />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                          <Icon className={`w-5 h-5 ${cat.textColor}`} />
                         </div>
                         <div>
                           <p className="font-medium text-white">{expense.description || cat.label}</p>
@@ -748,16 +754,16 @@ const ExpensesPage = () => {
               <div className="grid grid-cols-5 gap-2">
                 {categoryColors.map((color) => (
                   <button
-                    key={color.value}
+                    key={color.label}
                     type="button"
-                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value })}
+                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value, textColor: color.textColor })}
                     className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
                       newCustomCategory.color === color.value
                         ? "border-white"
                         : "border-zinc-700"
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-full ${color.value.replace(' text-', ' bg-').split(' ')[0]}`} />
+                    <div className={`w-6 h-6 rounded-full ${color.value}`} />
                   </button>
                 ))}
               </div>
