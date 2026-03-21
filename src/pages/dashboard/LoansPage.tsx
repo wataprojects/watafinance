@@ -17,6 +17,14 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
 
+// Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
 const loanTypes = [
@@ -115,19 +123,21 @@ const LoansPage = () => {
   };
 
   const handleAddLoan = async () => {
-    if (!validateForm()) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { error } = await supabase.from("loans").insert({
-      user_id: session.user.id,
-      borrower_name: newLoan.name,
-      initial_amount: parseFloat(newLoan.total_amount),
-      current_amount: parseFloat(newLoan.pending_amount),
-      interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
-      monthly_payment: parseFloat(newLoan.monthly_payment),
-      status: "active",
-    });
+      if (!validateForm()) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const { error } = await supabase.from("loans").insert({
+        user_id: session.user.id,
+        borrower_name: newLoan.name,
+        initial_amount: parseFloat(newLoan.total_amount),
+        current_amount: parseFloat(newLoan.pending_amount),
+        interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
+        monthly_payment: parseFloat(newLoan.monthly_payment),
+        status: "active",
+        start_date: formatDateToISO(newLoan.start_date),
+        end_date: newLoan.end_date ? formatDateToISO(newLoan.end_date) : null,
+      });
 
     if (!error) {
       setIsDialogOpen(false);

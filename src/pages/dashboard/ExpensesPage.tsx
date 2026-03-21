@@ -26,6 +26,14 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface CategoryOption {
   value: string;
   label: string;
@@ -149,11 +157,34 @@ function ExpensesPage() {
   });
 
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingCart);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
+    const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingCart);
+    
+    // Filtros - por defecto mes y año actual
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = new Date().getFullYear().toString();
+    const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+    const [filterYear, setFilterYear] = useState<string>(currentYear);
+    
+    const years = [2024, 2025, 2026, 2027, 2028];
+    const months = [
+      { value: "all", label: "Todos" },
+      { value: "01", label: "Enero" },
+      { value: "02", label: "Febrero" },
+      { value: "03", label: "Marzo" },
+      { value: "04", label: "Abril" },
+      { value: "05", label: "Mayo" },
+      { value: "06", label: "Junio" },
+      { value: "07", label: "Julio" },
+      { value: "08", label: "Agosto" },
+      { value: "09", label: "Septiembre" },
+      { value: "10", label: "Octubre" },
+      { value: "11", label: "Noviembre" },
+      { value: "12", label: "Diciembre" },
+    ];
+  
+    useEffect(() => {
+      checkAuth();
+    }, []);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -187,19 +218,19 @@ function ExpensesPage() {
   };
 
   const handleAddExpense = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { error } = await supabase.from("expenses").insert({
-      user_id: session.user.id,
-      amount: parseFloat(newExpense.amount),
-      description: newExpense.source,
-      category: newExpense.category,
-      date: newExpense.date.toISOString().split("T")[0],
-      is_recurring: newExpense.is_recurring,
-      scheduled_amount: newExpense.scheduled_amount ? parseFloat(newExpense.scheduled_amount) : null,
-      scheduled_change_date: newExpense.scheduled_change_date ? newExpense.scheduled_change_date.toISOString().split("T")[0] : null,
-    });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const { error } = await supabase.from("expenses").insert({
+        user_id: session.user.id,
+        amount: parseFloat(newExpense.amount),
+        description: newExpense.source,
+        category: newExpense.category,
+        date: formatDateToISO(newExpense.date),
+        is_recurring: newExpense.is_recurring,
+        scheduled_amount: newExpense.scheduled_amount ? parseFloat(newExpense.scheduled_amount) : null,
+        scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
+      });
 
     if (!error) {
       setIsDialogOpen(false);
@@ -276,7 +307,22 @@ function ExpensesPage() {
     setSelectedIcon(ShoppingCart);
   };
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  // Filtrar gastos
+    const filteredExpenses = expenses.filter((expense) => {
+      const expenseDate = new Date(expense.date + 'T00:00:00');
+      const expenseYear = expenseDate.getFullYear().toString();
+      const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, '0');
+      
+      // Filtro por año
+      if (filterYear !== "all" && expenseYear !== filterYear) return false;
+      
+      // Filtro por mes
+      if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
+      
+      return true;
+    });
+  
+    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
   const getCategoryInfo = (categoryValue: string) => {
     return expenseCategories.find(c => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
@@ -801,9 +847,34 @@ function ExpensesPage() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
-
-        {/* Stats */}
+                  </Dialog>
+          
+                  {/* Filtros */}
+                  <div className="flex gap-2 mb-6">
+                    <Select value={filterYear} onValueChange={setFilterYear}>
+                      <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Año" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="all" className="text-white">Todos</SelectItem>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterMonth} onValueChange={setFilterMonth}>
+                      <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Mes" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {months.map((month) => (
+                          <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+          
+                  {/* Stats */}
         <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-6">
           <CardContent className="p-6 text-center">
             <CreditCard className="w-8 h-8 mx-auto mb-2 text-rose-400" />
@@ -821,35 +892,35 @@ function ExpensesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <p className="text-slate-400 text-center">Cargando...</p>
-            ) : expenses.length === 0 ? (
-              <p className="text-slate-400 text-center">No hay gastos registrados</p>
-            ) : (
-              <div className="space-y-3">
-                {expenses.map((expense) => {
-                  const cat = getCategoryInfo(expense.category);
-                  const Icon = cat.icon;
-                  return (
-                    <div key={expense.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
-                          <Icon className="w-5 h-5" />
+                      {loading ? (
+                        <p className="text-slate-400 text-center">Cargando...</p>
+                      ) : filteredExpenses.length === 0 ? (
+                        <p className="text-slate-400 text-center">No hay gastos registrados</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {filteredExpenses.map((expense) => {
+                            const cat = getCategoryInfo(expense.category);
+                            const Icon = cat.icon;
+                            return (
+                              <div key={expense.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                                    <Icon className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-white">{expense.description || cat.label}</p>
+                                    <p className="text-xs text-slate-400">{new Date(expense.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-rose-400">-{formatCurrency(expense.amount)}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div>
-                          <p className="font-medium text-white">{expense.description || cat.label}</p>
-                          <p className="text-xs text-slate-400">{new Date(expense.date).toLocaleDateString("es-ES")}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-rose-400">-{formatCurrency(expense.amount)}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
+                      )}
+                    </CardContent>
         </Card>
       </div>
       <BottomNav />

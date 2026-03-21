@@ -22,6 +22,14 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe" | "settled";
 
@@ -100,19 +108,21 @@ const DebtsPage = () => {
   };
 
   const handleAddDebt = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { error } = await supabase.from("debts").insert({
-      user_id: session.user.id,
-      name: newDebt.person_name,
-      creditor: newDebt.description,
-      initial_amount: parseFloat(newDebt.amount),
-      current_amount: parseFloat(newDebt.amount),
-      interest_rate: null,
-      monthly_payment: null,
-      category: newDebt.debt_type,
-    });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const { error } = await supabase.from("debts").insert({
+        user_id: session.user.id,
+        name: newDebt.person_name,
+        creditor: newDebt.description,
+        initial_amount: parseFloat(newDebt.amount),
+        current_amount: parseFloat(newDebt.amount),
+        interest_rate: null,
+        monthly_payment: null,
+        category: newDebt.debt_type,
+        date: formatDateToISO(newDebt.date),
+        due_date: newDebt.due_date ? formatDateToISO(newDebt.due_date) : null,
+      });
 
     if (!error) {
       setIsDialogOpen(false);
