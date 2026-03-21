@@ -431,9 +431,9 @@ const IncomePage = () => {
                 Nuevo
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-slate-900">Nuevo Ingreso</DialogTitle>
+            <DialogContent className="bg-white border-slate-200 max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-slate-900">Nuevo Ingreso</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 {/* Fuente de ingreso */}

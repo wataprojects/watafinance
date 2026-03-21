@@ -373,7 +373,7 @@ const LoansPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Préstamos</h1>
-            <p className="text-slate-400">Gestiona tus préstamos y créditos</p>
+            <p className="text-slate-500">Gestiona tus préstamos y créditos</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

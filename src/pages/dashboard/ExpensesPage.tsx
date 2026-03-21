@@ -402,7 +402,7 @@ const ExpensesPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Gastos</h1>
-            <p className="text-slate-400">Controla tus gastos mensuales</p>
+            <p className="text-slate-500">Controla tus gastos mensuales</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -826,7 +826,7 @@ const ExpensesPage = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-slate-400 text-center">Cargando...</p>
+              <p className="text-slate-500 text-center">Cargando...</p>
             ) : filteredExpenses.length === 0 ? (
               <p className="text-slate-400 text-center">No hay gastos registrados</p>
             ) : (

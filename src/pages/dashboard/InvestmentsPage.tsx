@@ -132,7 +132,7 @@ const InvestmentsPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Inversiones</h1>
-            <p className="text-slate-400">Gestiona tu portafolio de inversiones</p>
+            <p className="text-slate-500">Gestiona tu portafolio de inversiones</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
