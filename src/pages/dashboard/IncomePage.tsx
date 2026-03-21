@@ -12,7 +12,8 @@ import {
   Plus, TrendingUp, DollarSign, Briefcase, Home, ArrowUpRight, 
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
-  ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown
+  ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown,
+  Pencil, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -77,7 +78,15 @@ const IncomePage = () => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedIncome, setSelectedIncome] = useState<any>(null);
+  
+  // Filtros
   const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [newIncome, setNewIncome] = useState({
     source: "",
@@ -88,6 +97,16 @@ const IncomePage = () => {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+  });
+  
+  const [editIncome, setEditIncome] = useState({
+    id: "",
+    source: "",
+    amount: "",
+    is_recurring: false,
+    income_type: "active" as "active" | "passive",
+    category: "salary",
+    date: new Date(),
   });
   
   const [newInvestment, setNewInvestment] = useState({
@@ -103,9 +122,40 @@ const IncomePage = () => {
     value: "",
   });
 
+  // Años disponibles para filtro
+  const years = [2024, 2025, 2026, 2027, 2028];
+  
+  // Meses para filtro
+  const months = [
+    { value: "all", label: "Todos" },
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
+
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (navigate) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          navigate("/login");
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [navigate]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -167,6 +217,57 @@ const IncomePage = () => {
     }
   };
 
+  const handleEditIncome = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !selectedIncome) return;
+
+    const { error } = await supabase.from("incomes").update({
+      amount: parseFloat(editIncome.amount),
+      description: editIncome.source,
+      category: editIncome.category,
+      is_passive: editIncome.income_type === "passive",
+      date: editIncome.date.toISOString().split("T")[0],
+    }).eq("id", selectedIncome.id);
+
+    if (!error) {
+      setIsEditDialogOpen(false);
+      setSelectedIncome(null);
+      fetchIncomes(session.user.id);
+    }
+  };
+
+  const handleDeleteIncome = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !selectedIncome) return;
+
+    const { error } = await supabase.from("incomes").delete().eq("id", selectedIncome.id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedIncome(null);
+      fetchIncomes(session.user.id);
+    }
+  };
+
+  const openEditDialog = (income: any) => {
+    setSelectedIncome(income);
+    setEditIncome({
+      id: income.id,
+      source: income.description || "",
+      amount: income.amount.toString(),
+      is_recurring: false,
+      income_type: income.is_passive ? "passive" : "active",
+      category: income.category,
+      date: new Date(income.date),
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (income: any) => {
+    setSelectedIncome(income);
+    setIsDeleteDialogOpen(true);
+  };
+
   const handleCreateInvestment = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newInvestment.name || !newInvestment.initial_value) return;
@@ -218,7 +319,19 @@ const IncomePage = () => {
     setIsNewCategoryModalOpen(false);
   };
 
+  // Filtrar ingresos
   const filteredIncomes = incomes.filter((income) => {
+    const incomeDate = new Date(income.date);
+    const incomeYear = incomeDate.getFullYear().toString();
+    const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, '0');
+    
+    // Filtro por año
+    if (filterYear !== "all" && incomeYear !== filterYear) return false;
+    
+    // Filtro por mes
+    if (filterMonth !== "all" && incomeMonth !== filterMonth) return false;
+    
+    // Filtro por tipo (activo/pasivo)
     if (filterType === "active") return !income.is_passive;
     if (filterType === "passive") return income.is_passive;
     return true;
@@ -710,38 +823,197 @@ const IncomePage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Filtro */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setFilterType("all")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "all"
-                ? "bg-sky-500 text-white"
-                : "bg-white/10 text-slate-300 hover:bg-white/20"
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFilterType("passive")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "passive"
-                ? "bg-purple-500 text-white"
-                : "bg-white/10 text-slate-300 hover:bg-white/20"
-            }`}
-          >
-            Pasivos
-          </button>
-          <button
-            onClick={() => setFilterType("active")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "active"
-                ? "bg-blue-500 text-white"
-                : "bg-white/10 text-slate-300 hover:bg-white/20"
-            }`}
-          >
-            Activos
-          </button>
+        {/* Modal de editar ingreso */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Editar Ingreso</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Fuente de ingreso</label>
+                <Input
+                  placeholder="Ej: Mi trabajo, Alquiler piso..."
+                  value={editIncome.source}
+                  onChange={(e) => setEditIncome({ ...editIncome, source: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Cantidad</label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={editIncome.amount}
+                  onChange={(e) => setEditIncome({ ...editIncome, amount: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white text-lg"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">Tipo de ingreso</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditIncome({ ...editIncome, income_type: "active" })}
+                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                      editIncome.income_type === "active" 
+                        ? "border-sky-500 bg-sky-500/20" 
+                        : "border-slate-600 bg-slate-700/30"
+                    }`}
+                  >
+                    <Briefcase className={`w-5 h-5 ${editIncome.income_type === "active" ? "text-sky-400" : "text-slate-400"}`} />
+                    <span className={`font-medium ${editIncome.income_type === "active" ? "text-white" : "text-slate-400"}`}>Activo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditIncome({ ...editIncome, income_type: "passive" })}
+                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                      editIncome.income_type === "passive" 
+                        ? "border-purple-500 bg-purple-500/20" 
+                        : "border-slate-600 bg-slate-700/30"
+                    }`}
+                  >
+                    <PiggyBank className={`w-5 h-5 ${editIncome.income_type === "passive" ? "text-purple-400" : "text-slate-400"}`} />
+                    <span className={`font-medium ${editIncome.income_type === "passive" ? "text-white" : "text-slate-400"}`}>Pasivo</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
+                <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                    >
+                      <span className="flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        {editIncome.date.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slate-800 border-slate-700 p-0">
+                    <Calendar
+                      mode="single"
+                      selected={editIncome.date}
+                      onSelect={(date) => {
+                        if (date) {
+                          setEditIncome({ ...editIncome, date });
+                          setIsDatePickerOpen(false);
+                        }
+                      }}
+                      className="bg-slate-800 text-white rounded-lg"
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <Button onClick={handleEditIncome} className="w-full bg-sky-500 hover:bg-sky-600 py-6">
+                Guardar Cambios
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de eliminar ingreso */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Eliminar Ingreso</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <p className="text-slate-300">
+                ¿Estás seguro de que quieres eliminar este ingreso? Esta acción no se puede deshacer.
+              </p>
+              {selectedIncome && (
+                <div className="p-4 bg-slate-700/50 rounded-xl">
+                  <p className="text-white font-medium">{selectedIncome.description || "Sin descripción"}</p>
+                  <p className="text-emerald-400 font-bold">{formatCurrency(selectedIncome.amount)}</p>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1 border-slate-600 text-white hover:bg-slate-700"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleDeleteIncome}
+                  className="flex-1 bg-red-500 hover:bg-red-600"
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Filtros - Fecha y Tipo */}
+        <div className="space-y-3 mb-6">
+          {/* Filtro por fecha (año y mes) */}
+          <div className="flex gap-2">
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="all" className="text-white">Todos los años</SelectItem>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtro por tipo */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+                filterType === "all"
+                  ? "bg-sky-500 text-white"
+                  : "bg-white/10 text-slate-300 hover:bg-white/20"
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterType("passive")}
+              className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+                filterType === "passive"
+                  ? "bg-purple-500 text-white"
+                  : "bg-white/10 text-slate-300 hover:bg-white/20"
+              }`}
+            >
+              Pasivos
+            </button>
+            <button
+              onClick={() => setFilterType("active")}
+              className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
+                filterType === "active"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-slate-300 hover:bg-white/20"
+              }`}
+            >
+              Activos
+            </button>
+          </div>
         </div>
 
         {/* Total */}
@@ -793,7 +1065,11 @@ const IncomePage = () => {
                   const cat = getCategoryInfo(income.category);
                   const Icon = cat.icon;
                   return (
-                    <div key={income.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                    <div 
+                      key={income.id} 
+                      className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                      onClick={() => openEditDialog(income)}
+                    >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
                           <Icon className="w-5 h-5" />
@@ -803,9 +1079,31 @@ const IncomePage = () => {
                           <p className="text-xs text-slate-400">{new Date(income.date).toLocaleDateString("es-ES")}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-emerald-400">+{formatCurrency(income.amount)}</p>
-                        <p className="text-xs text-slate-400">{income.is_passive ? "Pasivo" : "Activo"}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-bold text-emerald-400">+{formatCurrency(income.amount)}</p>
+                          <p className="text-xs text-slate-400">{income.is_passive ? "Pasivo" : "Activo"}</p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(income);
+                            }}
+                            className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+                          >
+                            <Pencil className="w-4 h-4 text-slate-400" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog(income);
+                            }}
+                            className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
