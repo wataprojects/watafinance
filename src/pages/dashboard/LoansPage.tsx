@@ -79,10 +79,13 @@ const LoansPage = () => {
   const [showSpecificFees, setShowSpecificFees] = useState(false);
   const [showAdditionalFees, setShowAdditionalFees] = useState(false);
   
+  // Usar una fecha por defecto válida
+  const defaultDate = new Date();
+  
   const [newLoan, setNewLoan] = useState({
     loan_type: "personal" as LoanType,
     name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-    start_date: new Date(), end_date: null as Date | null, investment_id: "none", patrimony_id: "none", notes: "",
+    start_date: defaultDate, end_date: null as Date | null, investment_id: "none", patrimony_id: "none", notes: "",
     tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
     subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
   });
@@ -201,6 +204,11 @@ const LoansPage = () => {
 
   const currentSpecificFees = specificFees[newLoan.loan_type] || [];
 
+  // Función para manejar el cambio de fecha fin
+  const handleEndDateChange = (date: Date | undefined) => {
+    setNewLoan({ ...newLoan, end_date: date || null });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
       <div className="container mx-auto px-4 py-6">
@@ -284,7 +292,7 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Fechas con DatePicker directo */}
+                {/* Fechas con DatePicker - usando una fecha por defecto si end_date es null */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
@@ -296,9 +304,8 @@ const LoansPage = () => {
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
                     <DatePicker
-                      date={newLoan.end_date || undefined}
-                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
-                      placeholder="Sin fecha"
+                      date={newLoan.end_date || defaultDate}
+                      onDateChange={handleEndDateChange}
                     />
                   </div>
                 </div>
