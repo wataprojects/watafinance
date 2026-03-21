@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, ChevronRight, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -19,12 +19,21 @@ const formatCurrency = (amount: number) => {
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
-const loanTypes = [
-  { value: "mortgage", label: "Hipoteca", color: "bg-blue-500/20 text-blue-400", icon: Home },
-  { value: "car", label: "Coche", color: "bg-purple-500/20 text-purple-400", icon: Car },
-  { value: "personal", label: "Personal", color: "bg-cyan-500/20 text-cyan-400", icon: Wallet },
-  { value: "business", label: "Negocio", color: "bg-amber-500/20 text-amber-400", icon: Briefcase },
-  { value: "other", label: "Otro", color: "bg-slate-500/20 text-slate-400", icon: MoreHorizontal },
+interface LoanTypeOption {
+  value: LoanType;
+  label: string;
+  color: string;
+  textColor: string;
+  bgColor: string;
+  icon: any;
+}
+
+const loanTypes: LoanTypeOption[] = [
+  { value: "mortgage", label: "Hipoteca", color: "bg-blue-500/20", textColor: "text-blue-400", bgColor: "border-blue-500", icon: Home },
+  { value: "car", label: "Coche", color: "bg-purple-500/20", textColor: "text-purple-400", bgColor: "border-purple-500", icon: Car },
+  { value: "personal", label: "Personal", color: "bg-cyan-500/20", textColor: "text-cyan-400", bgColor: "border-cyan-500", icon: Wallet },
+  { value: "business", label: "Negocio", color: "bg-amber-500/20", textColor: "text-amber-400", bgColor: "border-amber-500", icon: Briefcase },
+  { value: "other", label: "Otro", color: "bg-slate-500/20", textColor: "text-slate-400", bgColor: "border-slate-500", icon: MoreHorizontal },
 ];
 
 const universalFees = [
@@ -82,6 +91,9 @@ const LoansPage = () => {
   const [showSpecificFees, setShowSpecificFees] = useState(false);
   const [showAdditionalFees, setShowAdditionalFees] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoanTypeDialogOpen, setIsLoanTypeDialogOpen] = useState(false);
+  const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
+  const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   
   const defaultDate = new Date();
   
@@ -366,6 +378,8 @@ const LoansPage = () => {
 
   const getLoanTypeInfo = (type: string) => loanTypes.find(t => t.value === type) || loanTypes[loanTypes.length - 1];
 
+  const getSelectedLoanTypeInfo = (type: LoanType) => loanTypes.find(t => t.value === type) || loanTypes[0];
+
   return (
     <div className="min-h-screen bg-black pb-24">
       <div className="container mx-auto px-4 py-6">
@@ -413,6 +427,13 @@ const LoansPage = () => {
                 universalFees={universalFees}
                 additionalFees={additionalFees}
                 specificFees={specificFees}
+                isLoanTypeDialogOpen={isLoanTypeDialogOpen}
+                setIsLoanTypeDialogOpen={setIsLoanTypeDialogOpen}
+                isInvestmentDialogOpen={isInvestmentDialogOpen}
+                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                getSelectedLoanTypeInfo={getSelectedLoanTypeInfo}
               />
             </DialogContent>
           </Dialog>
@@ -456,7 +477,7 @@ const LoansPage = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeInfo.color}`}>
-                            <Icon className="w-6 h-6" />
+                            <Icon className={`w-6 h-6 ${typeInfo.textColor}`} />
                           </div>
                           <div>
                             <p className="font-medium text-white">{loan.borrower_name}</p>
@@ -509,7 +530,7 @@ const LoansPage = () => {
                     <div key={loan.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl opacity-60">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
-                          <Icon className="w-4 h-4" />
+                          <Icon className={`w-4 h-4 ${typeInfo.textColor}`} />
                         </div>
                         <div>
                           <p className="font-medium text-white text-sm">{loan.borrower_name}</p>
@@ -564,6 +585,13 @@ const LoansPage = () => {
             universalFees={universalFees}
             additionalFees={additionalFees}
             specificFees={specificFees}
+            isLoanTypeDialogOpen={isLoanTypeDialogOpen}
+            setIsLoanTypeDialogOpen={setIsLoanTypeDialogOpen}
+            isInvestmentDialogOpen={isInvestmentDialogOpen}
+            setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+            isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+            setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+            getSelectedLoanTypeInfo={getSelectedLoanTypeInfo}
           />
         </DialogContent>
       </Dialog>
@@ -641,7 +669,7 @@ const LoansPage = () => {
 };
 
 // Componente reutilizable para el formulario de préstamo
-const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees }: any) => {
+const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees, isLoanTypeDialogOpen, setIsLoanTypeDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedLoanTypeInfo }: any) => {
   const currentSpecificFees = specificFees[loan.loan_type] || [];
   
   const getInvestmentLabel = () => loan.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === loan.investment_id)?.name || "Sin vincular";
@@ -655,23 +683,70 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
     setLoan({ ...loan, end_date: date || null });
   };
 
+  const selectedLoanType = getSelectedLoanTypeInfo(loan.loan_type);
+  const SelectedIcon = selectedLoanType.icon;
+
   return (
     <div className="space-y-4 mt-2">
-      {/* Tipo de préstamo */}
+      {/* Tipo de préstamo con selector estilo categoría */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Tipo de préstamo</label>
-        <div className="grid grid-cols-5 gap-2">
-          {loanTypes.map((type: any) => {
-            const Icon = type.icon;
-            return (
-              <button key={type.value} type="button" onClick={() => { setLoan({ ...loan, loan_type: type.value }); setShowSpecificFees(true); }}
-                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"}`}>
-                <Icon className={`w-5 h-5 ${loan.loan_type === type.value ? "text-cyan-400" : "text-zinc-400"}`} />
-                <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-zinc-400"}`}>{type.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Dialog open={isLoanTypeDialogOpen} onOpenChange={setIsLoanTypeDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3 hover:border-zinc-600 transition-all"
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedLoanType.color}`}>
+                <SelectedIcon className={`w-6 h-6 ${selectedLoanType.textColor}`} />
+              </div>
+              <span className="text-white font-medium">{selectedLoanType.label}</span>
+              <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Seleccionar Tipo de Préstamo</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsLoanTypeDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <div className="grid grid-cols-3 gap-2">
+                {loanTypes.map((type: LoanTypeOption) => {
+                  const Icon = type.icon;
+                  const isSelected = loan.loan_type === type.value;
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setLoan({ ...loan, loan_type: type.value });
+                        setIsLoanTypeDialogOpen(false);
+                        setShowSpecificFees(true);
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                        isSelected
+                          ? `bg-cyan-500/20 ${type.bgColor}`
+                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${type.color}`}>
+                        <Icon className={`w-6 h-6 ${type.textColor}`} />
+                      </div>
+                      <span className={`text-xs font-medium ${isSelected ? "text-white" : "text-zinc-400"}`}>
+                        {type.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Nombre y Banco */}
@@ -764,7 +839,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
 
             {currentSpecificFees.length > 0 && (
               <div className="pt-3 border-t border-zinc-700">
-                <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find((t: any) => t.value === loan.loan_type)?.label}</p>
+                <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find((t: LoanTypeOption) => t.value === loan.loan_type)?.label}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {currentSpecificFees.map((fee: any) => (
                     <div key={fee.key}>
@@ -779,37 +854,188 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
         )}
       </div>
 
-      {/* Inversión y Patrimonio */}
-      <div className="space-y-3">
-        <Select value={loan.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setLoan({ ...loan, investment_id: v }); }}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-            <div className="flex items-center gap-2 w-full">
-              <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span className="text-zinc-400 text-sm">Inversión:</span>
-              <span className="text-white text-sm font-medium truncate">{getInvestmentLabel()}</span>
+      {/* Vinculación a Inversión - Botón estilo selector */}
+      <div>
+        <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
+        <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                loan.investment_id !== "none" 
+                  ? "border-emerald-500/50 bg-emerald-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                loan.investment_id !== "none" 
+                  ? "bg-emerald-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <TrendingUp className={`w-4 h-4 ${loan.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${loan.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                {getInvestmentLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsInvestmentDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoan({ ...loan, investment_id: "none" });
+                  setIsInvestmentDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  loan.investment_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {investments.map((inv: any) => (
+                <button
+                  key={inv.id}
+                  type="button"
+                  onClick={() => {
+                    setLoan({ ...loan, investment_id: inv.id });
+                    setIsInvestmentDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    loan.investment_id === inv.id
+                      ? "border-emerald-500 bg-emerald-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-white font-medium">{inv.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInvestmentDialogOpen(false);
+                  setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+              </button>
             </div>
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
-            {investments.map((inv: any) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
-            <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={loan.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setLoan({ ...loan, patrimony_id: v }); }}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-            <div className="flex items-center gap-2 w-full">
-              <Building className="w-4 h-4 text-sky-400 flex-shrink-0" />
-              <span className="text-zinc-400 text-sm">Patrimonio:</span>
-              <span className="text-white text-sm font-medium truncate">{getPatrimonyLabel()}</span>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Vinculación a Patrimonio - Botón estilo selector */}
+      <div>
+        <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
+        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                loan.patrimony_id !== "none" 
+                  ? "border-sky-500/50 bg-sky-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                loan.patrimony_id !== "none" 
+                  ? "bg-sky-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <Building className={`w-4 h-4 ${loan.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${loan.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                {getPatrimonyLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsPatrimonyDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoan({ ...loan, patrimony_id: "none" });
+                  setIsPatrimonyDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  loan.patrimony_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {patrimony.map((pat: any) => (
+                <button
+                  key={pat.id}
+                  type="button"
+                  onClick={() => {
+                    setLoan({ ...loan, patrimony_id: pat.id });
+                    setIsPatrimonyDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    loan.patrimony_id === pat.id
+                      ? "border-sky-500 bg-sky-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <span className="text-white font-medium">{pat.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPatrimonyDialogOpen(false);
+                  setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-sky-400" />
+                <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+              </button>
             </div>
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
-            {patrimony.map((pat: any) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
-            <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
-          </SelectContent>
-        </Select>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Notas */}
