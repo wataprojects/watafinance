@@ -27,6 +27,14 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 type FilterType = "all" | "active" | "passive";
 
 interface CategoryOption {
@@ -83,10 +91,14 @@ const IncomePage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
   
-  // Filtros
+  // Obtener fecha actual
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear().toString();
+  
+  // Filtros - por defecto mes y año actual
   const [filterType, setFilterType] = useState<FilterType>("all");
-  const [filterMonth, setFilterMonth] = useState<string>("all");
-  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
   
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [newIncome, setNewIncome] = useState({
@@ -195,8 +207,8 @@ const IncomePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Convertir la fecha a formato ISO (YYYY-MM-DD)
-    const dateStr = newIncome.date.toISOString().split("T")[0];
+    // Usar la función que evita problemas de timezone
+    const dateStr = formatDateToISO(newIncome.date);
 
     const { error } = await supabase.from("incomes").insert({
       user_id: session.user.id,
@@ -227,8 +239,8 @@ const IncomePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !selectedIncome) return;
 
-    // Convertir la fecha a formato ISO (YYYY-MM-DD)
-    const dateStr = editIncome.date.toISOString().split("T")[0];
+    // Usar la función que evita problemas de timezone
+    const dateStr = formatDateToISO(editIncome.date);
 
     const { error } = await supabase.from("incomes").update({
       amount: parseFloat(editIncome.amount),
@@ -261,7 +273,7 @@ const IncomePage = () => {
   const openEditDialog = (income: any) => {
     setSelectedIncome(income);
     // Convertir la fecha del string a Date
-    const incomeDate = new Date(income.date);
+    const incomeDate = new Date(income.date + 'T00:00:00');
     setEditIncome({
       id: income.id,
       source: income.description || "",
@@ -342,7 +354,7 @@ const IncomePage = () => {
 
   // Filtrar ingresos
   const filteredIncomes = incomes.filter((income) => {
-    const incomeDate = new Date(income.date);
+    const incomeDate = new Date(income.date + 'T00:00:00');
     const incomeYear = incomeDate.getFullYear().toString();
     const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, '0');
     
@@ -810,7 +822,7 @@ const IncomePage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Modal de editar ingreso - CON TODAS LAS OPCIONES */}
+        {/* Modal de editar ingreso */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -1146,7 +1158,7 @@ const IncomePage = () => {
                         </div>
                         <div>
                           <p className="font-medium text-white">{income.description || cat.label}</p>
-                          <p className="text-xs text-slate-400">{new Date(income.date).toLocaleDateString("es-ES")}</p>
+                          <p className="text-xs text-slate-400">{new Date(income.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
