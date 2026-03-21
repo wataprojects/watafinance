@@ -9,22 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
-
-// Función para formatear fecha legible
-const formatDateDisplay = (date: Date | null): string => {
-  if (!date) return "Seleccionar fecha";
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
 };
 
 // Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
@@ -294,43 +284,22 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Fechas con formato dd/mm/aaaa usando Popover */}
+                {/* Fechas con DatePicker directo */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm text-left flex items-center justify-between hover:bg-slate-600 transition-colors">
-                          <span>{formatDateDisplay(newLoan.start_date)}</span>
-                          <CalendarIcon className="w-4 h-4 text-slate-400" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="bg-slate-800 border-slate-700 p-0" align="start">
-                        <DatePicker
-                          date={newLoan.start_date}
-                          onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      date={newLoan.start_date}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
+                    />
                   </div>
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm text-left flex items-center justify-between hover:bg-slate-600 transition-colors">
-                          <span className={newLoan.end_date ? "text-white" : "text-slate-400"}>
-                            {newLoan.end_date ? formatDateDisplay(newLoan.end_date) : "Sin fecha"}
-                          </span>
-                          <CalendarIcon className="w-4 h-4 text-slate-400" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="bg-slate-800 border-slate-700 p-0" align="start">
-                        <DatePicker
-                          date={newLoan.end_date || new Date()}
-                          onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      date={newLoan.end_date || undefined}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
+                      placeholder="Sin fecha"
+                    />
                   </div>
                 </div>
 
