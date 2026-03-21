@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import { showError, showSuccess } from "@/utils/toast";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -131,6 +132,7 @@ function ExpensesPage() {
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [isChangeDatePickerOpen, setIsChangeDatePickerOpen] = useState(false);
   const [showScheduledChange, setShowScheduledChange] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newExpense, setNewExpense] = useState({
     source: "",
     amount: "",
@@ -157,7 +159,7 @@ function ExpensesPage() {
   });
 
   const [newCategoryName, setNewCategoryName] = useState("");
-    const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingCart);
+  const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingCart);
     
     // Filtros - por defecto mes y año actual
     const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
@@ -218,21 +220,34 @@ function ExpensesPage() {
   };
 
   const handleAddExpense = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-  
-      const { error } = await supabase.from("expenses").insert({
-        user_id: session.user.id,
-        amount: parseFloat(newExpense.amount),
-        description: newExpense.source,
-        category: newExpense.category,
-        date: formatDateToISO(newExpense.date),
-        is_recurring: newExpense.is_recurring,
-        scheduled_amount: newExpense.scheduled_amount ? parseFloat(newExpense.scheduled_amount) : null,
-        scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
-      });
+    if (isSubmitting) return;
+    
+    if (!newExpense.amount || !newExpense.source) {
+      showError("Por favor, completa los campos obligatorios");
+      return;
+    }
 
-    if (!error) {
+    setIsSubmitting(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.from("expenses").insert({
+      user_id: session.user.id,
+      amount: parseFloat(newExpense.amount),
+      description: newExpense.source,
+      category: newExpense.category,
+      date: formatDateToISO(newExpense.date),
+    });
+
+    if (error) {
+      console.error("Error inserting expense:", error);
+      showError("Error al guardar el gasto: " + error.message);
+    } else {
+      showSuccess("Gasto guardado correctamente");
       setIsDialogOpen(false);
       setNewExpense({
         source: "",
@@ -248,6 +263,8 @@ function ExpensesPage() {
       setShowScheduledChange(false);
       fetchExpenses(session.user.id);
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleCreateInvestment = async () => {
@@ -402,7 +419,7 @@ function ExpensesPage() {
 
                 {/* Importe */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Importe</label>
+                  <label className="text-sm text-slate-300 mb-1 block">Importe *</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -646,8 +663,12 @@ function ExpensesPage() {
                   </Select>
                 </div>
 
-                <Button onClick={handleAddExpense} className="w-full bg-rose-500 hover:bg-rose-600">
-                  Guardar
+                <Button 
+                  onClick={handleAddExpense} 
+                  className="w-full bg-rose-500 hover:bg-rose-600"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
             </DialogContent>
