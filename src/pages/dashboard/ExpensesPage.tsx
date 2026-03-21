@@ -12,7 +12,8 @@ import {
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
-  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
+  Wallet, Globe, Laptop, BookOpen, Plane, Music
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -40,6 +41,38 @@ interface CategoryOption {
   color: string;
 }
 
+// Iconos disponibles para categorías personalizadas
+const availableIcons = [
+  { value: "Home", icon: Home },
+  { value: "Zap", icon: Zap },
+  { value: "Heart", icon: Heart },
+  { value: "Shield", icon: Shield },
+  { value: "Wifi", icon: Wifi },
+  { value: "Smartphone", icon: Smartphone },
+  { value: "Flame", icon: Flame },
+  { value: "Sparkles", icon: Sparkles },
+  { value: "Car", icon: Car },
+  { value: "ShoppingCart", icon: ShoppingCart },
+  { value: "Film", icon: Film },
+  { value: "TrendingUp", icon: TrendingUp },
+  { value: "Megaphone", icon: Megaphone },
+  { value: "Train", icon: Train },
+  { value: "UtensilsCrossed", icon: UtensilsCrossed },
+  { value: "Shirt", icon: Shirt },
+  { value: "Briefcase", icon: Briefcase },
+  { value: "Wallet", icon: Wallet },
+  { value: "CreditCard", icon: CreditCard },
+  { value: "Building", icon: Building },
+  { value: "Laptop", icon: Laptop },
+  { value: "Globe", icon: Globe },
+  { value: "BookOpen", icon: BookOpen },
+  { value: "Plane", icon: Plane },
+  { value: "Music", icon: Music },
+  { value: "DollarSign", icon: DollarSign },
+  { value: "MoreHorizontal", icon: MoreHorizontal },
+];
+
+// Categorías para gastos - usando los mismos iconos que en la home
 const expenseCategories: CategoryOption[] = [
   { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20 text-blue-400" },
   { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20 text-yellow-400" },
@@ -79,7 +112,16 @@ const ExpensesPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear().toString();
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
+  
   const [newExpense, setNewExpense] = useState({
     source: "",
     amount: "",
@@ -103,11 +145,12 @@ const ExpensesPage = () => {
     value: "",
   });
 
-  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  const currentYear = new Date().getFullYear().toString();
-  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
-  const [filterYear, setFilterYear] = useState<string>(currentYear);
-  
+  const [newCustomCategory, setNewCustomCategory] = useState({
+    name: "",
+    icon: "ShoppingCart",
+    color: "bg-green-500/20 text-green-400",
+  });
+
   const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
@@ -123,6 +166,19 @@ const ExpensesPage = () => {
     { value: "10", label: "Octubre" },
     { value: "11", label: "Noviembre" },
     { value: "12", label: "Diciembre" },
+  ];
+
+  const categoryColors = [
+    { value: "bg-blue-500/20 text-blue-400", label: "Azul" },
+    { value: "bg-emerald-500/20 text-emerald-400", label: "Verde" },
+    { value: "bg-purple-500/20 text-purple-400", label: "Morado" },
+    { value: "bg-cyan-500/20 text-cyan-400", label: "Cian" },
+    { value: "bg-amber-500/20 text-amber-400", label: "Ámbar" },
+    { value: "bg-green-500/20 text-green-400", label: "Verde claro" },
+    { value: "bg-slate-500/20 text-slate-400", label: "Gris" },
+    { value: "bg-pink-500/20 text-pink-400", label: "Rosa" },
+    { value: "bg-orange-500/20 text-orange-400", label: "Naranja" },
+    { value: "bg-red-500/20 text-red-400", label: "Rojo" },
   ];
 
   useEffect(() => {
@@ -207,6 +263,24 @@ const ExpensesPage = () => {
     setIsSubmitting(false);
   };
 
+  const handleCreateCustomCategory = () => {
+    if (!newCustomCategory.name) return;
+    
+    const categoryValue = `custom_${newCustomCategory.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const iconData = availableIcons.find(i => i.value === newCustomCategory.icon);
+    const newCategory: CategoryOption = {
+      value: categoryValue,
+      label: newCustomCategory.name,
+      icon: iconData?.icon || ShoppingCart,
+      color: newCustomCategory.color,
+    };
+    
+    setCustomCategories([...customCategories, newCategory]);
+    setNewExpense({ ...newExpense, category: categoryValue });
+    setIsCreateCategoryDialogOpen(false);
+    setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20 text-green-400" });
+  };
+
   const filteredExpenses = expenses.filter((expense) => {
     const expenseDate = new Date(expense.date + 'T00:00:00');
     const expenseYear = expenseDate.getFullYear().toString();
@@ -221,8 +295,14 @@ const ExpensesPage = () => {
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
   const totalWithLoans = totalExpenses + totalLoans;
 
+  const allCategories = [...expenseCategories, ...customCategories];
+
   const getCategoryInfo = (categoryValue: string) => {
-    return expenseCategories.find(c => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
+    return allCategories.find(c => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
+  };
+
+  const getSelectedCategoryInfo = (categoryValue: string) => {
+    return allCategories.find(c => c.value === categoryValue) || expenseCategories.find(c => c.value === categoryValue) || expenseCategories[0];
   };
 
   const investmentTypes = [
@@ -304,6 +384,12 @@ const ExpensesPage = () => {
               <DialogHeader>
                 <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
               </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <div className="space-y-4 mt-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-1 block">Fuente de gasto</label>
@@ -325,31 +411,84 @@ const ExpensesPage = () => {
                   />
                 </div>
 
-                {/* Selector de Categoría */}
+                {/* Selector de Categoría con botón */}
                 <div>
                   <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {expenseCategories.map((cat) => {
-                      const Icon = cat.icon;
-                      return (
+                  <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3 hover:border-zinc-600 transition-all"
+                      >
+                        {(() => {
+                          const cat = getSelectedCategoryInfo(newExpense.category);
+                          const Icon = cat.icon;
+                          return (
+                            <>
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <span className="text-white font-medium">{cat.label}</span>
+                              <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
+                            </>
+                          );
+                        })()}
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsCategoryDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          {expenseCategories.map((cat) => {
+                            const Icon = cat.icon;
+                            return (
+                              <button
+                                key={cat.value}
+                                type="button"
+                                onClick={() => {
+                                  setNewExpense({ ...newExpense, category: cat.value });
+                                  setIsCategoryDialogOpen(false);
+                                }}
+                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                                  newExpense.category === cat.value
+                                    ? "border-red-500 bg-red-500/20"
+                                    : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                                }`}
+                              >
+                                <Icon className={`w-5 h-5 ${newExpense.category === cat.value ? "text-red-400" : "text-zinc-400"}`} />
+                                <span className={`text-xs font-medium ${newExpense.category === cat.value ? "text-white" : "text-zinc-400"}`}>
+                                  {cat.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Botón para crear categoría personalizada */}
                         <button
-                          key={cat.value}
                           type="button"
-                          onClick={() => setNewExpense({ ...newExpense, category: cat.value })}
-                          className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                            newExpense.category === cat.value
-                              ? "border-red-500 bg-red-500/20"
-                              : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                          }`}
+                          onClick={() => {
+                            setIsCategoryDialogOpen(false);
+                            setTimeout(() => {
+                              setIsCreateCategoryDialogOpen(true);
+                            }, 100);
+                          }}
+                          className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-red-500 hover:bg-red-500/10 transition-all"
                         >
-                          <Icon className={`w-4 h-4 ${newExpense.category === cat.value ? "text-red-400" : "text-zinc-400"}`} />
-                          <span className={`text-xs font-medium ${newExpense.category === cat.value ? "text-white" : "text-zinc-400"}`}>
-                            {cat.label}
-                          </span>
+                          <Plus className="w-5 h-5 text-red-400" />
+                          <span className="text-red-400 font-medium">Crear categoría</span>
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div>
@@ -513,6 +652,12 @@ const ExpensesPage = () => {
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewInvestmentOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-3 mt-2">
             <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
@@ -534,6 +679,12 @@ const ExpensesPage = () => {
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewPatrimonyOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-3 mt-2">
             <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
@@ -544,6 +695,76 @@ const ExpensesPage = () => {
             </div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <Button onClick={handleCreatePatrimony} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal crear categoría personalizada */}
+      <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
+          </DialogHeader>
+          <button 
+            onClick={() => setIsCreateCategoryDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
+              <Input
+                placeholder="Nombre de la categoría"
+                value={newCustomCategory.name}
+                onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
+              <div className="grid grid-cols-5 gap-2">
+                {availableIcons.map((iconOpt) => {
+                  const Icon = iconOpt.icon;
+                  return (
+                    <button
+                      key={iconOpt.value}
+                      type="button"
+                      onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
+                      className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        newCustomCategory.icon === iconOpt.value
+                          ? "border-red-500 bg-red-500/20"
+                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-red-400" : "text-zinc-400"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Color</label>
+              <div className="grid grid-cols-5 gap-2">
+                {categoryColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value })}
+                    className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                      newCustomCategory.color === color.value
+                        ? "border-white"
+                        : "border-zinc-700"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full ${color.value.replace(' text-', ' bg-').split(' ')[0]}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleCreateCustomCategory} className="w-full bg-red-500 hover:bg-red-600 text-white">
+              Crear Categoría
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

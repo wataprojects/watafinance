@@ -93,14 +93,16 @@ function Heart({ className }: { className?: string }) {
   );
 }
 
-const defaultCategories: CategoryOption[] = [
+// Categorías para ingresos - usando los mismos iconos que en el historial
+const incomeCategories: CategoryOption[] = [
   { value: "salary", label: "Sueldo", icon: Briefcase, color: "bg-blue-500/20 text-blue-400" },
-  { value: "rental", label: "Ingreso Alquiler", icon: Home, color: "bg-emerald-500/20 text-emerald-400" },
+  { value: "rental", label: "Alquiler", icon: Home, color: "bg-emerald-500/20 text-emerald-400" },
   { value: "digital_sales", label: "Ventas Digitales", icon: ShoppingCart, color: "bg-purple-500/20 text-purple-400" },
   { value: "services", label: "Servicios", icon: Laptop, color: "bg-cyan-500/20 text-cyan-400" },
   { value: "affiliates", label: "Afiliados", icon: Globe, color: "bg-amber-500/20 text-amber-400" },
   { value: "investments", label: "Inversiones", icon: TrendingUp, color: "bg-green-500/20 text-green-400" },
-  { value: "other", label: "Otros", icon: DollarSign, color: "bg-slate-500/20 text-slate-400" },
+  { value: "freelance", label: "Freelance", icon: Wallet, color: "bg-indigo-500/20 text-indigo-400" },
+  { value: "business", label: "Negocio", icon: Building, color: "bg-rose-500/20 text-rose-400" },
 ];
 
 const IncomePage = () => {
@@ -115,6 +117,7 @@ const IncomePage = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   
@@ -163,8 +166,8 @@ const IncomePage = () => {
 
   const [newCustomCategory, setNewCustomCategory] = useState({
     name: "",
-    icon: "DollarSign",
-    color: "bg-slate-500/20 text-slate-400",
+    icon: "Briefcase",
+    color: "bg-blue-500/20 text-blue-400",
   });
 
   const years = [2024, 2025, 2026, 2027, 2028];
@@ -370,17 +373,18 @@ const IncomePage = () => {
     if (!newCustomCategory.name) return;
     
     const categoryValue = `custom_${newCustomCategory.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const iconData = availableIcons.find(i => i.value === newCustomCategory.icon);
     const newCategory: CategoryOption = {
       value: categoryValue,
       label: newCustomCategory.name,
-      icon: availableIcons.find(i => i.value === newCustomCategory.icon)?.icon || DollarSign,
+      icon: iconData?.icon || Briefcase,
       color: newCustomCategory.color,
     };
     
     setCustomCategories([...customCategories, newCategory]);
     setNewIncome({ ...newIncome, category: categoryValue });
-    setIsCategoryDialogOpen(false);
-    setNewCustomCategory({ name: "", icon: "DollarSign", color: "bg-slate-500/20 text-slate-400" });
+    setIsCreateCategoryDialogOpen(false);
+    setNewCustomCategory({ name: "", icon: "Briefcase", color: "bg-blue-500/20 text-blue-400" });
   };
 
   const filteredIncomes = incomes.filter((income) => {
@@ -397,14 +401,14 @@ const IncomePage = () => {
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
 
-  const allCategories = [...defaultCategories, ...customCategories];
+  const allCategories = [...incomeCategories, ...customCategories];
 
   const getCategoryInfo = (categoryValue: string) => {
-    return allCategories.find(c => c.value === categoryValue) || allCategories[allCategories.length - 1];
+    return allCategories.find(c => c.value === categoryValue) || incomeCategories[0];
   };
 
   const getSelectedCategoryInfo = (categoryValue: string) => {
-    return allCategories.find(c => c.value === categoryValue) || defaultCategories[defaultCategories.length - 1];
+    return allCategories.find(c => c.value === categoryValue) || incomeCategories[0];
   };
 
   const investmentTypes = [
@@ -456,6 +460,12 @@ const IncomePage = () => {
               <DialogHeader>
                 <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
               </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <div className="space-y-4 mt-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-1 block">Fuente de ingreso</label>
@@ -505,9 +515,15 @@ const IncomePage = () => {
                       <DialogHeader>
                         <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
                       </DialogHeader>
+                      <button 
+                        onClick={() => setIsCategoryDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                       <div className="space-y-3 mt-4">
                         <div className="grid grid-cols-3 gap-2">
-                          {allCategories.map((cat) => {
+                          {incomeCategories.map((cat) => {
                             const Icon = cat.icon;
                             return (
                               <button
@@ -537,81 +553,15 @@ const IncomePage = () => {
                           type="button"
                           onClick={() => {
                             setIsCategoryDialogOpen(false);
-                            // Abrir diálogo de crear categoría después de un pequeño delay
                             setTimeout(() => {
-                              setNewCustomCategory({ name: "", icon: "DollarSign", color: "bg-slate-500/20 text-slate-400" });
-                              // Aquí podrías abrir otro diálogo o manejar de otra forma
+                              setIsCreateCategoryDialogOpen(true);
                             }, 100);
                           }}
                           className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-green-500 hover:bg-green-500/10 transition-all"
                         >
                           <Plus className="w-5 h-5 text-green-400" />
-                          <span className="text-green-400 font-medium">Crear categoría personalizada</span>
+                          <span className="text-green-400 font-medium">Crear categoría</span>
                         </button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  {/* Diálogo para crear categoría personalizada */}
-                  <Dialog open={!isCategoryDialogOpen && newCustomCategory.name !== "" && false} onOpenChange={() => {}}>
-                    <DialogContent className="bg-zinc-900 border-zinc-800">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 mt-4">
-                        <div>
-                          <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
-                          <Input
-                            placeholder="Nombre de la categoría"
-                            value={newCustomCategory.name}
-                            onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
-                            className="bg-zinc-800 border-zinc-700 text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
-                          <div className="grid grid-cols-5 gap-2">
-                            {availableIcons.map((iconOpt) => {
-                              const Icon = iconOpt.icon;
-                              return (
-                                <button
-                                  key={iconOpt.value}
-                                  type="button"
-                                  onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
-                                  className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
-                                    newCustomCategory.icon === iconOpt.value
-                                      ? "border-green-500 bg-green-500/20"
-                                      : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                                  }`}
-                                >
-                                  <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-green-400" : "text-zinc-400"}`} />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-sm text-zinc-400 mb-2 block">Color</label>
-                          <div className="grid grid-cols-5 gap-2">
-                            {categoryColors.map((color) => (
-                              <button
-                                key={color.value}
-                                type="button"
-                                onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value })}
-                                className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
-                                  newCustomCategory.color === color.value
-                                    ? "border-white"
-                                    : "border-zinc-700"
-                                }`}
-                              >
-                                <div className={`w-6 h-6 rounded-full ${color.value.replace(' text-', ' bg-').split(' ')[0]}`} />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <Button onClick={handleCreateCustomCategory} className="w-full bg-green-500 hover:bg-green-600 text-black">
-                          Crear Categoría
-                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -827,6 +777,12 @@ const IncomePage = () => {
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewInvestmentOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-3 mt-2">
             <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
@@ -848,6 +804,12 @@ const IncomePage = () => {
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewPatrimonyOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-3 mt-2">
             <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
@@ -868,6 +830,12 @@ const IncomePage = () => {
           <DialogHeader>
             <DialogTitle className="text-white">Editar Ingreso</DialogTitle>
           </DialogHeader>
+          <button 
+            onClick={() => setIsEditDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-4 mt-4">
             <div>
               <label className="text-sm text-zinc-400 mb-1 block">Fuente de ingreso</label>
@@ -937,6 +905,12 @@ const IncomePage = () => {
           <DialogHeader>
             <DialogTitle className="text-white">Eliminar Ingreso</DialogTitle>
           </DialogHeader>
+          <button 
+            onClick={() => setIsDeleteDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-4 mt-4">
             <p className="text-zinc-300">
               ¿Estás seguro de que quieres eliminar este ingreso?
@@ -955,6 +929,76 @@ const IncomePage = () => {
                 Eliminar
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal crear categoría personalizada */}
+      <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
+          </DialogHeader>
+          <button 
+            onClick={() => setIsCreateCategoryDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
+              <Input
+                placeholder="Nombre de la categoría"
+                value={newCustomCategory.name}
+                onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
+              <div className="grid grid-cols-5 gap-2">
+                {availableIcons.map((iconOpt) => {
+                  const Icon = iconOpt.icon;
+                  return (
+                    <button
+                      key={iconOpt.value}
+                      type="button"
+                      onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
+                      className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        newCustomCategory.icon === iconOpt.value
+                          ? "border-green-500 bg-green-500/20"
+                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-green-400" : "text-zinc-400"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Color</label>
+              <div className="grid grid-cols-5 gap-2">
+                {categoryColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value })}
+                    className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                      newCustomCategory.color === color.value
+                        ? "border-white"
+                        : "border-zinc-700"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full ${color.value.replace(' text-', ' bg-').split(' ')[0]}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleCreateCustomCategory} className="w-full bg-green-500 hover:bg-green-600 text-black">
+              Crear Categoría
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
