@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -20,11 +20,11 @@ const formatCurrency = (amount: number) => {
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
 const loanTypes = [
-  { value: "mortgage", label: "Hipoteca", color: "bg-blue-500/20 text-blue-400" },
-  { value: "car", label: "Coche", color: "bg-purple-500/20 text-purple-400" },
-  { value: "personal", label: "Personal", color: "bg-cyan-500/20 text-cyan-400" },
-  { value: "business", label: "Negocio", color: "bg-amber-500/20 text-amber-400" },
-  { value: "other", label: "Otro", color: "bg-slate-500/20 text-slate-400" },
+  { value: "mortgage", label: "Hipoteca", color: "bg-blue-500/20 text-blue-400", icon: Home },
+  { value: "car", label: "Coche", color: "bg-purple-500/20 text-purple-400", icon: Car },
+  { value: "personal", label: "Personal", color: "bg-cyan-500/20 text-cyan-400", icon: Wallet },
+  { value: "business", label: "Negocio", color: "bg-amber-500/20 text-amber-400", icon: Briefcase },
+  { value: "other", label: "Otro", color: "bg-slate-500/20 text-slate-400", icon: MoreHorizontal },
 ];
 
 const universalFees = [
@@ -451,12 +451,13 @@ const LoansPage = () => {
                 {activeLoans.map((loan) => {
                   const progress = ((parseFloat(loan.initial_amount) - parseFloat(loan.current_amount)) / parseFloat(loan.initial_amount)) * 100;
                   const typeInfo = getLoanTypeInfo(loan.loan_type);
+                  const Icon = typeInfo.icon;
                   return (
                     <div key={loan.id} className="p-4 bg-white/5 rounded-xl">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeInfo.color}`}>
-                            <Landmark className="w-6 h-6" />
+                            <Icon className="w-6 h-6" />
                           </div>
                           <div>
                             <p className="font-medium text-white">{loan.borrower_name}</p>
@@ -504,11 +505,12 @@ const LoansPage = () => {
               <div className="space-y-2">
                 {settledLoans.map((loan) => {
                   const typeInfo = getLoanTypeInfo(loan.loan_type);
+                  const Icon = typeInfo.icon;
                   return (
                     <div key={loan.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl opacity-60">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
-                          <Landmark className="w-4 h-4" />
+                          <Icon className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="font-medium text-white text-sm">{loan.borrower_name}</p>
@@ -661,12 +663,16 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       <div>
         <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
         <div className="grid grid-cols-5 gap-2">
-          {loanTypes.map((type: any) => (
-            <button key={type.value} type="button" onClick={() => { setLoan({ ...loan, loan_type: type.value }); setShowSpecificFees(true); }}
-              className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-slate-600 bg-slate-700/30 hover:border-slate-500"}`}>
-              <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-slate-400"}`}>{type.label}</span>
-            </button>
-          ))}
+          {loanTypes.map((type: any) => {
+            const Icon = type.icon;
+            return (
+              <button key={type.value} type="button" onClick={() => { setLoan({ ...loan, loan_type: type.value }); setShowSpecificFees(true); }}
+                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-slate-600 bg-slate-700/30 hover:border-slate-500"}`}>
+                <Icon className={`w-5 h-5 ${loan.loan_type === type.value ? "text-cyan-400" : "text-slate-400"}`} />
+                <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-slate-400"}`}>{type.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -737,9 +743,11 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
         </div>
       </div>
 
-      {/* Comisiones universales */}
+      {/* Comisiones - Todo junto en un solo bloque */}
       <div className="border border-slate-600 rounded-xl p-3">
         <p className="text-sm text-slate-300 font-medium mb-3">Comisiones</p>
+        
+        {/* Comisiones universales */}
         <div className="grid grid-cols-2 gap-3">
           {universalFees.map((fee: any) => (
             <div key={fee.key}>
@@ -749,42 +757,40 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
           ))}
         </div>
         
+        {/* Más opciones - incluye comisiones adicionales Y específicas */}
         <button type="button" onClick={() => setShowAdditionalFees(!showAdditionalFees)} className="flex items-center gap-2 mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
           {showAdditionalFees ? (<>Ocultar opciones <ChevronDown className="w-4 h-4 rotate-180" /></>) : (<>+ Más opciones <ChevronDown className="w-4 h-4" /></>)}
         </button>
         
         {showAdditionalFees && (
-          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-600">
-            {additionalFees.map((fee: any) => (
-              <div key={fee.key}>
-                <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Comisiones específicas por tipo */}
-      {showSpecificFees && currentSpecificFees.length > 0 && (
-        <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
-          <button type="button" onClick={() => setShowSpecificFees(!showSpecificFees)} className="flex items-center justify-between w-full mb-3">
-            <p className="text-sm text-cyan-300 font-medium">Comisiones específicas: {loanTypes.find((t: any) => t.value === loan.loan_type)?.label}</p>
-            <ChevronDown className={`w-4 h-4 text-cyan-400 transition-transform ${showSpecificFees ? "rotate-180" : ""}`} />
-          </button>
-          
-          {showSpecificFees && (
+          <div className="space-y-3 mt-3 pt-3 border-t border-slate-600">
+            {/* Comisiones adicionales */}
             <div className="grid grid-cols-2 gap-3">
-              {currentSpecificFees.map((fee: any) => (
+              {additionalFees.map((fee: any) => (
                 <div key={fee.key}>
                   <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
                   <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Comisiones específicas por tipo de préstamo */}
+            {currentSpecificFees.length > 0 && (
+              <div className="pt-3 border-t border-slate-600">
+                <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find((t: any) => t.value === loan.loan_type)?.label}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {currentSpecificFees.map((fee: any) => (
+                    <div key={fee.key}>
+                      <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
+                      <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Inversión y Patrimonio */}
       <div className="space-y-3">
