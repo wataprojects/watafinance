@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, Landmark, CheckCircle, Clock, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Home, Car, User, Briefcase, FileText, Percent, Wallet, AlertCircle } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -27,7 +27,6 @@ const loanTypes = [
   { value: "other", label: "Otro", icon: FileText, color: "bg-slate-500/20 text-slate-400" },
 ];
 
-// Comisiones universales para todos los préstamos
 const universalFees = [
   { key: "tin", label: "TIN (%)", placeholder: "Ej: 3.5", icon: Percent },
   { key: "tae", label: "TAE (%)", placeholder: "Ej: 3.8", icon: Percent },
@@ -36,7 +35,6 @@ const universalFees = [
   { key: "delay_interest", label: "Interés demora (%)", placeholder: "Ej: 4.5", icon: AlertCircle },
 ];
 
-// Comisiones específicas por tipo de préstamo
 const specificFees: Record<LoanType, { key: string; label: string; placeholder: string; icon: any }[]> = {
   mortgage: [
     { key: "subrogation", label: "Comisión subrogación (%)", placeholder: "Ej: 0.5", icon: Building },
@@ -73,9 +71,7 @@ const LoansPage = () => {
     loan_type: "personal" as LoanType,
     name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
     start_date: new Date(), end_date: null as Date | null, investment_id: "none", patrimony_id: "none", notes: "",
-    // Comisiones universales
     tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
-    // Comisiones específicas
     subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
   });
 
@@ -176,9 +172,9 @@ const LoansPage = () => {
     }
   };
 
-  const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
-  const activeLoans = loans.filter(l => l.status === "active").length;
-  const recoveredLoans = loans.filter(l => l.status === "paid").length;
+  const activeLoans = loans.filter(l => l.status === "active");
+  const totalDebt = activeLoans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
+  const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
   const getInvestmentLabel = () => newLoan.investment_id === "none" ? "Sin vincular" : investments.find(i => i.id === newLoan.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabel = () => newLoan.patrimony_id === "none" ? "Sin vincular" : patrimony.find(p => p.id === newLoan.patrimony_id)?.name || "Sin vincular";
@@ -207,7 +203,7 @@ const LoansPage = () => {
                 <p className="text-slate-400 text-sm">Registra las condiciones del préstamo</p>
               </DialogHeader>
               <div className="space-y-4 mt-2">
-                {/* Tipo de préstamo - Selector visual */}
+                {/* Tipo de préstamo */}
                 <div>
                   <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
                   <div className="grid grid-cols-5 gap-2">
@@ -238,7 +234,7 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Importe total y Capital pendiente */}
+                {/* Importe y Capital pendiente */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Importe total (€) *</label>
@@ -252,7 +248,7 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Cuota mensual y Día de cobro */}
+                {/* Cuota y Día de cobro */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Cuota mensual (€) *</label>
@@ -317,7 +313,7 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Comisiones específicas según tipo */}
+                {/* Comisiones específicas */}
                 {showSpecificFees && currentSpecificFees.length > 0 && (
                   <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
                     <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find(t => t.value === newLoan.loan_type)?.label}</p>
@@ -368,27 +364,20 @@ const LoansPage = () => {
           </Dialog>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <Landmark className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
-              <p className="text-xl font-bold text-white">{formatCurrency(totalLoans)}</p>
-              <p className="text-xs text-slate-400">Total Pendiente</p>
+        {/* Stats - Solo Deuda total y Cuotas/mes */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Card className="bg-gradient-to-r from-cyan-600 to-cyan-700">
+            <CardContent className="p-6 text-center">
+              <Landmark className="w-8 h-8 mx-auto mb-2 text-white/80" />
+              <p className="text-3xl font-bold text-white">{formatCurrency(totalDebt)}</p>
+              <p className="text-white/80 text-sm">Deuda total</p>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <Clock className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
-              <p className="text-xl font-bold text-white">{activeLoans}</p>
-              <p className="text-xs text-slate-400">Activos</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-5 h-5 mx-auto mb-1 text-emerald-400" />
-              <p className="text-xl font-bold text-white">{recoveredLoans}</p>
-              <p className="text-xs text-slate-400">Pagados</p>
+          <Card className="bg-gradient-to-r from-orange-500 to-rose-500">
+            <CardContent className="p-6 text-center">
+              <TrendingDownIcon className="w-8 h-8 mx-auto mb-2 text-white/80" />
+              <p className="text-3xl font-bold text-white">{formatCurrency(totalMonthly)}</p>
+              <p className="text-white/80 text-sm">Cuotas/mes</p>
             </CardContent>
           </Card>
         </div>
@@ -397,9 +386,9 @@ const LoansPage = () => {
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardHeader><CardTitle className="text-white flex items-center gap-2"><Landmark className="w-5 h-5 text-cyan-400" />Préstamos Activos</CardTitle></CardHeader>
           <CardContent>
-            {loading ? (<p className="text-slate-400 text-center">Cargando...</p>) : loans.length === 0 ? (<p className="text-slate-400 text-center">No hay préstamos registrados</p>) : (
+            {loading ? (<p className="text-slate-400 text-center">Cargando...</p>) : activeLoans.length === 0 ? (<p className="text-slate-400 text-center">No hay préstamos registrados</p>) : (
               <div className="space-y-3">
-                {loans.map((loan) => {
+                {activeLoans.map((loan) => {
                   const progress = ((parseFloat(loan.initial_amount) - parseFloat(loan.current_amount)) / parseFloat(loan.initial_amount)) * 100;
                   return (
                     <div key={loan.id} className="p-3 bg-white/5 rounded-xl">
