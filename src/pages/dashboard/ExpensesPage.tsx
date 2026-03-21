@@ -12,7 +12,7 @@ import {
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
   ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
-  Train, UtensilsCrossed, Shirt, MoreHorizontal, X
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -118,20 +118,18 @@ function PiggyBank({ className }: { className?: string }) {
   );
 }
 
-function ExpensesPage() {
+const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
-  const [isChangeDatePickerOpen, setIsChangeDatePickerOpen] = useState(false);
-  const [showScheduledChange, setShowScheduledChange] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newExpense, setNewExpense] = useState({
     source: "",
@@ -141,8 +139,6 @@ function ExpensesPage() {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
-    scheduled_amount: "",
-    scheduled_change_date: null as Date | null,
   });
 
   const [newInvestment, setNewInvestment] = useState({
@@ -194,6 +190,7 @@ function ExpensesPage() {
       navigate("/login");
     } else {
       fetchExpenses(session.user.id);
+      fetchLoans(session.user.id);
       fetchOptions(session.user.id);
     }
   };
@@ -205,6 +202,15 @@ function ExpensesPage() {
     ]);
     if (invResult.data) setInvestments(invResult.data);
     if (patResult.data) setPatrimony(patResult.data);
+  };
+
+  const fetchLoans = async (userId: string) => {
+    const { data } = await supabase
+      .from("loans")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "active");
+    if (data) setLoans(data);
   };
 
   const fetchExpenses = async (userId: string) => {
@@ -257,10 +263,7 @@ function ExpensesPage() {
         date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
-        scheduled_amount: "",
-        scheduled_change_date: null,
       });
-      setShowScheduledChange(false);
       fetchExpenses(session.user.id);
     }
     
@@ -339,7 +342,14 @@ function ExpensesPage() {
       return true;
     });
   
+    // Calcular total de gastos
     const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    
+    // Calcular total de préstamos activos (como gasto recurrente)
+    const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
+    
+    // Total general incluyendo préstamos
+    const totalWithLoans = totalExpenses + totalLoans;
 
   const getCategoryInfo = (categoryValue: string) => {
     return expenseCategories.find(c => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
@@ -450,72 +460,6 @@ function ExpensesPage() {
                   </Button>
                 </div>
 
-                {/* ¿Es recurrente? */}
-                <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                  <div>
-                    <p className="text-white font-medium">Gasto Recurrente</p>
-                    <p className="text-xs text-slate-400">Se repite mensualmente</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newRecurring = !newExpense.is_recurring;
-                      setNewExpense({ ...newExpense, is_recurring: newRecurring });
-                      if (!newRecurring) {
-                        setShowScheduledChange(false);
-                        setNewExpense({ ...newExpense, scheduled_amount: "", scheduled_change_date: null });
-                      }
-                    }}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      newExpense.is_recurring ? "bg-rose-500" : "bg-slate-600"
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                      newExpense.is_recurring ? "translate-x-6" : "translate-x-0.5"
-                    }`} />
-                  </button>
-                </div>
-
-                {/* Cambio de importe programado - Solo si es recurrente */}
-                {newExpense.is_recurring && (
-                  <div className="border border-slate-600 rounded-xl p-4 space-y-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowScheduledChange(!showScheduledChange)}
-                      className="flex items-center justify-between w-full"
-                    >
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-amber-400" />
-                        <span className="text-white font-medium">Cambio de importe programado</span>
-                      </div>
-                      <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${showScheduledChange ? "rotate-90" : ""}`} />
-                    </button>
-                    
-                    {showScheduledChange && (
-                      <div className="space-y-4 pt-2 border-t border-slate-600">
-                        <div>
-                          <label className="text-sm text-slate-300 mb-1 block">Nuevo importe (€)</label>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={newExpense.scheduled_amount}
-                            onChange={(e) => setNewExpense({ ...newExpense, scheduled_amount: e.target.value })}
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm text-slate-300 mb-1 block">A partir de</label>
-                          <DatePicker
-                            date={newExpense.scheduled_change_date || new Date()}
-                            onDateChange={(date) => setNewExpense({ ...newExpense, scheduled_change_date: date })}
-                            placeholder="Seleccionar fecha"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Fecha con calendario */}
                 <div>
                   <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
@@ -525,7 +469,7 @@ function ExpensesPage() {
                   />
                 </div>
 
-                {/* Asociar Inversión - Formato con label integrado */}
+                {/* Asociar Inversión */}
                 <div>
                   <Select value={newExpense.investment_id} onValueChange={(v) => {
                     if (v === "new") {
@@ -545,33 +489,16 @@ function ExpensesPage() {
                       </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">
-                        <span className="flex items-center gap-2">
-                          <TrendingDownIcon className="w-4 h-4" />
-                          Sin vincular
-                        </span>
-                      </SelectItem>
-                      {investments.length > 0 && (
-                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">INVERSIONES</div>
-                      )}
+                      <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
                       {investments.map((inv) => (
-                        <SelectItem key={inv.id} value={inv.id} className="text-white">
-                          <span className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-400" />
-                            {inv.name}
-                          </span>
-                        </SelectItem>
+                        <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
                       ))}
-                      <SelectItem value="new" className="text-emerald-400 font-medium">
-                        <span className="flex items-center gap-2">
-                          <Plus className="w-4 h-4" /> Nueva inversión
-                        </span>
-                      </SelectItem>
+                      <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Asociar Patrimonio - Formato con label integrado */}
+                {/* Asociar Patrimonio */}
                 <div>
                   <Select value={newExpense.patrimony_id} onValueChange={(v) => {
                     if (v === "new") {
@@ -591,28 +518,11 @@ function ExpensesPage() {
                       </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">
-                        <span className="flex items-center gap-2">
-                          <TrendingDownIcon className="w-4 h-4" />
-                          Sin vincular
-                        </span>
-                      </SelectItem>
-                      {patrimony.length > 0 && (
-                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">PATRIMONIO</div>
-                      )}
+                      <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
                       {patrimony.map((pat) => (
-                        <SelectItem key={pat.id} value={pat.id} className="text-white">
-                          <span className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-sky-400" />
-                            {pat.name}
-                          </span>
-                        </SelectItem>
+                        <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
                       ))}
-                      <SelectItem value="new" className="text-emerald-400 font-medium">
-                        <span className="flex items-center gap-2">
-                          <Plus className="w-4 h-4" /> Nuevo patrimonio
-                        </span>
-                      </SelectItem>
+                      <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -822,41 +732,89 @@ function ExpensesPage() {
               </Button>
             </div>
           </DialogContent>
-                  </Dialog>
+        </Dialog>
           
-                  {/* Filtros */}
-                  <div className="flex gap-2 mb-6">
-                    <Select value={filterYear} onValueChange={setFilterYear}>
-                      <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Año" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="all" className="text-white">Todos</SelectItem>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={filterMonth} onValueChange={setFilterMonth}>
-                      <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Mes" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        {months.map((month) => (
-                          <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-          
-                  {/* Stats */}
+        {/* Filtros */}
+        <div className="flex gap-2 mb-6">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="flex-1 bg-white/10 border-white/20 text-white">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Stats - Total de Gastos */}
         <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-6">
           <CardContent className="p-6 text-center">
             <CreditCard className="w-8 h-8 mx-auto mb-2 text-rose-400" />
-            <p className="text-4xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
+            <p className="text-4xl font-bold text-white">{formatCurrency(totalWithLoans)}</p>
             <p className="text-slate-400">Total de Gastos</p>
+            {totalLoans > 0 && (
+              <p className="text-xs text-cyan-300 mt-1">
+                (+ {formatCurrency(totalLoans)} en préstamos)
+              </p>
+            )}
           </CardContent>
         </Card>
+
+        {/* Bloque de Préstamos Activos */}
+        {loans.length > 0 && (
+          <Card className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border-cyan-500/30 mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-cyan-400" />
+                Préstamos Activos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loans.map((loan) => {
+                  const progress = ((parseFloat(loan.initial_amount) - parseFloat(loan.current_amount)) / parseFloat(loan.initial_amount)) * 100;
+                  return (
+                    <div key={loan.id} className="p-3 bg-white/5 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-white">{loan.borrower_name}</p>
+                          <p className="text-xs text-slate-400">{loan.bank}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-cyan-400">{formatCurrency(loan.monthly_payment)}/mes</p>
+                          <p className="text-xs text-slate-400">Pendiente: {formatCurrency(loan.current_amount)}</p>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full" 
+                          style={{ width: `${progress}%` }} 
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-3 border-t border-cyan-500/30 flex justify-between items-center">
+                <span className="text-sm text-cyan-300">Total préstamos mensuales</span>
+                <span className="text-lg font-bold text-cyan-400">{formatCurrency(totalLoans)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Lista de gastos */}
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
@@ -867,35 +825,35 @@ function ExpensesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-                      {loading ? (
-                        <p className="text-slate-400 text-center">Cargando...</p>
-                      ) : filteredExpenses.length === 0 ? (
-                        <p className="text-slate-400 text-center">No hay gastos registrados</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {filteredExpenses.map((expense) => {
-                            const cat = getCategoryInfo(expense.category);
-                            const Icon = cat.icon;
-                            return (
-                              <div key={expense.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
-                                    <Icon className="w-5 h-5" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-white">{expense.description || cat.label}</p>
-                                    <p className="text-xs text-slate-400">{new Date(expense.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-rose-400">-{formatCurrency(expense.amount)}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
+            {loading ? (
+              <p className="text-slate-400 text-center">Cargando...</p>
+            ) : filteredExpenses.length === 0 ? (
+              <p className="text-slate-400 text-center">No hay gastos registrados</p>
+            ) : (
+              <div className="space-y-3">
+                {filteredExpenses.map((expense) => {
+                  const cat = getCategoryInfo(expense.category);
+                  const Icon = cat.icon;
+                  return (
+                    <div key={expense.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                          <Icon className="w-5 h-5" />
                         </div>
-                      )}
-                    </CardContent>
+                        <div>
+                          <p className="font-medium text-white">{expense.description || cat.label}</p>
+                          <p className="text-xs text-slate-400">{new Date(expense.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-rose-400">-{formatCurrency(expense.amount)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
       <BottomNav />
