@@ -116,7 +116,6 @@ const PatrimonyPage = () => {
     { value: "other", label: "Otros" },
   ];
 
-  // Agrupar por categoría
   const byCategory = patrimony.reduce((acc, p) => {
     if (!acc[p.category]) acc[p.category] = 0;
     acc[p.category] += parseFloat(p.value);
@@ -124,68 +123,58 @@ const PatrimonyPage = () => {
   }, {} as Record<string, number>);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Patrimonio</h1>
-            <p className="text-slate-500">Tu riqueza total</p>
+            <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
+            <p className="text-blue-400 text-sm">Tu riqueza total</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-indigo-500 hover:bg-indigo-600">
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Activo
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-zinc-900 border-zinc-800">
               <DialogHeader>
                 <DialogTitle className="text-white">Agregar Activo</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm text-slate-300">Nombre</label>
+                  <label className="text-sm text-zinc-400">Nombre</label>
                   <Input
                     placeholder="Nombre del activo"
                     value={newAsset.name}
                     onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-300">Categoría</label>
+                  <label className="text-sm text-zinc-400">Categoría</label>
                   <Select value={newAsset.category} onValueChange={(v) => setNewAsset({ ...newAsset, category: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
                       {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        <SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm text-slate-300">Valor</label>
+                  <label className="text-sm text-zinc-400">Valor</label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={newAsset.value}
                     onChange={(e) => setNewAsset({ ...newAsset, value: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
-                <div>
-                  <label className="text-sm text-slate-300">Descripción (opcional)</label>
-                  <Input
-                    placeholder="Descripción"
-                    value={newAsset.description}
-                    onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <Button onClick={handleAddAsset} className="w-full bg-indigo-500 hover:bg-indigo-600">
+                <Button onClick={handleAddAsset} className="w-full bg-blue-500 hover:bg-blue-600 text-white">
                   Guardar
                 </Button>
               </div>
@@ -193,65 +182,62 @@ const PatrimonyPage = () => {
           </Dialog>
         </div>
 
-        {/* Total Patrimonio */}
-        <Card className="bg-gradient-to-r from-indigo-600 to-purple-600 mb-6">
+        <Card className="bg-gradient-to-r from-blue-900 to-zinc-900 border-blue-800 mb-6">
           <CardContent className="p-8 text-center">
-            <Briefcase className="w-12 h-12 mx-auto mb-4 text-white/80" />
+            <Briefcase className="w-12 h-12 mx-auto mb-4 text-blue-400" />
             <p className="text-5xl font-bold text-white mb-2">{formatCurrency(totalPatrimony)}</p>
-            <p className="text-white/80">Patrimonio Total</p>
+            <p className="text-blue-300">Patrimonio Total</p>
           </CardContent>
         </Card>
 
-        {/* Por categoría */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {Object.entries(byCategory).map(([cat, value]) => {
               const Icon = getCategoryIcon(cat);
               const catLabel = categories.find(c => c.value === cat)?.label || cat;
               const numValue = typeof value === 'number' ? value : 0;
               return (
-              <Card key={cat} className="bg-white/10 backdrop-blur-sm border-white/20">
+              <Card key={cat} className="bg-zinc-900 border-zinc-800">
                 <CardContent className="p-4 text-center">
-                  <Icon className="w-6 h-6 mx-auto mb-2 text-indigo-400" />
+                  <Icon className="w-6 h-6 mx-auto mb-2 text-blue-400" />
                   <p className="text-lg font-bold text-white">{formatCurrency(numValue)}</p>
-                  <p className="text-xs text-slate-400">{catLabel}</p>
+                  <p className="text-xs text-zinc-500">{catLabel}</p>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* Lista de activos */}
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-indigo-400" />
+              <Briefcase className="w-5 h-5 text-blue-500" />
               Mis Activos
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-slate-400 text-center">Cargando...</p>
+              <p className="text-zinc-500 text-center">Cargando...</p>
             ) : patrimony.length === 0 ? (
-              <p className="text-slate-400 text-center">No hay activos registrados</p>
+              <p className="text-zinc-500 text-center">No hay activos registrados</p>
             ) : (
               <div className="space-y-3">
                 {patrimony.map((asset) => {
                   const Icon = getCategoryIcon(asset.category);
                   const percentage = totalPatrimony > 0 ? (parseFloat(asset.value) / totalPatrimony) * 100 : 0;
                   return (
-                    <div key={asset.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                    <div key={asset.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getCategoryColor(asset.category)}`}>
                           <Icon className="w-6 h-6" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{asset.name}</p>
-                          <p className="text-xs text-slate-400">{asset.description || asset.category}</p>
+                          <p className="text-xs text-zinc-500">{asset.description || asset.category}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-white">{formatCurrency(asset.value)}</p>
-                        <p className="text-xs text-slate-400">{percentage.toFixed(1)}%</p>
+                        <p className="text-xs text-zinc-500">{percentage.toFixed(1)}%</p>
                       </div>
                     </div>
                   );
