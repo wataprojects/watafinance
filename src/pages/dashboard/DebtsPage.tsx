@@ -232,13 +232,13 @@ const DebtsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Deudas</h1>
-            <p className="text-slate-400">Dinero prestado y recibido</p>
+            <h1 className="text-2xl font-bold text-slate-900">Deudas</h1>
+            <p className="text-slate-500">Gestiona préstamos y cobros</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -247,80 +247,80 @@ const DebtsPage = () => {
                 Nueva
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-white border-slate-200 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-white">Nueva deuda</DialogTitle>
-                <p className="text-slate-400 text-sm">Registra quién debe a quién</p>
+                <DialogTitle className="text-slate-900">Nueva deuda</DialogTitle>
+                <p className="text-slate-500 text-sm">Registra quién debe a quién</p>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 {/* Tipo de deuda - Toggle */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-2 block">Tipo de deuda</label>
+                  <label className="text-sm text-slate-600 mb-2 block">Tipo de deuda</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setNewDebt({ ...newDebt, debt_type: "they_owe" })}
                       className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                        newDebt.debt_type === "they_owe" 
-                          ? "border-emerald-500 bg-emerald-500/20" 
-                          : "border-slate-600 bg-slate-700/30"
+                        newDebt.debt_type === "they_owe"
+                          ? "border-emerald-500 bg-emerald-50"
+                          : "border-slate-200 bg-slate-50"
                       }`}
                     >
-                      <TrendingUp className={`w-6 h-6 ${newDebt.debt_type === "they_owe" ? "text-emerald-400" : "text-slate-400"}`} />
-                      <span className={`font-medium ${newDebt.debt_type === "they_owe" ? "text-white" : "text-slate-400"}`}>Me deben</span>
+                      <TrendingUp className={`w-6 h-6 ${newDebt.debt_type === "they_owe" ? "text-emerald-600" : "text-slate-400"}`} />
+                      <span className={`font-medium ${newDebt.debt_type === "they_owe" ? "text-slate-900" : "text-slate-600"}`}>Me deben</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setNewDebt({ ...newDebt, debt_type: "i_owe" })}
                       className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                        newDebt.debt_type === "i_owe" 
-                          ? "border-rose-500 bg-rose-500/20" 
-                          : "border-slate-600 bg-slate-700/30"
+                        newDebt.debt_type === "i_owe"
+                          ? "border-rose-500 bg-rose-50"
+                          : "border-slate-200 bg-slate-50"
                       }`}
                     >
-                      <TrendingDownIcon className={`w-6 h-6 ${newDebt.debt_type === "i_owe" ? "text-rose-400" : "text-slate-400"}`} />
-                      <span className={`font-medium ${newDebt.debt_type === "i_owe" ? "text-white" : "text-slate-400"}`}>Debo yo</span>
+                      <TrendingDownIcon className={`w-6 h-6 ${newDebt.debt_type === "i_owe" ? "text-rose-600" : "text-slate-400"}`} />
+                      <span className={`font-medium ${newDebt.debt_type === "i_owe" ? "text-slate-900" : "text-slate-600"}`}>Debo yo</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Persona */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Persona</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Persona</label>
                   <Input
                     placeholder="Nombre"
                     value={newDebt.person_name}
                     onChange={(e) => setNewDebt({ ...newDebt, person_name: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                   />
                 </div>
 
                 {/* Cantidad */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Cantidad (€)</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Cantidad (€)</label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={newDebt.amount}
                     onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                   />
                 </div>
 
                 {/* Motivo */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Motivo</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Motivo</label>
                   <Input
                     placeholder="Ej: Cena sábado, Préstamo piso..."
                     value={newDebt.description}
                     onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                   />
                 </div>
 
                 {/* Fecha */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Fecha</label>
                   <DatePicker
                     date={newDebt.date}
                     onDateChange={(date) => setNewDebt({ ...newDebt, date })}
@@ -329,7 +329,7 @@ const DebtsPage = () => {
 
                 {/* Vence (opcional) */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Vence (opcional)</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Vence (opcional)</label>
                   <DatePicker
                     date={newDebt.due_date || new Date()}
                     onDateChange={(date) => setNewDebt({ ...newDebt, due_date: date })}
@@ -339,12 +339,12 @@ const DebtsPage = () => {
 
                 {/* Notas (opcional) */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-1 block">Notas (opcional)</label>
+                  <label className="text-sm text-slate-600 mb-1 block">Notas (opcional)</label>
                   <Textarea
                     placeholder="Notas adicionales..."
                     value={newDebt.notes}
                     onChange={(e) => setNewDebt({ ...newDebt, notes: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     rows={3}
                   />
                 </div>

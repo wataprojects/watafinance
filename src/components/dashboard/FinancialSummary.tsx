@@ -97,7 +97,7 @@ const FinancialSummary = () => {
             <SelectTrigger className="w-[180px] bg-sky-500/20 border-sky-500/40 text-white">
               <SelectValue placeholder="Seleccionar mes" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectContent className="bg-white border-slate-200">
               {months.map((month) => (
                 <SelectItem key={month.value} value={month.value} className="text-white">
                   {month.label} {currentYear}

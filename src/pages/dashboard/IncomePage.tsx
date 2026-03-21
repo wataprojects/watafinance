@@ -416,13 +416,13 @@ const IncomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Ingresos</h1>
-            <p className="text-slate-400">Gestiona tus fuentes de dinero</p>
+            <h1 className="text-2xl font-bold text-slate-900">Ingresos</h1>
+            <p className="text-slate-500">Gestiona tus fuentes de dinero</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -433,7 +433,7 @@ const IncomePage = () => {
             </DialogTrigger>
             <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
+                <DialogTitle className="text-slate-900">Nuevo Ingreso</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 {/* Fuente de ingreso */}

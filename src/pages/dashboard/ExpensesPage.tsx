@@ -396,12 +396,12 @@ const ExpensesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Gastos</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Gastos</h1>
             <p className="text-slate-400">Controla tus gastos mensuales</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -413,7 +413,7 @@ const ExpensesPage = () => {
             </DialogTrigger>
             <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+                <DialogTitle className="text-slate-900">Agregar Gasto</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 {/* Fuente de Gasto - Campo de texto */}

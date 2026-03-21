@@ -218,7 +218,7 @@ export function DatePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 bg-slate-800 border-slate-700 rounded-xl" align="start">
+      <PopoverContent className="w-80 p-0 bg-white border-slate-200 rounded-xl" align="start">
         <div className="flex flex-col">
           {/* Header según el modo de vista */}
           <div className="flex items-center justify-between p-3 border-b border-slate-700 bg-slate-800/50">
