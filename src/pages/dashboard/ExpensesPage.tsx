@@ -13,7 +13,7 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
-  Wallet, Globe, Laptop, BookOpen, Plane, Music
+  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
