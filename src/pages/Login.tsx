@@ -52,52 +52,51 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-xl flex items-center justify-center">
-            <Wallet className="w-7 h-7 text-white" />
+          <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+            <Wallet className="w-7 h-7 text-black" />
           </div>
           <span className="text-3xl font-bold text-white">FinPro</span>
         </div>
 
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-white">Bienvenido</CardTitle>
-            <CardDescription className="text-slate-300">
+            <CardDescription className="text-zinc-400">
               Inicia sesión o regístrate
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm text-slate-300">Correo electrónico</label>
+                <label className="text-sm text-zinc-400">Correo electrónico</label>
                 <Input
                   type="email"
                   placeholder="tu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus:border-emerald-500"
+                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm text-slate-300">Contraseña</label>
+                <label className="text-sm text-zinc-400">Contraseña</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus:border-emerald-500 pr-10"
+                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 pr-10"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -105,7 +104,7 @@ const Login = () => {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
                   <p className="text-red-400 text-sm">{error}</p>
                 </div>
               )}
@@ -113,7 +112,7 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6"
+                className="w-full bg-green-500 hover:bg-green-600 text-black py-6 font-semibold"
               >
                 {loading ? "Cargando..." : "Iniciar Sesión"}
               </Button>
@@ -125,7 +124,7 @@ const Login = () => {
                 variant="outline"
                 onClick={handleSignUp}
                 disabled={loading}
-                className="w-full border-white/20 text-white hover:bg-white/10"
+                className="w-full border-zinc-700 text-white hover:bg-zinc-800"
               >
                 Crear Cuenta
               </Button>
@@ -134,7 +133,7 @@ const Login = () => {
             <div className="mt-6 text-center">
               <button 
                 onClick={() => navigate("/dashboard")}
-                className="text-emerald-400 hover:text-emerald-300 text-sm"
+                className="text-green-400 hover:text-green-300 text-sm"
               >
                 Continuar sin iniciar sesión (demo)
               </button>

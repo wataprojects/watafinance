@@ -45,7 +45,6 @@ const FinancialHealth = () => {
   const totalDebts = debts.reduce((sum, d) => sum + parseFloat(d.current_amount || 0), 0);
   const totalInitialDebts = debts.reduce((sum, d) => sum + parseFloat(d.initial_amount || 0), 0);
 
-  // Calcular puntuación de salud financiera
   const savingsScore = totalIncome > 0 ? Math.min(100, ((totalIncome - totalExpenses) / totalIncome) * 100 + 50) : 50;
   const debtScore = totalInitialDebts > 0 ? Math.max(0, 100 - ((totalDebts / totalInitialDebts) * 100)) : 100;
   const investmentScore = totalIncome > 0 ? Math.min(100, (totalInvestments / totalIncome) * 10) : 0;
@@ -62,11 +61,21 @@ const FinancialHealth = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "excellent": return "text-emerald-400";
-      case "good": return "text-sky-400";
-      case "warning": return "text-yellow-400";
-      case "poor": return "text-red-400";
-      default: return "text-slate-400";
+      case "excellent": return "text-green-500";
+      case "good": return "text-green-400";
+      case "warning": return "text-yellow-500";
+      case "poor": return "text-red-500";
+      default: return "text-zinc-400";
+    }
+  };
+
+  const getStatusBg = (status: string) => {
+    switch (status) {
+      case "excellent": return "bg-green-500";
+      case "good": return "bg-green-600";
+      case "warning": return "bg-yellow-500";
+      case "poor": return "bg-red-500";
+      default: return "bg-zinc-500";
     }
   };
 
@@ -80,23 +89,23 @@ const FinancialHealth = () => {
   };
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
-            <Heart className="w-5 h-5 text-sky-400" />
+            <Heart className="w-5 h-5 text-green-500" />
             Salud Financiera
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-sky-400">{score}</span>
-            <span className="text-sm text-sky-200">/ 100</span>
+            <span className="text-3xl font-bold text-green-500">{score}</span>
+            <span className="text-sm text-zinc-400">/ 100</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -107,19 +116,15 @@ const FinancialHealth = () => {
                     <span className={getStatusColor(category.status)}>
                       {getStatusIcon(category.status)}
                     </span>
-                    <span className="font-medium text-white">{category.name}</span>
+                    <span className="font-medium text-zinc-300">{category.name}</span>
                   </div>
                   <span className={`font-bold ${getStatusColor(category.status)}`}>
                     {category.score}
                   </span>
                 </div>
-                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full rounded-full transition-all ${
-                      category.status === "excellent" ? "bg-emerald-500" :
-                      category.status === "good" ? "bg-sky-500" :
-                      category.status === "warning" ? "bg-yellow-500" : "bg-red-500"
-                    }`}
+                    className={`h-full rounded-full transition-all ${getStatusBg(category.status)}`}
                     style={{ width: `${category.score}%` }}
                   />
                 </div>

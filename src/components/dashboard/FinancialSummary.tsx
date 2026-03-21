@@ -16,7 +16,6 @@ const formatCurrency = (amount: number) => {
 };
 
 const FinancialSummary = () => {
-  // Obtener el mes actual (0 = enero, 11 = diciembre)
   const currentMonth = new Date().getMonth() + 1;
   const currentMonthStr = currentMonth.toString().padStart(2, '0');
   
@@ -87,20 +86,20 @@ const FinancialSummary = () => {
   const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-white">
             Resumen {selectedMonthLabel} {currentYear}
           </CardTitle>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[180px] bg-sky-500/20 border-sky-500/40 text-white">
-              <SelectValue placeholder="Seleccionar mes" />
+            <SelectTrigger className="w-[140px] bg-zinc-800 border-zinc-700 text-white text-sm">
+              <SelectValue placeholder="Mes" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200">
+            <SelectContent className="bg-zinc-800 border-zinc-700">
               {months.map((month) => (
                 <SelectItem key={month.value} value={month.value} className="text-white">
-                  {month.label} {currentYear}
+                  {month.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -110,48 +109,44 @@ const FinancialSummary = () => {
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Total Ingresos */}
-            <div className="bg-sky-500/20 rounded-xl p-4">
+            <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-sky-300" />
-                <span className="text-xs text-sky-300 font-medium">Ingresos</span>
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-green-400 font-medium">Ingresos</span>
               </div>
               <p className="text-xl font-bold text-white">
                 {formatCurrency(totalIncome)}
               </p>
             </div>
 
-            {/* Total Gastos */}
-            <div className="bg-rose-500/20 rounded-xl p-4">
+            <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-4 h-4 text-rose-300" />
-                <span className="text-xs text-rose-300 font-medium">Gastos</span>
+                <TrendingDown className="w-4 h-4 text-red-500" />
+                <span className="text-xs text-red-400 font-medium">Gastos</span>
               </div>
               <p className="text-xl font-bold text-white">
                 {formatCurrency(totalExpenses)}
               </p>
             </div>
 
-            {/* Balance */}
-            <div className={`${balance >= 0 ? "bg-emerald-500/20" : "bg-orange-500/20"} rounded-xl p-4`}>
+            <div className={`${balance >= 0 ? "bg-zinc-800/50" : "bg-red-900/20"} rounded-xl p-4 border ${balance >= 0 ? "border-zinc-700" : "border-red-800"}`}>
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className={`w-4 h-4 ${balance >= 0 ? "text-emerald-300" : "text-orange-300"}`} />
-                <span className={`text-xs ${balance >= 0 ? "text-emerald-300" : "text-orange-300"} font-medium`}>Balance</span>
+                <DollarSign className={`w-4 h-4 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
+                <span className={`text-xs font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
               </div>
-              <p className={`text-xl font-bold ${balance >= 0 ? "text-white" : "text-white"}`}>
-                {formatCurrency(balance)}
+              <p className={`text-xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
               </p>
             </div>
 
-            {/* Tasa de Ahorro */}
-            <div className="bg-purple-500/20 rounded-xl p-4">
+            <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
               <div className="flex items-center gap-2 mb-2">
-                <PiggyBank className="w-4 h-4 text-purple-300" />
-                <span className="text-xs text-purple-300 font-medium">Ahorro</span>
+                <PiggyBank className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-green-400 font-medium">Ahorro</span>
               </div>
               <p className="text-xl font-bold text-white">
                 {savingsRate.toFixed(1)}%

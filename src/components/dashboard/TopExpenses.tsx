@@ -46,15 +46,15 @@ const TopExpenses = () => {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      food: "bg-emerald-500",
+      food: "bg-green-500",
       transport: "bg-purple-500",
-      housing: "bg-sky-500",
+      housing: "bg-blue-500",
       utilities: "bg-yellow-500",
-      shopping: "bg-rose-500",
-      entertainment: "bg-pink-500",
-      other: "bg-slate-500",
+      shopping: "bg-pink-500",
+      entertainment: "bg-indigo-500",
+      other: "bg-zinc-500",
     };
-    return colors[category] || "bg-slate-500";
+    return colors[category] || "bg-zinc-500";
   };
 
   const getCategoryLabel = (category: string) => {
@@ -71,20 +71,20 @@ const TopExpenses = () => {
   };
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
-          <CreditCard className="w-5 h-5 text-sky-400" />
+          <CreditCard className="w-5 h-5 text-green-500" />
           Principales Gastos
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : expenses.length === 0 ? (
-          <p className="text-sky-200 text-center py-8">No hay gastos registrados</p>
+          <p className="text-zinc-400 text-center py-8">No hay gastos registrados</p>
         ) : (
           <>
             <div className="space-y-3">
@@ -92,7 +92,7 @@ const TopExpenses = () => {
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${getCategoryColor(expense.category)}`}></div>
-                    <span className="font-medium text-white">
+                    <span className="font-medium text-zinc-300">
                       {getCategoryLabel(expense.category)}
                     </span>
                   </div>
@@ -100,7 +100,7 @@ const TopExpenses = () => {
                     <span className="font-semibold text-white">
                       {formatCurrency(expense.amount)}
                     </span>
-                    <span className="text-xs text-sky-200 ml-2">
+                    <span className="text-xs text-zinc-500 ml-2">
                       ({total > 0 ? Math.round((expense.amount / total) * 100) : 0}%)
                     </span>
                   </div>
@@ -108,9 +108,9 @@ const TopExpenses = () => {
               ))}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/20">
+            <div className="mt-4 pt-4 border-t border-zinc-700">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-sky-200">
+                <span className="text-sm font-medium text-zinc-400">
                   Total
                 </span>
                 <span className="text-lg font-bold text-white">

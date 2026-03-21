@@ -46,63 +46,60 @@ const IncomeBalance = () => {
   const passivePercentage = totalIncome > 0 ? Math.round((passiveIncome / totalIncome) * 100) : 0;
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold text-white">Balance de Ingresos</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Ingresos Activos */}
-            <div className="flex items-center justify-between p-4 bg-sky-500/20 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-sky-500 rounded-lg flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="font-medium text-white">Ingresos Activos</p>
-                  <p className="text-xs text-sky-200">Trabajo / Negocio</p>
+                  <p className="text-xs text-zinc-400">Trabajo / Negocio</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-bold text-white">{formatCurrency(activeIncome)}</p>
-                <p className="text-xs text-sky-300">{100 - passivePercentage}%</p>
+                <p className="text-xs text-zinc-400">{100 - passivePercentage}%</p>
               </div>
             </div>
 
-            {/* Ingresos Pasivos */}
-            <div className="flex items-center justify-between p-4 bg-emerald-500/20 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-green-900/20 rounded-xl border border-green-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-                  <Home className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <Home className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
                   <p className="font-medium text-white">Ingresos Pasivos</p>
-                  <p className="text-xs text-emerald-200">Rentas / Inversiones</p>
+                  <p className="text-xs text-green-400/70">Rentas / Inversiones</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-white">{formatCurrency(passiveIncome)}</p>
-                <p className="text-xs text-emerald-300">{passivePercentage}%</p>
+                <p className="font-bold text-green-400">{formatCurrency(passiveIncome)}</p>
+                <p className="text-xs text-green-400/70">{passivePercentage}%</p>
               </div>
             </div>
 
-            {/* Total y meta */}
-            <div className="pt-4 border-t border-white/20">
+            <div className="pt-4 border-t border-zinc-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-sky-300" />
-                  <span className="text-sm font-medium text-white">Meta FIRE: 70% pasivo</span>
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-medium text-zinc-300">Meta FIRE: 70% pasivo</span>
                 </div>
-                <span className="text-sm font-bold text-sky-300">{passivePercentage}%</span>
+                <span className="text-sm font-bold text-green-500">{passivePercentage}%</span>
               </div>
-              <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
+              <div className="mt-2 h-2 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-sky-400 to-purple-400 rounded-full transition-all"
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all"
                   style={{ width: `${Math.min((passivePercentage / 70) * 100, 100)}%` }}
                 />
               </div>
