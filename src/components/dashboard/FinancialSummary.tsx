@@ -16,14 +16,17 @@ const formatCurrency = (amount: number) => {
 };
 
 const FinancialSummary = () => {
-  const [selectedMonth, setSelectedMonth] = useState("01");
+  // Obtener el mes actual (0 = enero, 11 = diciembre)
+  const currentMonth = new Date().getMonth() + 1;
+  const currentMonthStr = currentMonth.toString().padStart(2, '0');
+  
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const currentYear = new Date().getFullYear();
   
-  // Generar meses dinámicamente para el año actual
   const months = [
     { value: "01", label: "Enero" },
     { value: "02", label: "Febrero" },
@@ -87,7 +90,9 @@ const FinancialSummary = () => {
     <Card className="bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-white">Resumen Financiero</CardTitle>
+          <CardTitle className="text-lg font-semibold text-white">
+            Resumen {selectedMonthLabel} {currentYear}
+          </CardTitle>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px] bg-sky-500/20 border-sky-500/40 text-white">
               <SelectValue placeholder="Seleccionar mes" />

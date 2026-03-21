@@ -76,6 +76,7 @@ const IncomePage = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isEditDatePickerOpen, setIsEditDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -107,6 +108,8 @@ const IncomePage = () => {
     income_type: "active" as "active" | "passive",
     category: "salary",
     date: new Date(),
+    investment_id: "none",
+    patrimony_id: "none",
   });
   
   const [newInvestment, setNewInvestment] = useState({
@@ -192,13 +195,16 @@ const IncomePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
+    // Convertir la fecha a formato ISO (YYYY-MM-DD)
+    const dateStr = newIncome.date.toISOString().split("T")[0];
+
     const { error } = await supabase.from("incomes").insert({
       user_id: session.user.id,
       amount: parseFloat(newIncome.amount),
       description: newIncome.source,
       category: newIncome.category,
       is_passive: newIncome.income_type === "passive",
-      date: newIncome.date.toISOString().split("T")[0],
+      date: dateStr,
     });
 
     if (!error) {
@@ -221,12 +227,15 @@ const IncomePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !selectedIncome) return;
 
+    // Convertir la fecha a formato ISO (YYYY-MM-DD)
+    const dateStr = editIncome.date.toISOString().split("T")[0];
+
     const { error } = await supabase.from("incomes").update({
       amount: parseFloat(editIncome.amount),
       description: editIncome.source,
       category: editIncome.category,
       is_passive: editIncome.income_type === "passive",
-      date: editIncome.date.toISOString().split("T")[0],
+      date: dateStr,
     }).eq("id", selectedIncome.id);
 
     if (!error) {
@@ -251,6 +260,8 @@ const IncomePage = () => {
 
   const openEditDialog = (income: any) => {
     setSelectedIncome(income);
+    // Convertir la fecha del string a Date
+    const incomeDate = new Date(income.date);
     setEditIncome({
       id: income.id,
       source: income.description || "",
@@ -258,7 +269,9 @@ const IncomePage = () => {
       is_recurring: false,
       income_type: income.is_passive ? "passive" : "active",
       category: income.category,
-      date: new Date(income.date),
+      date: incomeDate,
+      investment_id: "none",
+      patrimony_id: "none",
     });
     setIsEditDialogOpen(true);
   };
@@ -268,7 +281,7 @@ const IncomePage = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleCreateInvestment = async () => {
+  const handleCreateInvestment = async (isForEdit: boolean = false) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newInvestment.name || !newInvestment.initial_value) return;
 
@@ -282,13 +295,17 @@ const IncomePage = () => {
 
     if (!error && data) {
       setInvestments([...investments, { id: data.id, name: data.name }]);
-      setNewIncome({ ...newIncome, investment_id: data.id });
+      if (isForEdit) {
+        setEditIncome({ ...editIncome, investment_id: data.id });
+      } else {
+        setNewIncome({ ...newIncome, investment_id: data.id });
+      }
       setIsNewInvestmentOpen(false);
       setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
     }
   };
 
-  const handleCreatePatrimony = async () => {
+  const handleCreatePatrimony = async (isForEdit: boolean = false) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
 
@@ -301,7 +318,11 @@ const IncomePage = () => {
 
     if (!error && data) {
       setPatrimony([...patrimony, { id: data.id, name: data.name }]);
-      setNewIncome({ ...newIncome, patrimony_id: data.id });
+      if (isForEdit) {
+        setEditIncome({ ...editIncome, patrimony_id: data.id });
+      } else {
+        setNewIncome({ ...newIncome, patrimony_id: data.id });
+      }
       setIsNewPatrimonyOpen(false);
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
@@ -370,15 +391,15 @@ const IncomePage = () => {
     { value: "other", label: "Otros" },
   ];
 
-  const getInvestmentLabel = () => {
-    if (newIncome.investment_id === "none") return "Sin vincular";
-    const inv = investments.find(i => i.id === newIncome.investment_id);
+  const getInvestmentLabel = (investmentId: string) => {
+    if (investmentId === "none") return "Sin vincular";
+    const inv = investments.find(i => i.id === investmentId);
     return inv ? inv.name : "Sin vincular";
   };
 
-  const getPatrimonyLabel = () => {
-    if (newIncome.patrimony_id === "none") return "Sin vincular";
-    const pat = patrimony.find(p => p.id === newIncome.patrimony_id);
+  const getPatrimonyLabel = (patrimonyId: string) => {
+    if (patrimonyId === "none") return "Sin vincular";
+    const pat = patrimony.find(p => p.id === patrimonyId);
     return pat ? pat.name : "Sin vincular";
   };
 
@@ -531,7 +552,7 @@ const IncomePage = () => {
                   </Dialog>
                 </div>
 
-                {/* Asociar Inversión - Formato con label integrado */}
+                {/* Asociar Inversión */}
                 <div>
                   <Select value={newIncome.investment_id} onValueChange={(v) => {
                     if (v === "new") {
@@ -545,39 +566,22 @@ const IncomePage = () => {
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-emerald-400" />
                           <span className="text-slate-300">Inversión:</span>
-                          <span className="text-white font-medium">{getInvestmentLabel()}</span>
+                          <span className="text-white font-medium">{getInvestmentLabel(newIncome.investment_id)}</span>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-400" />
                       </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">
-                        <span className="flex items-center gap-2">
-                          <TrendingDown className="w-4 h-4" />
-                          Sin vincular
-                        </span>
-                      </SelectItem>
-                      {investments.length > 0 && (
-                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">INVERSIONES</div>
-                      )}
+                      <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
                       {investments.map((inv) => (
-                        <SelectItem key={inv.id} value={inv.id} className="text-white">
-                          <span className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-400" />
-                            {inv.name}
-                          </span>
-                        </SelectItem>
+                        <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
                       ))}
-                      <SelectItem value="new" className="text-emerald-400 font-medium">
-                        <span className="flex items-center gap-2">
-                          <Plus className="w-4 h-4" /> Nueva inversión
-                        </span>
-                      </SelectItem>
+                      <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Asociar Patrimonio - Formato con label integrado */}
+                {/* Asociar Patrimonio */}
                 <div>
                   <Select value={newIncome.patrimony_id} onValueChange={(v) => {
                     if (v === "new") {
@@ -591,34 +595,17 @@ const IncomePage = () => {
                         <div className="flex items-center gap-2">
                           <Building className="w-4 h-4 text-sky-400" />
                           <span className="text-slate-300">Patrimonio:</span>
-                          <span className="text-white font-medium">{getPatrimonyLabel()}</span>
+                          <span className="text-white font-medium">{getPatrimonyLabel(newIncome.patrimony_id)}</span>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-400" />
                       </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400">
-                        <span className="flex items-center gap-2">
-                          <TrendingDown className="w-4 h-4" />
-                          Sin vincular
-                        </span>
-                      </SelectItem>
-                      {patrimony.length > 0 && (
-                        <div className="px-2 py-1 text-xs text-slate-500 font-medium">PATRIMONIO</div>
-                      )}
+                      <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
                       {patrimony.map((pat) => (
-                        <SelectItem key={pat.id} value={pat.id} className="text-white">
-                          <span className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-sky-400" />
-                            {pat.name}
-                          </span>
-                        </SelectItem>
+                        <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
                       ))}
-                      <SelectItem value="new" className="text-emerald-400 font-medium">
-                        <span className="flex items-center gap-2">
-                          <Plus className="w-4 h-4" /> Nuevo patrimonio
-                        </span>
-                      </SelectItem>
+                      <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -682,7 +669,7 @@ const IncomePage = () => {
                   />
                 </div>
               </div>
-              <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600">
+              <Button onClick={() => handleCreateInvestment(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">
                 Crear Inversión
               </Button>
             </div>
@@ -728,7 +715,7 @@ const IncomePage = () => {
                   className="bg-slate-700 border-slate-600 text-white"
                 />
               </div>
-              <Button onClick={handleCreatePatrimony} className="w-full bg-emerald-500 hover:bg-emerald-600">
+              <Button onClick={() => handleCreatePatrimony(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">
                 Crear Patrimonio
               </Button>
             </div>
@@ -823,13 +810,14 @@ const IncomePage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Modal de editar ingreso */}
+        {/* Modal de editar ingreso - CON TODAS LAS OPCIONES */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="bg-slate-800 border-slate-700 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white">Editar Ingreso</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {/* Fuente de ingreso */}
               <div>
                 <label className="text-sm text-slate-300 mb-1 block">Fuente de ingreso</label>
                 <Input
@@ -840,6 +828,7 @@ const IncomePage = () => {
                 />
               </div>
 
+              {/* Cantidad */}
               <div>
                 <label className="text-sm text-slate-300 mb-1 block">Cantidad</label>
                 <Input
@@ -851,6 +840,7 @@ const IncomePage = () => {
                 />
               </div>
 
+              {/* Tipo: Activo o Pasivo */}
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">Tipo de ingreso</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -881,9 +871,31 @@ const IncomePage = () => {
                 </div>
               </div>
 
+              {/* Categoría en edición */}
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">Categoría</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className="w-full bg-slate-700 border-slate-600 text-white justify-between hover:bg-slate-600"
+                >
+                  <span className="flex items-center gap-2">
+                    {(() => {
+                      const cat = getCategoryInfo(editIncome.category);
+                      const Icon = cat.icon;
+                      return <Icon className="w-4 h-4" />;
+                    })()}
+                    {getCategoryInfo(editIncome.category).label}
+                  </span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Fecha con calendario en edición */}
               <div>
                 <label className="text-sm text-slate-300 mb-1 block">Fecha</label>
-                <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <Dialog open={isEditDatePickerOpen} onOpenChange={setIsEditDatePickerOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
@@ -903,13 +915,71 @@ const IncomePage = () => {
                       onSelect={(date) => {
                         if (date) {
                           setEditIncome({ ...editIncome, date });
-                          setIsDatePickerOpen(false);
+                          setIsEditDatePickerOpen(false);
                         }
                       }}
                       className="bg-slate-800 text-white rounded-lg"
                     />
                   </DialogContent>
                 </Dialog>
+              </div>
+
+              {/* Asociar Inversión en edición */}
+              <div>
+                <Select value={editIncome.investment_id} onValueChange={(v) => {
+                  if (v === "new") {
+                    setIsNewInvestmentOpen(true);
+                  } else {
+                    setEditIncome({ ...editIncome, investment_id: v });
+                  }
+                }}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                        <span className="text-slate-300">Inversión:</span>
+                        <span className="text-white font-medium">{getInvestmentLabel(editIncome.investment_id)}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
+                    {investments.map((inv) => (
+                      <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
+                    ))}
+                    <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Asociar Patrimonio en edición */}
+              <div>
+                <Select value={editIncome.patrimony_id} onValueChange={(v) => {
+                  if (v === "new") {
+                    setIsNewPatrimonyOpen(true);
+                  } else {
+                    setEditIncome({ ...editIncome, patrimony_id: v });
+                  }
+                }}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-3">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-sky-400" />
+                        <span className="text-slate-300">Patrimonio:</span>
+                        <span className="text-white font-medium">{getPatrimonyLabel(editIncome.patrimony_id)}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
+                    {patrimony.map((pat) => (
+                      <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
+                    ))}
+                    <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button onClick={handleEditIncome} className="w-full bg-sky-500 hover:bg-sky-600 py-6">
