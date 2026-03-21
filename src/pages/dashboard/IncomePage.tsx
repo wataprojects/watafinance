@@ -13,7 +13,7 @@ import {
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
   ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown,
-  Pencil, Trash2
+  Pencil, Trash2, TrendingDown as TrendingDownIcon, Link2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -53,26 +53,6 @@ const defaultCategories: CategoryOption[] = [
   { value: "other", label: "Otros", icon: DollarSign, color: "bg-slate-500/20 text-slate-400" },
 ];
 
-const iconOptions = [
-  { icon: Briefcase, label: "Trabajo" },
-  { icon: Home, label: "Casa" },
-  { icon: ShoppingCart, label: "Tienda" },
-  { icon: Laptop, label: "Tecnología" },
-  { icon: Smartphone, label: "App" },
-  { icon: Globe, label: "Web" },
-  { icon: Music, label: "Música" },
-  { icon: BookOpen, label: "Educación" },
-  { icon: Car, label: "Vehículo" },
-  { icon: Plane, label: "Viajes" },
-  { icon: Wallet, label: "Billetera" },
-  { icon: CreditCard, label: "Tarjeta" },
-  { icon: PiggyBank, label: "Ahorros" },
-  { icon: Building, label: "Banco" },
-  { icon: Zap, label: "Energía" },
-  { icon: DollarSign, label: "Dinero" },
-  { icon: TrendingUp, label: "Gráfico" },
-];
-
 const IncomePage = () => {
   const navigate = useNavigate();
   const [incomes, setIncomes] = useState<any[]>([]);
@@ -80,8 +60,6 @@ const IncomePage = () => {
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -95,7 +73,6 @@ const IncomePage = () => {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYear);
   
-  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [newIncome, setNewIncome] = useState({
     source: "",
     amount: "",
@@ -271,7 +248,7 @@ const IncomePage = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleCreateInvestment = async (isForEdit: boolean = false) => {
+  const handleCreateInvestment = async (forEdit: boolean = false) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newInvestment.name || !newInvestment.initial_value) return;
 
@@ -285,7 +262,7 @@ const IncomePage = () => {
 
     if (!error && data) {
       setInvestments([...investments, { id: data.id, name: data.name }]);
-      if (isForEdit) {
+      if (forEdit) {
         setEditIncome({ ...editIncome, investment_id: data.id });
       } else {
         setNewIncome({ ...newIncome, investment_id: data.id });
@@ -295,7 +272,7 @@ const IncomePage = () => {
     }
   };
 
-  const handleCreatePatrimony = async (isForEdit: boolean = false) => {
+  const handleCreatePatrimony = async (forEdit: boolean = false) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
 
@@ -308,7 +285,7 @@ const IncomePage = () => {
 
     if (!error && data) {
       setPatrimony([...patrimony, { id: data.id, name: data.name }]);
-      if (isForEdit) {
+      if (forEdit) {
         setEditIncome({ ...editIncome, patrimony_id: data.id });
       } else {
         setNewIncome({ ...newIncome, patrimony_id: data.id });
@@ -316,18 +293,6 @@ const IncomePage = () => {
       setIsNewPatrimonyOpen(false);
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
     }
-  };
-
-  const handleCreateCategory = (name: string, icon: any) => {
-    const newCat: CategoryOption = {
-      value: `custom_${Date.now()}`,
-      label: name,
-      icon: icon,
-      color: "bg-green-500/20 text-green-400"
-    };
-    setCustomCategories([...customCategories, newCat]);
-    setNewIncome({ ...newIncome, category: newCat.value });
-    setIsNewCategoryModalOpen(false);
   };
 
   const filteredIncomes = incomes.filter((income) => {
@@ -344,14 +309,7 @@ const IncomePage = () => {
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
 
-  const byCategory = filteredIncomes.reduce((acc, income) => {
-    const cat = income.category;
-    if (!acc[cat]) acc[cat] = 0;
-    acc[cat] += parseFloat(income.amount);
-    return acc;
-  }, {} as Record<string, number>);
-
-  const allCategories = [...defaultCategories, ...customCategories];
+  const allCategories = [...defaultCategories];
 
   const getCategoryInfo = (categoryValue: string) => {
     return allCategories.find(c => c.value === categoryValue) || allCategories[allCategories.length - 1];
@@ -455,6 +413,37 @@ const IncomePage = () => {
                     </button>
                   </div>
                 </div>
+                
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">¿Es recurrente?</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewIncome({ ...newIncome, is_recurring: true })}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                        newIncome.is_recurring 
+                          ? "border-green-500 bg-green-500/20" 
+                          : "border-zinc-700 bg-zinc-800"
+                      }`}
+                    >
+                      <TrendingDownIcon className={`w-5 h-5 ${newIncome.is_recurring ? "text-green-400" : "text-zinc-400"}`} />
+                      <span className={`font-medium ${newIncome.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewIncome({ ...newIncome, is_recurring: false })}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                        !newIncome.is_recurring 
+                          ? "border-zinc-500 bg-zinc-700" 
+                          : "border-zinc-700 bg-zinc-800"
+                      }`}
+                    >
+                      <DollarSign className={`w-5 h-5 ${!newIncome.is_recurring ? "text-white" : "text-zinc-400"}`} />
+                      <span className={`font-medium ${!newIncome.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
                   <DatePicker
@@ -462,6 +451,37 @@ const IncomePage = () => {
                     onDateChange={(date) => setNewIncome({ ...newIncome, date })}
                   />
                 </div>
+
+                {/* Vinculación a Inversión */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Inversión</label>
+                  <Select value={newIncome.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setNewIncome({ ...newIncome, investment_id: v }); }}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue placeholder="Sin vincular" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
+                      {investments.map((inv) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
+                      <SelectItem value="new" className="text-green-400 font-medium">+ Nueva inversión</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Vinculación a Patrimonio */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
+                  <Select value={newIncome.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setNewIncome({ ...newIncome, patrimony_id: v }); }}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue placeholder="Sin vincular" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
+                      {patrimony.map((pat) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
+                      <SelectItem value="new" className="text-green-400 font-medium">+ Nuevo patrimonio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button onClick={handleAddIncome} className="w-full bg-green-500 hover:bg-green-600 text-black py-6">
                   Guardar
                 </Button>
@@ -569,6 +589,143 @@ const IncomePage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal nueva inversión */}
+      <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
+              <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            </div>
+            <Button onClick={() => handleCreateInvestment(false)} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal nuevo patrimonio */}
+      <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+              <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <Button onClick={() => handleCreatePatrimony(false)} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de edición */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Ingreso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Fuente de ingreso</label>
+              <Input
+                placeholder="Ej: Mi trabajo, Alquiler piso..."
+                value={editIncome.source}
+                onChange={(e) => setEditIncome({ ...editIncome, source: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Cantidad</label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={editIncome.amount}
+                onChange={(e) => setEditIncome({ ...editIncome, amount: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white text-lg"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Tipo de ingreso</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditIncome({ ...editIncome, income_type: "active" })}
+                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                    editIncome.income_type === "active" 
+                      ? "border-green-500 bg-green-500/20" 
+                      : "border-zinc-700 bg-zinc-800"
+                  }`}
+                >
+                  <Briefcase className={`w-6 h-6 ${editIncome.income_type === "active" ? "text-green-400" : "text-zinc-400"}`} />
+                  <span className={`font-medium ${editIncome.income_type === "active" ? "text-white" : "text-zinc-400"}`}>Activo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditIncome({ ...editIncome, income_type: "passive" })}
+                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                    editIncome.income_type === "passive" 
+                      ? "border-purple-500 bg-purple-500/20" 
+                      : "border-zinc-700 bg-zinc-800"
+                  }`}
+                >
+                  <PiggyBank className={`w-6 h-6 ${editIncome.income_type === "passive" ? "text-purple-400" : "text-zinc-400"}`} />
+                  <span className={`font-medium ${editIncome.income_type === "passive" ? "text-white" : "text-zinc-400"}`}>Pasivo</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
+              <DatePicker
+                date={editIncome.date}
+                onDateChange={(date) => setEditIncome({ ...editIncome, date })}
+              />
+            </div>
+            <Button onClick={handleEditIncome} className="w-full bg-green-500 hover:bg-green-600 text-black py-6">
+              Guardar cambios
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de eliminación */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Eliminar Ingreso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <p className="text-zinc-300">
+              ¿Estás seguro de que quieres eliminar este ingreso?
+            </p>
+            {selectedIncome && (
+              <div className="p-4 bg-zinc-800/50 rounded-xl">
+                <p className="text-white font-medium">{selectedIncome.description}</p>
+                <p className="text-green-400 font-bold">{formatCurrency(selectedIncome.amount)}</p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">
+                Cancelar
+              </Button>
+              <Button onClick={handleDeleteIncome} className="flex-1 bg-red-500 hover:bg-red-600">
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );

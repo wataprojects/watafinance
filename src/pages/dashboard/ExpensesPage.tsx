@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DatePicker } from "@/components/ui/date-picker";
 import { 
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
-  ChevronRight, Calendar as CalendarIcon, TrendingUp, Building, TrendingDown as TrendingDownIcon,
+  TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
-  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -79,7 +79,6 @@ const ExpensesPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newExpense, setNewExpense] = useState({
     source: "",
@@ -256,6 +255,36 @@ const ExpensesPage = () => {
     return pat ? pat.name : "Sin vincular";
   };
 
+  const handleCreateInvestment = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+    const { data, error } = await supabase.from("investments").insert({
+      user_id: session.user.id, name: newInvestment.name, type: newInvestment.type,
+      initial_value: parseFloat(newInvestment.initial_value),
+      current_value: parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
+    }).select().single();
+    if (!error && data) {
+      setInvestments([...investments, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, investment_id: data.id });
+      setIsNewInvestmentOpen(false);
+      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+    }
+  };
+
+  const handleCreatePatrimony = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
+    const { data, error } = await supabase.from("patrimony").insert({
+      user_id: session.user.id, name: newPatrimonyAsset.name, category: newPatrimonyAsset.category, value: parseFloat(newPatrimonyAsset.value),
+    }).select().single();
+    if (!error && data) {
+      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, patrimony_id: data.id });
+      setIsNewPatrimonyOpen(false);
+      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
@@ -295,6 +324,37 @@ const ExpensesPage = () => {
                     className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
+
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">¿Es recurrente?</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewExpense({ ...newExpense, is_recurring: true })}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                        newExpense.is_recurring 
+                          ? "border-red-500 bg-red-500/20" 
+                          : "border-zinc-700 bg-zinc-800"
+                      }`}
+                    >
+                      <RecurringIcon className={`w-5 h-5 ${newExpense.is_recurring ? "text-red-400" : "text-zinc-400"}`} />
+                      <span className={`font-medium ${newExpense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewExpense({ ...newExpense, is_recurring: false })}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                        !newExpense.is_recurring 
+                          ? "border-zinc-500 bg-zinc-700" 
+                          : "border-zinc-700 bg-zinc-800"
+                      }`}
+                    >
+                      <DollarSign className={`w-5 h-5 ${!newExpense.is_recurring ? "text-white" : "text-zinc-400"}`} />
+                      <span className={`font-medium ${!newExpense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
                   <DatePicker
@@ -302,6 +362,37 @@ const ExpensesPage = () => {
                     onDateChange={(date) => setNewExpense({ ...newExpense, date })}
                   />
                 </div>
+
+                {/* Vinculación a Inversión */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Inversión</label>
+                  <Select value={newExpense.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setNewExpense({ ...newExpense, investment_id: v }); }}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue placeholder="Sin vincular" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
+                      {investments.map((inv) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
+                      <SelectItem value="new" className="text-green-400 font-medium">+ Nueva inversión</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Vinculación a Patrimonio */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
+                  <Select value={newExpense.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setNewExpense({ ...newExpense, patrimony_id: v }); }}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue placeholder="Sin vincular" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="none" className="text-zinc-400">Sin vincular</SelectItem>
+                      {patrimony.map((pat) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
+                      <SelectItem value="new" className="text-green-400 font-medium">+ Nuevo patrimonio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button 
                   onClick={handleAddExpense} 
                   className="w-full bg-red-500 hover:bg-red-600 text-white"
@@ -390,6 +481,46 @@ const ExpensesPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal nueva inversión */}
+      <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
+              <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            </div>
+            <Button onClick={handleCreateInvestment} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal nuevo patrimonio */}
+      <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+              <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <Button onClick={handleCreatePatrimony} className="w-full bg-green-500 hover:bg-green-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
