@@ -57,6 +57,17 @@ const specificFees: Record<LoanType, { key: string; label: string; placeholder: 
   other: [],
 };
 
+// Helper function to safely parse dates
+const safeParseDate = (dateStr: string | null | undefined): Date => {
+  if (!dateStr) return new Date();
+  try {
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? new Date() : date;
+  } catch {
+    return new Date();
+  }
+};
+
 const LoansPage = () => {
   const navigate = useNavigate();
   const [loans, setLoans] = useState<any[]>([]);
@@ -279,8 +290,8 @@ const LoansPage = () => {
       pending_amount: loan.current_amount?.toString() || "",
       monthly_payment: loan.monthly_payment?.toString() || "",
       collection_day: loan.collection_day?.toString() || "",
-      start_date: loan.start_date ? new Date(loan.start_date) : new Date(),
-      end_date: loan.end_date ? new Date(loan.end_date) : null,
+      start_date: safeParseDate(loan.start_date),
+      end_date: loan.end_date ? safeParseDate(loan.end_date) : null,
       investment_id: "none",
       patrimony_id: "none",
       notes: loan.notes || "",
@@ -635,6 +646,15 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
   const getInvestmentLabel = () => loan.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === loan.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabel = () => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === loan.patrimony_id)?.name || "Sin vincular";
 
+  // Safe date handlers for DatePicker
+  const handleStartDateChange = (date: Date | undefined) => {
+    setLoan({ ...loan, start_date: date || new Date() });
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    setLoan({ ...loan, end_date: date || null });
+  };
+
   return (
     <div className="space-y-4 mt-2">
       {/* Tipo de préstamo */}
@@ -702,11 +722,18 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       <div className="space-y-3">
         <div>
           <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
-          <DatePicker date={loan.start_date} onDateChange={(date) => setLoan({ ...loan, start_date: date })} />
+          <DatePicker 
+            date={loan.start_date} 
+            onDateChange={handleStartDateChange} 
+          />
         </div>
         <div>
           <label className="text-sm text-slate-300 mb-1 block">Fecha fin (opcional)</label>
-          <DatePicker date={loan.end_date} onDateChange={(date) => setLoan({ ...loan, end_date: date })} placeholder="Sin fecha fin" />
+          <DatePicker 
+            date={loan.end_date || undefined} 
+            onDateChange={handleEndDateChange} 
+            placeholder="Sin fecha fin" 
+          />
         </div>
       </div>
 
