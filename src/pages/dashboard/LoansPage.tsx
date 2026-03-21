@@ -78,6 +78,7 @@ const LoansPage = () => {
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [showSpecificFees, setShowSpecificFees] = useState(false);
   const [showAdditionalFees, setShowAdditionalFees] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Usar una fecha por defecto válida
   const defaultDate = new Date();
@@ -130,23 +131,41 @@ const LoansPage = () => {
   };
 
   const handleAddLoan = async () => {
-      if (!validateForm()) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-  
-      const { error } = await supabase.from("loans").insert({
-        user_id: session.user.id,
-        borrower_name: newLoan.name,
-        initial_amount: parseFloat(newLoan.total_amount),
-        current_amount: parseFloat(newLoan.pending_amount),
-        interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
-        monthly_payment: parseFloat(newLoan.monthly_payment),
-        status: "active",
-        start_date: formatDateToISO(newLoan.start_date),
-        end_date: newLoan.end_date ? formatDateToISO(newLoan.end_date) : null,
-      });
+    if (isSaving) return;
+    
+    if (!validateForm()) {
+      console.log("Errores de validación:", errors);
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsSaving(false);
+      return;
+    }
 
-    if (!error) {
+    const loanData = {
+      user_id: session.user.id,
+      borrower_name: newLoan.name,
+      creditor: newLoan.bank,
+      initial_amount: parseFloat(newLoan.total_amount),
+      current_amount: parseFloat(newLoan.pending_amount),
+      interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
+      monthly_payment: parseFloat(newLoan.monthly_payment),
+      category: newLoan.loan_type,
+    };
+
+    console.log("Guardando préstamo:", loanData);
+
+    const { error } = await supabase.from("loans").insert(loanData);
+
+    if (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al guardar: " + error.message);
+    } else {
+      console.log("Préstamo guardado correctamente");
       setIsDialogOpen(false);
       setNewLoan({
         loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
@@ -159,6 +178,8 @@ const LoansPage = () => {
       setShowSpecificFees(false);
       fetchLoans(session.user.id);
     }
+    
+    setIsSaving(false);
   };
 
   const handleCreateInvestment = async () => {
@@ -203,11 +224,6 @@ const LoansPage = () => {
   const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
 
   const currentSpecificFees = specificFees[newLoan.loan_type] || [];
-
-  // Función para manejar el cambio de fecha fin
-  const handleEndDateChange = (date: Date | undefined) => {
-    setNewLoan({ ...newLoan, end_date: date || null });
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
@@ -292,8 +308,8 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Fechas con DatePicker - usando una fecha por defecto si end_date es null */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Fechas en líneas separadas */}
+                <div className="space-y-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
                     <DatePicker
@@ -302,10 +318,10 @@ const LoansPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
+                    <label className="text-sm text-slate-300 mb-1 block">Fecha fin (opcional)</label>
                     <DatePicker
                       date={newLoan.end_date || defaultDate}
-                      onDateChange={handleEndDateChange}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
                     />
                   </div>
                 </div>
@@ -412,7 +428,13 @@ const LoansPage = () => {
                   <Textarea placeholder="Condiciones especiales..." value={newLoan.notes} onChange={(e) => setNewLoan({ ...newLoan, notes: e.target.value })} className="bg-slate-700 border-slate-600 text-white" rows={2} />
                 </div>
 
-                <Button onClick={handleAddLoan} className="w-full bg-cyan-500 hover:bg-cyan-600 py-5">Registrar préstamo</Button>
+                <Button 
+                  onClick={handleAddLoan} 
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 py-5"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Guardando..." : "Registrar préstamo"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
