@@ -284,20 +284,20 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Fechas con DatePicker - siempre pasando una fecha válida */}
+                {/* Fechas con DatePicker directo */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
                     <DatePicker
                       date={newLoan.start_date}
-                      onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date || new Date() })}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
                     />
                   </div>
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
                     <DatePicker
                       date={newLoan.end_date || undefined}
-                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date || null })}
+                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
                       placeholder="Sin fecha"
                     />
                   </div>
