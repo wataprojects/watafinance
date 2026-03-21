@@ -93,14 +93,21 @@ export function DatePicker({
     }
   }
 
-  const togglePicker = () => {
+  const toggleYearPicker = () => {
     if (showYearPicker) {
       setShowYearPicker(false)
-      setShowMonthPicker(true)
-    } else if (showMonthPicker) {
-      setShowMonthPicker(false)
     } else {
       setShowYearPicker(true)
+      setShowMonthPicker(false)
+    }
+  }
+
+  const toggleMonthPicker = () => {
+    if (showMonthPicker) {
+      setShowMonthPicker(false)
+    } else {
+      setShowMonthPicker(true)
+      setShowYearPicker(false)
     }
   }
 
@@ -157,15 +164,25 @@ export function DatePicker({
             
             <div className="flex items-center gap-2">
               <button
-                onClick={togglePicker}
-                className="px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-colors text-sm font-semibold text-white"
+                onClick={toggleYearPicker}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg transition-colors text-sm font-semibold",
+                  showYearPicker 
+                    ? "bg-indigo-600 text-white" 
+                    : "text-white hover:bg-slate-700"
+                )}
               >
                 {format(currentMonth, "yyyy", { locale: es })}
               </button>
               <span className="text-slate-500">|</span>
               <button
-                onClick={togglePicker}
-                className="px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-colors text-sm font-semibold text-white capitalize"
+                onClick={toggleMonthPicker}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg transition-colors text-sm font-semibold capitalize",
+                  showMonthPicker 
+                    ? "bg-indigo-600 text-white" 
+                    : "text-white hover:bg-slate-700"
+                )}
               >
                 {format(currentMonth, "MMMM", { locale: es })}
               </button>
