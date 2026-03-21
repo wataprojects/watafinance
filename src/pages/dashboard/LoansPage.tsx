@@ -27,36 +27,6 @@ const loanTypes = [
   { value: "other", label: "Otro", color: "bg-slate-500/20 text-slate-400" },
 ];
 
-const universalFees = [
-  { key: "tin", label: "TIN (%)", placeholder: "3.5" },
-  { key: "tae", label: "TAE (%)", placeholder: "3.8" },
-];
-
-const additionalFees = [
-  { key: "opening_commission", label: "Comisión apertura (%)", placeholder: "0.5" },
-  { key: "early_repayment", label: "Amortización anticipada (%)", placeholder: "0.5" },
-  { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5" },
-];
-
-const specificFees: Record<LoanType, { key: string; label: string; placeholder: string }[]> = {
-  mortgage: [
-    { key: "subrogation", label: "Comisión subrogación (%)", placeholder: "0.5" },
-    { key: "novation", label: "Comisión novación (%)", placeholder: "0.3" },
-    { key: "valuation", label: "Gastos tasación (€)", placeholder: "300" },
-    { key: "insurance", label: "Seguros obligatorios (€)", placeholder: "150" },
-  ],
-  car: [
-    { key: "cancellation", label: "Comisión cancelación (%)", placeholder: "1" },
-  ],
-  personal: [
-    { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5" },
-  ],
-  business: [
-    { key: "study", label: "Comisión estudio (%)", placeholder: "1" },
-  ],
-  other: [],
-};
-
 const LoansPage = () => {
   const navigate = useNavigate();
   const [loans, setLoans] = useState<any[]>([]);
@@ -67,44 +37,41 @@ const LoansPage = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
-  const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
-  const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
-  const [showSpecificFees, setShowSpecificFees] = useState(false);
-  const [showAdditionalFees, setShowAdditionalFees] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  const defaultDate = new Date();
-  
+  // Estado para nuevo préstamo
   const [newLoan, setNewLoan] = useState({
     loan_type: "personal" as LoanType,
-    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-    start_date: defaultDate, end_date: null as Date | null, 
-    investment_id: "none", patrimony_id: "none", notes: "",
-    tin: "", tae: "", 
-    opening_commission: "", early_repayment: "", delay_interest: "",
-    subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
+    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
+    start_date: new Date(), end_date: null as Date | null, 
+    notes: "",
+    tin: "", 
   });
 
+  // Estado para editar préstamo
   const [editLoan, setEditLoan] = useState({
     id: "",
     loan_type: "personal" as LoanType,
-    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-    start_date: defaultDate, end_date: null as Date | null, 
-    investment_id: "none", patrimony_id: "none", notes: "",
-    tin: "", tae: "", 
-    opening_commission: "", early_repayment: "", delay_interest: "",
-    subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
+    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
+    start_date: new Date(), end_date: null as Date | null, 
+    notes: "",
+    tin: "", 
   });
 
-  const [newInvestment, setNewInvestment] = useState({ name: "", type: "stocks", initial_value: "", current_value: "" });
-  const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({ name: "", category: "real_estate", value: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => { checkAuth(); }, []);
+  useEffect(() => { 
+    checkAuth(); 
+  }, []);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { navigate("/login"); } else { fetchLoans(session.user.id); fetchOptions(session.user.id); }
+    if (!session) { 
+      navigate("/login"); 
+    } else { 
+      fetchLoans(session.user.id); 
+      fetchOptions(session.user.id); 
+    }
   };
 
   const fetchOptions = async (userId: string) => {
@@ -163,18 +130,9 @@ const LoansPage = () => {
       current_amount: parseFloat(newLoan.pending_amount),
       interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
       monthly_payment: parseFloat(newLoan.monthly_payment),
-      collection_day: newLoan.collection_day ? parseInt(newLoan.collection_day) : null,
+      collection_day: newLoan.collection_day ? parseInt(newLoan.collection_day) : 1,
       start_date: formatDateToISO(newLoan.start_date),
       end_date: formatDateToISO(newLoan.end_date),
-      opening_commission: newLoan.opening_commission ? parseFloat(newLoan.opening_commission) : null,
-      early_repayment: newLoan.early_repayment ? parseFloat(newLoan.early_repayment) : null,
-      delay_interest: newLoan.delay_interest ? parseFloat(newLoan.delay_interest) : null,
-      subrogation: newLoan.subrogation ? parseFloat(newLoan.subrogation) : null,
-      novation: newLoan.novation ? parseFloat(newLoan.novation) : null,
-      valuation: newLoan.valuation ? parseFloat(newLoan.valuation) : null,
-      insurance: newLoan.insurance ? parseFloat(newLoan.insurance) : null,
-      cancellation: newLoan.cancellation ? parseFloat(newLoan.cancellation) : null,
-      study: newLoan.study ? parseFloat(newLoan.study) : null,
       notes: newLoan.notes || null,
       loan_type: newLoan.loan_type,
     };
@@ -187,14 +145,10 @@ const LoansPage = () => {
     } else {
       setIsDialogOpen(false);
       setNewLoan({
-        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-        start_date: new Date(), end_date: null, investment_id: "none", patrimony_id: "none", notes: "",
-        tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
-        subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
+        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
+        start_date: new Date(), end_date: null, notes: "", tin: "",
       });
       setErrors({});
-      setShowAdditionalFees(false);
-      setShowSpecificFees(false);
       fetchLoans(session.user.id);
     }
     
@@ -220,18 +174,9 @@ const LoansPage = () => {
       current_amount: parseFloat(editLoan.pending_amount),
       interest_rate: editLoan.tin ? parseFloat(editLoan.tin) : null,
       monthly_payment: parseFloat(editLoan.monthly_payment),
-      collection_day: editLoan.collection_day ? parseInt(editLoan.collection_day) : null,
+      collection_day: editLoan.collection_day ? parseInt(editLoan.collection_day) : 1,
       start_date: formatDateToISO(editLoan.start_date),
       end_date: formatDateToISO(editLoan.end_date),
-      opening_commission: editLoan.opening_commission ? parseFloat(editLoan.opening_commission) : null,
-      early_repayment: editLoan.early_repayment ? parseFloat(editLoan.early_repayment) : null,
-      delay_interest: editLoan.delay_interest ? parseFloat(editLoan.delay_interest) : null,
-      subrogation: editLoan.subrogation ? parseFloat(editLoan.subrogation) : null,
-      novation: editLoan.novation ? parseFloat(editLoan.novation) : null,
-      valuation: editLoan.valuation ? parseFloat(editLoan.valuation) : null,
-      insurance: editLoan.insurance ? parseFloat(editLoan.insurance) : null,
-      cancellation: editLoan.cancellation ? parseFloat(editLoan.cancellation) : null,
-      study: editLoan.study ? parseFloat(editLoan.study) : null,
       notes: editLoan.notes || null,
       loan_type: editLoan.loan_type,
     };
@@ -278,23 +223,11 @@ const LoansPage = () => {
       total_amount: loan.initial_amount?.toString() || "",
       pending_amount: loan.current_amount?.toString() || "",
       monthly_payment: loan.monthly_payment?.toString() || "",
-      collection_day: loan.collection_day?.toString() || "",
-      start_date: loan.start_date ? new Date(loan.start_date) : new Date(),
-      end_date: loan.end_date ? new Date(loan.end_date) : null,
-      investment_id: "none",
-      patrimony_id: "none",
+      collection_day: loan.collection_day?.toString() || "1",
+      start_date: loan.start_date ? new Date(loan.start_date + 'T00:00:00') : new Date(),
+      end_date: loan.end_date ? new Date(loan.end_date + 'T00:00:00') : null,
       notes: loan.notes || "",
       tin: loan.interest_rate?.toString() || "",
-      tae: "",
-      opening_commission: loan.opening_commission?.toString() || "",
-      early_repayment: loan.early_repayment?.toString() || "",
-      delay_interest: loan.delay_interest?.toString() || "",
-      subrogation: loan.subrogation?.toString() || "",
-      novation: loan.novation?.toString() || "",
-      valuation: loan.valuation?.toString() || "",
-      insurance: loan.insurance?.toString() || "",
-      cancellation: loan.cancellation?.toString() || "",
-      study: loan.study?.toString() || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -304,54 +237,11 @@ const LoansPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleCreateInvestment = async (forEdit: boolean = false) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
-    const { data, error } = await supabase.from("investments").insert({
-      user_id: session.user.id, name: newInvestment.name, type: newInvestment.type,
-      initial_value: parseFloat(newInvestment.initial_value),
-      current_value: parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
-    }).select().single();
-    if (!error && data) {
-      setInvestments([...investments, { id: data.id, name: data.name }]);
-      if (forEdit) {
-        setEditLoan({ ...editLoan, investment_id: data.id });
-      } else {
-        setNewLoan({ ...newLoan, investment_id: data.id });
-      }
-      setIsNewInvestmentOpen(false);
-      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
-    }
-  };
-
-  const handleCreatePatrimony = async (forEdit: boolean = false) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
-    const { data, error } = await supabase.from("patrimony").insert({
-      user_id: session.user.id, name: newPatrimonyAsset.name, category: newPatrimonyAsset.category, value: parseFloat(newPatrimonyAsset.value),
-    }).select().single();
-    if (!error && data) {
-      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
-      if (forEdit) {
-        setEditLoan({ ...editLoan, patrimony_id: data.id });
-      } else {
-        setNewLoan({ ...newLoan, patrimony_id: data.id });
-      }
-      setIsNewPatrimonyOpen(false);
-      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
-    }
-  };
-
   const activeLoans = loans.filter(l => l.status === "active");
   const settledLoans = loans.filter(l => l.status === "settled");
   const totalDebt = activeLoans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
-  const getInvestmentLabel = (loan: any) => loan.investment_id === "none" ? "Sin vincular" : investments.find(i => i.id === loan.investment_id)?.name || "Sin vincular";
-  const getPatrimonyLabel = (loan: any) => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find(p => p.id === loan.patrimony_id)?.name || "Sin vincular";
-
-  const investmentTypes = [{ value: "stocks", label: "Acciones" }, { value: "etf", label: "ETF" }, { value: "crypto", label: "Criptomonedas" }, { value: "bonds", label: "Bonos" }, { value: "real_estate", label: "Bienes Raíces" }, { value: "other", label: "Otros" }];
-  const patrimonyCategories = [{ value: "real_estate", label: "Bienes Raíces" }, { value: "vehicle", label: "Vehículos" }, { value: "investments", label: "Inversiones" }, { value: "savings", label: "Ahorros" }, { value: "business", label: "Negocios" }, { value: "other", label: "Otros" }];
   const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
 
   const getLoanTypeInfo = (type: string) => loanTypes.find(t => t.value === type) || loanTypes[loanTypes.length - 1];
@@ -377,32 +267,11 @@ const LoansPage = () => {
                 loan={newLoan} 
                 setLoan={setNewLoan} 
                 errors={errors}
-                showSpecificFees={showSpecificFees}
-                setShowSpecificFees={setShowSpecificFees}
-                showAdditionalFees={showAdditionalFees}
-                setShowAdditionalFees={setShowAdditionalFees}
                 isSaving={isSaving}
                 onSubmit={handleAddLoan}
                 isNew={true}
-                investments={investments}
-                patrimony={patrimony}
-                isNewInvestmentOpen={isNewInvestmentOpen}
-                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                isNewPatrimonyOpen={isNewPatrimonyOpen}
-                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                newInvestment={newInvestment}
-                setNewInvestment={setNewInvestment}
-                newPatrimonyAsset={newPatrimonyAsset}
-                setNewPatrimonyAsset={setNewPatrimonyAsset}
-                handleCreateInvestment={() => handleCreateInvestment(false)}
-                handleCreatePatrimony={() => handleCreatePatrimony(false)}
                 collectionDays={collectionDays}
-                investmentTypes={investmentTypes}
-                patrimonyCategories={patrimonyCategories}
                 loanTypes={loanTypes}
-                universalFees={universalFees}
-                additionalFees={additionalFees}
-                specificFees={specificFees}
               />
             </DialogContent>
           </Dialog>
@@ -526,32 +395,11 @@ const LoansPage = () => {
             loan={editLoan} 
             setLoan={setEditLoan} 
             errors={errors}
-            showSpecificFees={showSpecificFees}
-            setShowSpecificFees={setShowSpecificFees}
-            showAdditionalFees={showAdditionalFees}
-            setShowAdditionalFees={setShowAdditionalFees}
             isSaving={isSaving}
             onSubmit={handleEditLoan}
             isNew={false}
-            investments={investments}
-            patrimony={patrimony}
-            isNewInvestmentOpen={isNewInvestmentOpen}
-            setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-            isNewPatrimonyOpen={isNewPatrimonyOpen}
-            setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-            newInvestment={newInvestment}
-            setNewInvestment={setNewInvestment}
-            newPatrimonyAsset={newPatrimonyAsset}
-            setNewPatrimonyAsset={setNewPatrimonyAsset}
-            handleCreateInvestment={() => handleCreateInvestment(true)}
-            handleCreatePatrimony={() => handleCreatePatrimony(true)}
             collectionDays={collectionDays}
-            investmentTypes={investmentTypes}
-            patrimonyCategories={patrimonyCategories}
             loanTypes={loanTypes}
-            universalFees={universalFees}
-            additionalFees={additionalFees}
-            specificFees={specificFees}
           />
         </DialogContent>
       </Dialog>
@@ -584,57 +432,13 @@ const LoansPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nueva inversión */}
-      <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700">
-          <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-slate-300 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Tipo</label>
-              <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm text-slate-300 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-              <div><label className="text-sm text-slate-300 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            </div>
-            <Button onClick={() => handleCreateInvestment(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">Crear</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal nuevo patrimonio */}
-      <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700">
-          <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-slate-300 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Categoría</label>
-              <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
-              </Select>
-            </div>
-            <div><label className="text-sm text-slate-300 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
-            <Button onClick={() => handleCreatePatrimony(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">Crear</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <BottomNav />
     </div>
   );
 };
 
-// Componente reutilizable para el formulario de préstamo
-const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees }: any) => {
-  const currentSpecificFees = specificFees[loan.loan_type] || [];
-  
-  const getInvestmentLabel = () => loan.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === loan.investment_id)?.name || "Sin vincular";
-  const getPatrimonyLabel = () => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === loan.patrimony_id)?.name || "Sin vincular";
-
+// Componente simplificado para el formulario de préstamo
+const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, collectionDays, loanTypes }: any) => {
   return (
     <div className="space-y-4 mt-2">
       {/* Tipo de préstamo */}
@@ -642,7 +446,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
         <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
         <div className="grid grid-cols-5 gap-2">
           {loanTypes.map((type: any) => (
-            <button key={type.value} type="button" onClick={() => { setLoan({ ...loan, loan_type: type.value }); setShowSpecificFees(true); }}
+            <button key={type.value} type="button" onClick={() => setLoan({ ...loan, loan_type: type.value })}
               className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${loan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-slate-600 bg-slate-700/30 hover:border-slate-500"}`}>
               <span className={`text-xs font-medium ${loan.loan_type === type.value ? "text-white" : "text-slate-400"}`}>{type.label}</span>
             </button>
@@ -710,86 +514,10 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
         </div>
       </div>
 
-      {/* Comisiones universales */}
-      <div className="border border-slate-600 rounded-xl p-3">
-        <p className="text-sm text-slate-300 font-medium mb-3">Comisiones</p>
-        <div className="grid grid-cols-2 gap-3">
-          {universalFees.map((fee: any) => (
-            <div key={fee.key}>
-              <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-              <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-            </div>
-          ))}
-        </div>
-        
-        <button type="button" onClick={() => setShowAdditionalFees(!showAdditionalFees)} className="flex items-center gap-2 mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
-          {showAdditionalFees ? (<>Ocultar opciones <ChevronDown className="w-4 h-4 rotate-180" /></>) : (<>+ Más opciones <ChevronDown className="w-4 h-4" /></>)}
-        </button>
-        
-        {showAdditionalFees && (
-          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-600">
-            {additionalFees.map((fee: any) => (
-              <div key={fee.key}>
-                <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Comisiones específicas por tipo */}
-      {showSpecificFees && currentSpecificFees.length > 0 && (
-        <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
-          <button type="button" onClick={() => setShowSpecificFees(!showSpecificFees)} className="flex items-center justify-between w-full mb-3">
-            <p className="text-sm text-cyan-300 font-medium">Comisiones específicas: {loanTypes.find((t: any) => t.value === loan.loan_type)?.label}</p>
-            <ChevronDown className={`w-4 h-4 text-cyan-400 transition-transform ${showSpecificFees ? "rotate-180" : ""}`} />
-          </button>
-          
-          {showSpecificFees && (
-            <div className="grid grid-cols-2 gap-3">
-              {currentSpecificFees.map((fee: any) => (
-                <div key={fee.key}>
-                  <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                  <Input type="number" step="0.01" placeholder={fee.placeholder} value={loan[fee.key]} onChange={(e) => setLoan({ ...loan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Inversión y Patrimonio */}
-      <div className="space-y-3">
-        <Select value={loan.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setLoan({ ...loan, investment_id: v }); }}>
-          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-            <div className="flex items-center gap-2 w-full">
-              <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span className="text-slate-300 text-sm">Inversión:</span>
-              <span className="text-white text-sm font-medium truncate">{getInvestmentLabel()}</span>
-            </div>
-          </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
-            {investments.map((inv: any) => (<SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>))}
-            <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={loan.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setLoan({ ...loan, patrimony_id: v }); }}>
-          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-            <div className="flex items-center gap-2 w-full">
-              <Building className="w-4 h-4 text-sky-400 flex-shrink-0" />
-              <span className="text-slate-300 text-sm">Patrimonio:</span>
-              <span className="text-white text-sm font-medium truncate">{getPatrimonyLabel()}</span>
-            </div>
-          </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
-            {patrimony.map((pat: any) => (<SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>))}
-            <SelectItem value="new" className="text-emerald-400 font-medium">+ Nuevo patrimonio</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* TIN */}
+      <div>
+        <label className="text-sm text-slate-300 mb-1 block">TIN (%) (opcional)</label>
+        <Input type="number" step="0.01" placeholder="3.5" value={loan.tin} onChange={(e) => setLoan({ ...loan, tin: e.target.value })} className="bg-slate-700 border-slate-600 text-white" />
       </div>
 
       {/* Notas */}
