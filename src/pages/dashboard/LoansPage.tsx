@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText, ChevronDown } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -17,55 +17,15 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
 
-// Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
-const formatDateToISO = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
 const loanTypes = [
-  { value: "mortgage", label: "Hipoteca", icon: Home, color: "bg-blue-500/20 text-blue-400" },
-  { value: "car", label: "Coche", icon: Car, color: "bg-purple-500/20 text-purple-400" },
-  { value: "personal", label: "Personal", icon: User, color: "bg-cyan-500/20 text-cyan-400" },
-  { value: "business", label: "Negocio", icon: Briefcase, color: "bg-amber-500/20 text-amber-400" },
-  { value: "other", label: "Otro", icon: FileText, color: "bg-slate-500/20 text-slate-400" },
+  { value: "mortgage", label: "Hipoteca", icon: Building, color: "bg-blue-500/20 text-blue-400" },
+  { value: "car", label: "Coche", icon: Landmark, color: "bg-purple-500/20 text-purple-400" },
+  { value: "personal", label: "Personal", icon: Landmark, color: "bg-cyan-500/20 text-cyan-400" },
+  { value: "business", label: "Negocio", icon: Landmark, color: "bg-amber-500/20 text-amber-400" },
+  { value: "other", label: "Otro", icon: Landmark, color: "bg-slate-500/20 text-slate-400" },
 ];
-
-// Comisiones universales - solo TIN y TAE visibles por defecto
-const universalFees = [
-  { key: "tin", label: "TIN (%)", placeholder: "3.5", icon: Percent },
-  { key: "tae", label: "TAE (%)", placeholder: "3.8", icon: Percent },
-];
-
-// Comisiones adicionales (ocultas por defecto)
-const additionalFees = [
-  { key: "opening_commission", label: "Comisión apertura (%)", placeholder: "0.5", icon: Wallet },
-  { key: "early_repayment", label: "Amortización anticipada (%)", placeholder: "0.5", icon: TrendingDownIcon },
-  { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5", icon: AlertCircle },
-];
-
-const specificFees: Record<LoanType, { key: string; label: string; placeholder: string; icon: any }[]> = {
-  mortgage: [
-    { key: "subrogation", label: "Comisión subrogación (%)", placeholder: "0.5", icon: Building },
-    { key: "novation", label: "Comisión novación (%)", placeholder: "0.3", icon: FileText },
-    { key: "valuation", label: "Gastos tasación (€)", placeholder: "300", icon: Home },
-    { key: "insurance", label: "Seguros obligatorios (€)", placeholder: "150", icon: AlertCircle },
-  ],
-  car: [
-    { key: "cancellation", label: "Comisión cancelación (%)", placeholder: "1", icon: TrendingDownIcon },
-  ],
-  personal: [
-    { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5", icon: AlertCircle },
-  ],
-  business: [
-    { key: "study", label: "Comisión estudio (%)", placeholder: "1", icon: FileText },
-  ],
-  other: [],
-};
 
 const LoansPage = () => {
   const navigate = useNavigate();
@@ -76,19 +36,19 @@ const LoansPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
-  const [showSpecificFees, setShowSpecificFees] = useState(false);
-  const [showAdditionalFees, setShowAdditionalFees] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Usar una fecha por defecto válida
   const defaultDate = new Date();
   
   const [newLoan, setNewLoan] = useState({
-    loan_type: "personal" as LoanType,
-    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-    start_date: defaultDate, end_date: null as Date | null, investment_id: "none", patrimony_id: "none", notes: "",
-    tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
-    subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
+    name: "", 
+    total_amount: "", 
+    current_amount: "", 
+    monthly_payment: "", 
+    interest_rate: "",
+    investment_id: "none", 
+    patrimony_id: "none", 
+    notes: "",
   });
 
   const [newInvestment, setNewInvestment] = useState({ name: "", type: "stocks", initial_value: "", current_value: "" });
@@ -121,11 +81,9 @@ const LoansPage = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!newLoan.name.trim()) newErrors.name = "Obligatorio";
-    if (!newLoan.bank.trim()) newErrors.bank = "Obligatorio";
     if (!newLoan.total_amount || parseFloat(newLoan.total_amount) <= 0) newErrors.total_amount = "Obligatorio";
-    if (!newLoan.pending_amount || parseFloat(newLoan.pending_amount) <= 0) newErrors.pending_amount = "Obligatorio";
+    if (!newLoan.current_amount || parseFloat(newLoan.current_amount) <= 0) newErrors.current_amount = "Obligatorio";
     if (!newLoan.monthly_payment || parseFloat(newLoan.monthly_payment) <= 0) newErrors.monthly_payment = "Obligatorio";
-    if (!newLoan.collection_day) newErrors.collection_day = "Obligatorio";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -145,14 +103,14 @@ const LoansPage = () => {
       return;
     }
 
-    // Solo guardar las columnas que existen en la tabla loans
+    // Solo guardar las columnas que existen en la tabla loans:
+    // id, user_id, borrower_name, initial_amount, current_amount, interest_rate, monthly_payment, status, created_at, updated_at
     const loanData = {
       user_id: session.user.id,
       borrower_name: newLoan.name,
-      creditor: newLoan.bank,
       initial_amount: parseFloat(newLoan.total_amount),
-      current_amount: parseFloat(newLoan.pending_amount),
-      interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
+      current_amount: parseFloat(newLoan.current_amount),
+      interest_rate: newLoan.interest_rate ? parseFloat(newLoan.interest_rate) : null,
       monthly_payment: parseFloat(newLoan.monthly_payment),
     };
 
@@ -167,14 +125,16 @@ const LoansPage = () => {
       console.log("Préstamo guardado correctamente");
       setIsDialogOpen(false);
       setNewLoan({
-        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
-        start_date: new Date(), end_date: null, investment_id: "none", patrimony_id: "none", notes: "",
-        tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
-        subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
+        name: "", 
+        total_amount: "", 
+        current_amount: "", 
+        monthly_payment: "", 
+        interest_rate: "",
+        investment_id: "none", 
+        patrimony_id: "none", 
+        notes: "",
       });
       setErrors({});
-      setShowAdditionalFees(false);
-      setShowSpecificFees(false);
       fetchLoans(session.user.id);
     }
     
@@ -220,9 +180,6 @@ const LoansPage = () => {
 
   const investmentTypes = [{ value: "stocks", label: "Acciones" }, { value: "etf", label: "ETF" }, { value: "crypto", label: "Criptomonedas" }, { value: "bonds", label: "Bonos" }, { value: "real_estate", label: "Bienes Raíces" }, { value: "other", label: "Otros" }];
   const patrimonyCategories = [{ value: "real_estate", label: "Bienes Raíces" }, { value: "vehicle", label: "Vehículos" }, { value: "investments", label: "Inversiones" }, { value: "savings", label: "Ahorros" }, { value: "business", label: "Negocios" }, { value: "other", label: "Otros" }];
-  const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
-
-  const currentSpecificFees = specificFees[newLoan.loan_type] || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pb-24">
@@ -242,38 +199,14 @@ const LoansPage = () => {
                 <p className="text-slate-400 text-sm">Registra las condiciones del préstamo</p>
               </DialogHeader>
               <div className="space-y-4 mt-2">
-                {/* Tipo de préstamo - Visual pero no se guarda */}
+                {/* Nombre del préstamo */}
                 <div>
-                  <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {loanTypes.map((type) => {
-                      const Icon = type.icon;
-                      return (
-                        <button key={type.value} type="button" onClick={() => { setNewLoan({ ...newLoan, loan_type: type.value as LoanType }); setShowSpecificFees(true); }}
-                          className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${newLoan.loan_type === type.value ? "border-cyan-500 bg-cyan-500/20" : "border-slate-600 bg-slate-700/30 hover:border-slate-500"}`}>
-                          <Icon className={`w-5 h-5 ${newLoan.loan_type === type.value ? "text-white" : "text-slate-400"}`} />
-                          <span className={`text-xs font-medium ${newLoan.loan_type === type.value ? "text-white" : "text-slate-400"}`}>{type.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <label className="text-sm text-slate-300 mb-1 block">Nombre del préstamo *</label>
+                  <Input placeholder="Ej: Hipoteca casa, Coche nuevo" value={newLoan.name} onChange={(e) => setNewLoan({ ...newLoan, name: e.target.value })}
+                    className={`bg-slate-700 border-slate-600 text-white ${errors.name ? "border-red-500" : ""}`} />
                 </div>
 
-                {/* Nombre y Banco */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Nombre *</label>
-                    <Input placeholder="Ej: Hipoteca casa" value={newLoan.name} onChange={(e) => setNewLoan({ ...newLoan, name: e.target.value })}
-                      className={`bg-slate-700 border-slate-600 text-white ${errors.name ? "border-red-500" : ""}`} />
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Banco *</label>
-                    <Input placeholder="Ej: BBVA, Santander" value={newLoan.bank} onChange={(e) => setNewLoan({ ...newLoan, bank: e.target.value })}
-                      className={`bg-slate-700 border-slate-600 text-white ${errors.bank ? "border-red-500" : ""}`} />
-                  </div>
-                </div>
-
-                {/* Importe y Capital pendiente */}
+                {/* Importe total y Capital pendiente */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Importe total (€) *</label>
@@ -282,12 +215,12 @@ const LoansPage = () => {
                   </div>
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Capital pendiente (€) *</label>
-                    <Input type="number" placeholder="€ 0.00" value={newLoan.pending_amount} onChange={(e) => setNewLoan({ ...newLoan, pending_amount: e.target.value })}
-                      className={`bg-slate-700 border-slate-600 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />
+                    <Input type="number" placeholder="€ 0.00" value={newLoan.current_amount} onChange={(e) => setNewLoan({ ...newLoan, current_amount: e.target.value })}
+                      className={`bg-slate-700 border-slate-600 text-white ${errors.current_amount ? "border-red-500" : ""}`} />
                   </div>
                 </div>
 
-                {/* Cuota y Día de cobro */}
+                {/* Cuota mensual y Tipo de interés */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Cuota mensual (€) *</label>
@@ -295,100 +228,13 @@ const LoansPage = () => {
                       className={`bg-slate-700 border-slate-600 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Día de cobro *</label>
-                    <Select value={newLoan.collection_day} onValueChange={(v) => setNewLoan({ ...newLoan, collection_day: v })}>
-                      <SelectTrigger className={`bg-slate-700 border-slate-600 text-white ${errors.collection_day ? "border-red-500" : ""}`}>
-                        <SelectValue placeholder="Selecciona" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        {collectionDays.map((day) => (<SelectItem key={day} value={day.toString()} className="text-white">{day}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-sm text-slate-300 mb-1 block">Tipo de interés (%)</label>
+                    <Input type="number" step="0.01" placeholder="Ej: 3.5" value={newLoan.interest_rate} onChange={(e) => setNewLoan({ ...newLoan, interest_rate: e.target.value })}
+                      className="bg-slate-700 border-slate-600 text-white" />
                   </div>
                 </div>
 
-                {/* Fechas en líneas separadas */}
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
-                    <DatePicker
-                      date={newLoan.start_date}
-                      onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300 mb-1 block">Fecha fin (opcional)</label>
-                    <DatePicker
-                      date={newLoan.end_date || defaultDate}
-                      onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
-                    />
-                  </div>
-                </div>
-
-                {/* Comisiones universales - Solo TIN y TAE visibles */}
-                <div className="border border-slate-600 rounded-xl p-3">
-                  <p className="text-sm text-slate-300 font-medium mb-3">Comisiones</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {universalFees.map((fee) => (
-                      <div key={fee.key}>
-                        <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                        <Input type="number" step="0.01" placeholder={fee.placeholder} value={newLoan[fee.key as keyof typeof newLoan] as string} onChange={(e) => setNewLoan({ ...newLoan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Botón desplegable para más opciones */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAdditionalFees(!showAdditionalFees)}
-                    className="flex items-center gap-2 mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-                  >
-                    {showAdditionalFees ? (
-                      <>Ocultar opciones <ChevronDown className="w-4 h-4 rotate-180" /></>
-                    ) : (
-                      <>+ Más opciones <ChevronDown className="w-4 h-4" /></>
-                    )}
-                  </button>
-                  
-                  {/* Comisiones adicionales ocultas */}
-                  {showAdditionalFees && (
-                    <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-600">
-                      {additionalFees.map((fee) => (
-                        <div key={fee.key}>
-                          <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                          <Input type="number" step="0.01" placeholder={fee.placeholder} value={newLoan[fee.key as keyof typeof newLoan] as string} onChange={(e) => setNewLoan({ ...newLoan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Comisiones específicas */}
-                {showSpecificFees && currentSpecificFees.length > 0 && (
-                  <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
-                    <button
-                      type="button"
-                      onClick={() => setShowSpecificFees(!showSpecificFees)}
-                      className="flex items-center justify-between w-full mb-3"
-                    >
-                      <p className="text-sm text-cyan-300 font-medium">Comisiones específicas: {loanTypes.find(t => t.value === newLoan.loan_type)?.label}</p>
-                      <ChevronDown className={`w-4 h-4 text-cyan-400 transition-transform ${showSpecificFees ? "rotate-180" : ""}`} />
-                    </button>
-                    
-                    {showSpecificFees && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {currentSpecificFees.map((fee) => (
-                          <div key={fee.key}>
-                            <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
-                            <Input type="number" step="0.01" placeholder={fee.placeholder} value={newLoan[fee.key as keyof typeof newLoan] as string} onChange={(e) => setNewLoan({ ...newLoan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Inversión y Patrimonio - Ahora en 2 líneas */}
+                {/* Inversión y Patrimonio */}
                 <div className="space-y-3">
                   <Select value={newLoan.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setNewLoan({ ...newLoan, investment_id: v }); }}>
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -439,7 +285,7 @@ const LoansPage = () => {
           </Dialog>
         </div>
 
-        {/* Stats - Solo Deuda total y Cuotas/mes */}
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="bg-gradient-to-r from-cyan-600 to-cyan-700">
             <CardContent className="p-6 text-center">
