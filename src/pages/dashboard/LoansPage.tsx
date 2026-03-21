@@ -9,12 +9,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronRight, Calendar as CalendarIcon, Percent, Wallet, AlertCircle, Home, Car, User, Briefcase, FileText, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+};
+
+// Función para formatear fecha legible
+const formatDateDisplay = (date: Date | null): string => {
+  if (!date) return "Seleccionar fecha";
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 // Función para convertir Date a string YYYY-MM-DD sin problemas de timezone
@@ -35,29 +44,34 @@ const loanTypes = [
   { value: "other", label: "Otro", icon: FileText, color: "bg-slate-500/20 text-slate-400" },
 ];
 
+// Comisiones universales - solo TIN y TAE visibles por defecto
 const universalFees = [
-  { key: "tin", label: "TIN (%)", placeholder: "Ej: 3.5", icon: Percent },
-  { key: "tae", label: "TAE (%)", placeholder: "Ej: 3.8", icon: Percent },
-  { key: "opening_commission", label: "Comisión apertura (%)", placeholder: "Ej: 0.5", icon: Wallet },
-  { key: "early_repayment", label: "Amortización anticipada (%)", placeholder: "Ej: 0.5", icon: TrendingDownIcon },
-  { key: "delay_interest", label: "Interés demora (%)", placeholder: "Ej: 4.5", icon: AlertCircle },
+  { key: "tin", label: "TIN (%)", placeholder: "3.5", icon: Percent },
+  { key: "tae", label: "TAE (%)", placeholder: "3.8", icon: Percent },
+];
+
+// Comisiones adicionales (ocultas por defecto)
+const additionalFees = [
+  { key: "opening_commission", label: "Comisión apertura (%)", placeholder: "0.5", icon: Wallet },
+  { key: "early_repayment", label: "Amortización anticipada (%)", placeholder: "0.5", icon: TrendingDownIcon },
+  { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5", icon: AlertCircle },
 ];
 
 const specificFees: Record<LoanType, { key: string; label: string; placeholder: string; icon: any }[]> = {
   mortgage: [
-    { key: "subrogation", label: "Comisión subrogación (%)", placeholder: "Ej: 0.5", icon: Building },
-    { key: "novation", label: "Comisión novación (%)", placeholder: "Ej: 0.3", icon: FileText },
-    { key: "valuation", label: "Gastos tasación (€)", placeholder: "Ej: 300", icon: Home },
-    { key: "insurance", label: "Seguros obligatorios (€)", placeholder: "Ej: 150", icon: AlertCircle },
+    { key: "subrogation", label: "Comisión subrogación (%)", placeholder: "0.5", icon: Building },
+    { key: "novation", label: "Comisión novación (%)", placeholder: "0.3", icon: FileText },
+    { key: "valuation", label: "Gastos tasación (€)", placeholder: "300", icon: Home },
+    { key: "insurance", label: "Seguros obligatorios (€)", placeholder: "150", icon: AlertCircle },
   ],
   car: [
-    { key: "cancellation", label: "Comisión cancelación (%)", placeholder: "Ej: 1", icon: TrendingDownIcon },
+    { key: "cancellation", label: "Comisión cancelación (%)", placeholder: "1", icon: TrendingDownIcon },
   ],
   personal: [
-    { key: "delay_interest", label: "Interés demora (%)", placeholder: "Ej: 4.5", icon: AlertCircle },
+    { key: "delay_interest", label: "Interés demora (%)", placeholder: "4.5", icon: AlertCircle },
   ],
   business: [
-    { key: "study", label: "Comisión estudio (%)", placeholder: "Ej: 1", icon: FileText },
+    { key: "study", label: "Comisión estudio (%)", placeholder: "1", icon: FileText },
   ],
   other: [],
 };
@@ -69,11 +83,10 @@ const LoansPage = () => {
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [showSpecificFees, setShowSpecificFees] = useState(false);
+  const [showAdditionalFees, setShowAdditionalFees] = useState(false);
   
   const [newLoan, setNewLoan] = useState({
     loan_type: "personal" as LoanType,
@@ -148,6 +161,8 @@ const LoansPage = () => {
         subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
       });
       setErrors({});
+      setShowAdditionalFees(false);
+      setShowSpecificFees(false);
       fetchLoans(session.user.id);
     }
   };
@@ -278,10 +293,13 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Fechas */}
+                {/* Fechas con formato dd/mm/aaaa */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha inicio</label>
+                    <div className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm">
+                      {formatDateDisplay(newLoan.start_date)}
+                    </div>
                     <DatePicker
                       date={newLoan.start_date}
                       onDateChange={(date) => setNewLoan({ ...newLoan, start_date: date })}
@@ -289,6 +307,9 @@ const LoansPage = () => {
                   </div>
                   <div>
                     <label className="text-sm text-slate-300 mb-1 block">Fecha fin</label>
+                    <div className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm">
+                      {newLoan.end_date ? formatDateDisplay(newLoan.end_date) : "Sin fecha"}
+                    </div>
                     <DatePicker
                       date={newLoan.end_date || new Date()}
                       onDateChange={(date) => setNewLoan({ ...newLoan, end_date: date })}
@@ -297,9 +318,9 @@ const LoansPage = () => {
                   </div>
                 </div>
 
-                {/* Comisiones universales */}
+                {/* Comisiones universales - Solo TIN y TAE visibles */}
                 <div className="border border-slate-600 rounded-xl p-3">
-                  <p className="text-sm text-slate-300 font-medium mb-3">Comisiones universales</p>
+                  <p className="text-sm text-slate-300 font-medium mb-3">Comisiones</p>
                   <div className="grid grid-cols-2 gap-3">
                     {universalFees.map((fee) => (
                       <div key={fee.key}>
@@ -308,28 +329,67 @@ const LoansPage = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Comisiones específicas */}
-                {showSpecificFees && currentSpecificFees.length > 0 && (
-                  <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
-                    <p className="text-sm text-cyan-300 font-medium mb-3">Comisiones específicas: {loanTypes.find(t => t.value === newLoan.loan_type)?.label}</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {currentSpecificFees.map((fee) => (
+                  
+                  {/* Botón desplegable para más opciones */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAdditionalFees(!showAdditionalFees)}
+                    className="flex items-center gap-2 mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    {showAdditionalFees ? (
+                      <>Ocultar opciones <ChevronDown className="w-4 h-4 rotate-180" /></>
+                    ) : (
+                      <>+ Más opciones <ChevronDown className="w-4 h-4" /></>
+                    )}
+                  </button>
+                  
+                  {/* Comisiones adicionales ocultas */}
+                  {showAdditionalFees && (
+                    <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-600">
+                      {additionalFees.map((fee) => (
                         <div key={fee.key}>
                           <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
                           <Input type="number" step="0.01" placeholder={fee.placeholder} value={newLoan[fee.key as keyof typeof newLoan] as string} onChange={(e) => setNewLoan({ ...newLoan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+
+                {/* Comisiones específicas */}
+                {showSpecificFees && currentSpecificFees.length > 0 && (
+                  <div className="border border-cyan-500/50 rounded-xl p-3 bg-cyan-500/5">
+                    <button
+                      type="button"
+                      onClick={() => setShowSpecificFees(!showSpecificFees)}
+                      className="flex items-center justify-between w-full mb-3"
+                    >
+                      <p className="text-sm text-cyan-300 font-medium">Comisiones específicas: {loanTypes.find(t => t.value === newLoan.loan_type)?.label}</p>
+                      <ChevronDown className={`w-4 h-4 text-cyan-400 transition-transform ${showSpecificFees ? "rotate-180" : ""}`} />
+                    </button>
+                    
+                    {showSpecificFees && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {currentSpecificFees.map((fee) => (
+                          <div key={fee.key}>
+                            <label className="text-xs text-slate-400 mb-1 block">{fee.label}</label>
+                            <Input type="number" step="0.01" placeholder={fee.placeholder} value={newLoan[fee.key as keyof typeof newLoan] as string} onChange={(e) => setNewLoan({ ...newLoan, [fee.key]: e.target.value })} className="bg-slate-700 border-slate-600 text-white text-sm" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Inversión y Patrimonio */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Inversión y Patrimonio - Ahora en 2 líneas */}
+                <div className="space-y-3">
                   <Select value={newLoan.investment_id} onValueChange={(v) => { if (v === "new") setIsNewInvestmentOpen(true); else setNewLoan({ ...newLoan, investment_id: v }); }}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-2">
-                      <div className="flex items-center gap-2 w-full"><TrendingUp className="w-4 h-4 text-emerald-400" /><span className="text-slate-300 text-sm">Inversión:</span><span className="text-white text-sm font-medium truncate">{getInvestmentLabel()}</span></div>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <div className="flex items-center gap-2 w-full">
+                        <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        <span className="text-slate-300 text-sm">Inversión:</span>
+                        <span className="text-white text-sm font-medium truncate">{getInvestmentLabel()}</span>
+                      </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
                       <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
@@ -337,9 +397,14 @@ const LoansPage = () => {
                       <SelectItem value="new" className="text-emerald-400 font-medium">+ Nueva inversión</SelectItem>
                     </SelectContent>
                   </Select>
+                  
                   <Select value={newLoan.patrimony_id} onValueChange={(v) => { if (v === "new") setIsNewPatrimonyOpen(true); else setNewLoan({ ...newLoan, patrimony_id: v }); }}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-auto py-2">
-                      <div className="flex items-center gap-2 w-full"><Building className="w-4 h-4 text-sky-400" /><span className="text-slate-300 text-sm">Patrimonio:</span><span className="text-white text-sm font-medium truncate">{getPatrimonyLabel()}</span></div>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <div className="flex items-center gap-2 w-full">
+                        <Building className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                        <span className="text-slate-300 text-sm">Patrimonio:</span>
+                        <span className="text-white text-sm font-medium truncate">{getPatrimonyLabel()}</span>
+                      </div>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
                       <SelectItem value="none" className="text-slate-400">Sin vincular</SelectItem>
