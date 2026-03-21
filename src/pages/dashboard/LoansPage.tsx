@@ -135,6 +135,14 @@ const LoansPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const formatDateToISO = (date: Date | null): string | null => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const handleAddLoan = async () => {
     if (isSaving) return;
     if (!validateForm(newLoan)) return;
@@ -156,8 +164,8 @@ const LoansPage = () => {
       interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
       monthly_payment: parseFloat(newLoan.monthly_payment),
       collection_day: newLoan.collection_day ? parseInt(newLoan.collection_day) : null,
-      start_date: newLoan.start_date ? newLoan.start_date.toISOString().split('T')[0] : null,
-      end_date: newLoan.end_date ? newLoan.end_date.toISOString().split('T')[0] : null,
+      start_date: formatDateToISO(newLoan.start_date),
+      end_date: formatDateToISO(newLoan.end_date),
       opening_commission: newLoan.opening_commission ? parseFloat(newLoan.opening_commission) : null,
       early_repayment: newLoan.early_repayment ? parseFloat(newLoan.early_repayment) : null,
       delay_interest: newLoan.delay_interest ? parseFloat(newLoan.delay_interest) : null,
@@ -213,8 +221,8 @@ const LoansPage = () => {
       interest_rate: editLoan.tin ? parseFloat(editLoan.tin) : null,
       monthly_payment: parseFloat(editLoan.monthly_payment),
       collection_day: editLoan.collection_day ? parseInt(editLoan.collection_day) : null,
-      start_date: editLoan.start_date ? editLoan.start_date.toISOString().split('T')[0] : null,
-      end_date: editLoan.end_date ? editLoan.end_date.toISOString().split('T')[0] : null,
+      start_date: formatDateToISO(editLoan.start_date),
+      end_date: formatDateToISO(editLoan.end_date),
       opening_commission: editLoan.opening_commission ? parseFloat(editLoan.opening_commission) : null,
       early_repayment: editLoan.early_repayment ? parseFloat(editLoan.early_repayment) : null,
       delay_interest: editLoan.delay_interest ? parseFloat(editLoan.delay_interest) : null,
@@ -253,7 +261,10 @@ const LoansPage = () => {
     } else {
       setIsDeleteDialogOpen(false);
       setSelectedLoan(null);
-      fetchLoans((await supabase.auth.getSession()).data.session?.user.id!);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        fetchLoans(session.user.id);
+      }
     }
   };
 
@@ -336,14 +347,12 @@ const LoansPage = () => {
   const totalDebt = activeLoans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
-  const getInvestmentLabel = (investmentId: string) => investmentId === "none" ? "Sin vincular" : investments.find(i => i.id === investmentId)?.name || "Sin vincular";
-  const getPatrimonyLabel = (patrimonyId: string) => patrimonyId === "none" ? "Sin vincular" : patrimony.find(p => p.id === patrimonyId)?.name || "Sin vincular";
+  const getInvestmentLabel = (loan: any) => loan.investment_id === "none" ? "Sin vincular" : investments.find(i => i.id === loan.investment_id)?.name || "Sin vincular";
+  const getPatrimonyLabel = (loan: any) => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find(p => p.id === loan.patrimony_id)?.name || "Sin vincular";
 
   const investmentTypes = [{ value: "stocks", label: "Acciones" }, { value: "etf", label: "ETF" }, { value: "crypto", label: "Criptomonedas" }, { value: "bonds", label: "Bonos" }, { value: "real_estate", label: "Bienes Raíces" }, { value: "other", label: "Otros" }];
   const patrimonyCategories = [{ value: "real_estate", label: "Bienes Raíces" }, { value: "vehicle", label: "Vehículos" }, { value: "investments", label: "Inversiones" }, { value: "savings", label: "Ahorros" }, { value: "business", label: "Negocios" }, { value: "other", label: "Otros" }];
   const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
-
-  const currentSpecificFees = specificFees[editLoan.loan_type || newLoan.loan_type] || [];
 
   const getLoanTypeInfo = (type: string) => loanTypes.find(t => t.value === type) || loanTypes[loanTypes.length - 1];
 
@@ -588,7 +597,7 @@ const LoansPage = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm text-slate-300 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_amount: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
+              <div><label className="text-sm text-slate-300 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
               <div><label className="text-sm text-slate-300 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-slate-700 border-slate-600 text-white" /></div>
             </div>
             <Button onClick={() => handleCreateInvestment(false)} className="w-full bg-emerald-500 hover:bg-emerald-600">Crear</Button>
