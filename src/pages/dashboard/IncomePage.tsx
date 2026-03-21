@@ -43,6 +43,56 @@ interface CategoryOption {
   color: string;
 }
 
+// Iconos disponibles para categorías personalizadas
+const availableIcons = [
+  { value: "Briefcase", icon: Briefcase },
+  { value: "Home", icon: Home },
+  { value: "ShoppingCart", icon: ShoppingCart },
+  { value: "Laptop", icon: Laptop },
+  { value: "Globe", icon: Globe },
+  { value: "TrendingUp", icon: TrendingUp },
+  { value: "DollarSign", icon: DollarSign },
+  { value: "Wallet", icon: Wallet },
+  { value: "CreditCard", icon: CreditCard },
+  { value: "PiggyBank", icon: PiggyBank },
+  { value: "Building", icon: Building },
+  { value: "Car", icon: Car },
+  { value: "Plane", icon: Plane },
+  { value: "Smartphone", icon: Smartphone },
+  { value: "Music", icon: Music },
+  { value: "BookOpen", icon: BookOpen },
+  { value: "Zap", icon: Zap },
+  { value: "Heart", icon: Heart },
+  { value: "UtensilsCrossed", icon: UtensilsCrossed },
+  { value: "Shirt", icon: Shirt },
+];
+
+function UtensilsCrossed({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </svg>
+  );
+}
+
+function Shirt({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+    </svg>
+  );
+}
+
+function Heart({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  );
+}
+
 const defaultCategories: CategoryOption[] = [
   { value: "salary", label: "Sueldo", icon: Briefcase, color: "bg-blue-500/20 text-blue-400" },
   { value: "rental", label: "Ingreso Alquiler", icon: Home, color: "bg-emerald-500/20 text-emerald-400" },
@@ -64,7 +114,9 @@ const IncomePage = () => {
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
@@ -109,6 +161,12 @@ const IncomePage = () => {
     value: "",
   });
 
+  const [newCustomCategory, setNewCustomCategory] = useState({
+    name: "",
+    icon: "DollarSign",
+    color: "bg-slate-500/20 text-slate-400",
+  });
+
   const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
@@ -124,6 +182,19 @@ const IncomePage = () => {
     { value: "10", label: "Octubre" },
     { value: "11", label: "Noviembre" },
     { value: "12", label: "Diciembre" },
+  ];
+
+  const categoryColors = [
+    { value: "bg-blue-500/20 text-blue-400", label: "Azul" },
+    { value: "bg-emerald-500/20 text-emerald-400", label: "Verde" },
+    { value: "bg-purple-500/20 text-purple-400", label: "Morado" },
+    { value: "bg-cyan-500/20 text-cyan-400", label: "Cian" },
+    { value: "bg-amber-500/20 text-amber-400", label: "Ámbar" },
+    { value: "bg-green-500/20 text-green-400", label: "Verde claro" },
+    { value: "bg-slate-500/20 text-slate-400", label: "Gris" },
+    { value: "bg-pink-500/20 text-pink-400", label: "Rosa" },
+    { value: "bg-orange-500/20 text-orange-400", label: "Naranja" },
+    { value: "bg-red-500/20 text-red-400", label: "Rojo" },
   ];
 
   useEffect(() => {
@@ -295,6 +366,23 @@ const IncomePage = () => {
     }
   };
 
+  const handleCreateCustomCategory = () => {
+    if (!newCustomCategory.name) return;
+    
+    const categoryValue = `custom_${newCustomCategory.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const newCategory: CategoryOption = {
+      value: categoryValue,
+      label: newCustomCategory.name,
+      icon: availableIcons.find(i => i.value === newCustomCategory.icon)?.icon || DollarSign,
+      color: newCustomCategory.color,
+    };
+    
+    setCustomCategories([...customCategories, newCategory]);
+    setNewIncome({ ...newIncome, category: categoryValue });
+    setIsCategoryDialogOpen(false);
+    setNewCustomCategory({ name: "", icon: "DollarSign", color: "bg-slate-500/20 text-slate-400" });
+  };
+
   const filteredIncomes = incomes.filter((income) => {
     const incomeDate = new Date(income.date + 'T00:00:00');
     const incomeYear = incomeDate.getFullYear().toString();
@@ -309,10 +397,14 @@ const IncomePage = () => {
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
 
-  const allCategories = [...defaultCategories];
+  const allCategories = [...defaultCategories, ...customCategories];
 
   const getCategoryInfo = (categoryValue: string) => {
     return allCategories.find(c => c.value === categoryValue) || allCategories[allCategories.length - 1];
+  };
+
+  const getSelectedCategoryInfo = (categoryValue: string) => {
+    return allCategories.find(c => c.value === categoryValue) || defaultCategories[defaultCategories.length - 1];
   };
 
   const investmentTypes = [
@@ -385,31 +477,144 @@ const IncomePage = () => {
                   />
                 </div>
                 
-                {/* Selector de Categoría */}
+                {/* Selector de Categoría con botón */}
                 <div>
                   <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {defaultCategories.map((cat) => {
-                      const Icon = cat.icon;
-                      return (
+                  <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3 hover:border-zinc-600 transition-all"
+                      >
+                        {(() => {
+                          const cat = getSelectedCategoryInfo(newIncome.category);
+                          const Icon = cat.icon;
+                          return (
+                            <>
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <span className="text-white font-medium">{cat.label}</span>
+                              <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
+                            </>
+                          );
+                        })()}
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-3 mt-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          {allCategories.map((cat) => {
+                            const Icon = cat.icon;
+                            return (
+                              <button
+                                key={cat.value}
+                                type="button"
+                                onClick={() => {
+                                  setNewIncome({ ...newIncome, category: cat.value });
+                                  setIsCategoryDialogOpen(false);
+                                }}
+                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                                  newIncome.category === cat.value
+                                    ? "border-green-500 bg-green-500/20"
+                                    : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                                }`}
+                              >
+                                <Icon className={`w-5 h-5 ${newIncome.category === cat.value ? "text-green-400" : "text-zinc-400"}`} />
+                                <span className={`text-xs font-medium ${newIncome.category === cat.value ? "text-white" : "text-zinc-400"}`}>
+                                  {cat.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Botón para crear categoría personalizada */}
                         <button
-                          key={cat.value}
                           type="button"
-                          onClick={() => setNewIncome({ ...newIncome, category: cat.value })}
-                          className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                            newIncome.category === cat.value
-                              ? "border-green-500 bg-green-500/20"
-                              : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                          }`}
+                          onClick={() => {
+                            setIsCategoryDialogOpen(false);
+                            // Abrir diálogo de crear categoría después de un pequeño delay
+                            setTimeout(() => {
+                              setNewCustomCategory({ name: "", icon: "DollarSign", color: "bg-slate-500/20 text-slate-400" });
+                              // Aquí podrías abrir otro diálogo o manejar de otra forma
+                            }, 100);
+                          }}
+                          className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-green-500 hover:bg-green-500/10 transition-all"
                         >
-                          <Icon className={`w-5 h-5 ${newIncome.category === cat.value ? "text-green-400" : "text-zinc-400"}`} />
-                          <span className={`text-xs font-medium ${newIncome.category === cat.value ? "text-white" : "text-zinc-400"}`}>
-                            {cat.label}
-                          </span>
+                          <Plus className="w-5 h-5 text-green-400" />
+                          <span className="text-green-400 font-medium">Crear categoría personalizada</span>
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  {/* Diálogo para crear categoría personalizada */}
+                  <Dialog open={!isCategoryDialogOpen && newCustomCategory.name !== "" && false} onOpenChange={() => {}}>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
+                          <Input
+                            placeholder="Nombre de la categoría"
+                            value={newCustomCategory.name}
+                            onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
+                            className="bg-zinc-800 border-zinc-700 text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
+                          <div className="grid grid-cols-5 gap-2">
+                            {availableIcons.map((iconOpt) => {
+                              const Icon = iconOpt.icon;
+                              return (
+                                <button
+                                  key={iconOpt.value}
+                                  type="button"
+                                  onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
+                                  className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                                    newCustomCategory.icon === iconOpt.value
+                                      ? "border-green-500 bg-green-500/20"
+                                      : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                                  }`}
+                                >
+                                  <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-green-400" : "text-zinc-400"}`} />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm text-zinc-400 mb-2 block">Color</label>
+                          <div className="grid grid-cols-5 gap-2">
+                            {categoryColors.map((color) => (
+                              <button
+                                key={color.value}
+                                type="button"
+                                onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value })}
+                                className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                                  newCustomCategory.color === color.value
+                                    ? "border-white"
+                                    : "border-zinc-700"
+                                }`}
+                              >
+                                <div className={`w-6 h-6 rounded-full ${color.value.replace(' text-', ' bg-').split(' ')[0]}`} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <Button onClick={handleCreateCustomCategory} className="w-full bg-green-500 hover:bg-green-600 text-black">
+                          Crear Categoría
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div>
