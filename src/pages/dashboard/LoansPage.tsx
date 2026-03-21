@@ -134,7 +134,6 @@ const LoansPage = () => {
     if (isSaving) return;
     
     if (!validateForm()) {
-      console.log("Errores de validación:", errors);
       return;
     }
     
@@ -146,6 +145,7 @@ const LoansPage = () => {
       return;
     }
 
+    // Solo guardar las columnas que existen en la tabla loans
     const loanData = {
       user_id: session.user.id,
       borrower_name: newLoan.name,
@@ -154,7 +154,6 @@ const LoansPage = () => {
       current_amount: parseFloat(newLoan.pending_amount),
       interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
       monthly_payment: parseFloat(newLoan.monthly_payment),
-      category: newLoan.loan_type,
     };
 
     console.log("Guardando préstamo:", loanData);
@@ -243,7 +242,7 @@ const LoansPage = () => {
                 <p className="text-slate-400 text-sm">Registra las condiciones del préstamo</p>
               </DialogHeader>
               <div className="space-y-4 mt-2">
-                {/* Tipo de préstamo */}
+                {/* Tipo de préstamo - Visual pero no se guarda */}
                 <div>
                   <label className="text-sm text-slate-300 mb-2 block">Tipo de préstamo</label>
                   <div className="grid grid-cols-5 gap-2">
