@@ -370,6 +370,18 @@ const ExpensesPage = () => {
     { value: "other", label: "Otros" },
   ];
 
+  // Obtener información del tipo de préstamo
+  const getLoanTypeInfo = (type: string) => {
+    const types: Record<string, { label: string; color: string; textColor: string }> = {
+      mortgage: { label: "Hipoteca", color: "bg-blue-500/20", textColor: "text-blue-400" },
+      car: { label: "Coche", color: "bg-purple-500/20", textColor: "text-purple-400" },
+      personal: { label: "Personal", color: "bg-cyan-500/20", textColor: "text-cyan-400" },
+      business: { label: "Negocio", color: "bg-amber-500/20", textColor: "text-amber-400" },
+      other: { label: "Otro", color: "bg-slate-500/20", textColor: "text-slate-400" },
+    };
+    return types[type] || types.other;
+  };
+
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
@@ -574,7 +586,6 @@ const ExpensesPage = () => {
                         <X className="w-4 h-4" />
                       </button>
                       <div className="space-y-3 mt-4">
-                        {/* Opción sin vincular */}
                         <button
                           type="button"
                           onClick={() => {
@@ -593,7 +604,6 @@ const ExpensesPage = () => {
                           <span className="text-zinc-400 font-medium">Sin vincular</span>
                         </button>
 
-                        {/* Lista de inversiones existentes */}
                         {investments.map((inv) => (
                           <button
                             key={inv.id}
@@ -615,7 +625,6 @@ const ExpensesPage = () => {
                           </button>
                         ))}
 
-                        {/* Botón crear nueva inversión */}
                         <button
                           type="button"
                           onClick={() => {
@@ -669,7 +678,6 @@ const ExpensesPage = () => {
                         <X className="w-4 h-4" />
                       </button>
                       <div className="space-y-3 mt-4">
-                        {/* Opción sin vincular */}
                         <button
                           type="button"
                           onClick={() => {
@@ -688,7 +696,6 @@ const ExpensesPage = () => {
                           <span className="text-zinc-400 font-medium">Sin vincular</span>
                         </button>
 
-                        {/* Lista de patrimonio existente */}
                         {patrimony.map((pat) => (
                           <button
                             key={pat.id}
@@ -710,7 +717,6 @@ const ExpensesPage = () => {
                           </button>
                         ))}
 
-                        {/* Botón crear nuevo patrimonio */}
                         <button
                           type="button"
                           onClick={() => {
@@ -775,6 +781,48 @@ const ExpensesPage = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Resumen de Préstamos */}
+        {loans.length > 0 && (
+          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                <Landmark className="w-5 h-5 text-cyan-400" />
+                Resumen de Préstamos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loans.map((loan) => {
+                  const typeInfo = getLoanTypeInfo(loan.loan_type);
+                  return (
+                    <div key={loan.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
+                          <Landmark className={`w-5 h-5 ${typeInfo.textColor}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{loan.borrower_name}</p>
+                          <p className="text-xs text-zinc-400">{loan.bank} • {typeInfo.label}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-cyan-400">{formatCurrency(loan.monthly_payment)}/mes</p>
+                        <p className="text-xs text-zinc-400">Pendiente: {formatCurrency(loan.current_amount)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-3 border-t border-zinc-700">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">Total Préstamos</span>
+                  <span className="text-xl font-bold text-cyan-400">{formatCurrency(totalLoans)}/mes</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
