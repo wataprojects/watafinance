@@ -1,317 +1,158 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, isSameDay, isToday } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export type DatePickerProps = {
-  date?: Date;
-  onDateChange?: (date: Date | undefined) => void;
+interface DatePickerProps {
+  date: Date;
+  onDateChange: (date: Date) => void;
   placeholder?: string;
-  disabled?: boolean;
-};
+  className?: string;
+}
 
-// Arrays para los meses y años
-const months = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-];
-
-const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - 25 + i);
-
-export function DatePicker({
-  date,
-  onDateChange,
-  placeholder = "Seleccionar fecha",
-  disabled = false,
-}: DatePickerProps) {
+const DatePicker = ({ date, onDateChange, placeholder, className }: DatePickerProps) => {
+  const [currentMonth, setCurrentMonth] = React.useState(date || new Date());
   const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(date);
-  const [viewMode, setViewMode] = React.useState<"day" | "month" | "year">("day");
-  const [tempDate, setTempDate] = React.useState<Date>(date || new Date());
 
-  // Sincronizar cuando cambia la prop date
-  React.useEffect(() => {
-    if (date) {
-      setSelectedDate(date);
-      setTempDate(date);
-    }
-  }, [date]);
+  const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const monthNames = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
 
-  // Generar días del mes
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
+  const days = getDaysInMonth(currentMonth);
+  const firstDayOfMonth = getDay(startOfMonth(currentMonth));
 
-  const getFirstDayOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay();
-  };
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
-  // Renderizar días del calendario
-  const renderDays = () => {
-    const year = tempDate.getFullYear();
-    const month = tempDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    const days = [];
-
-    // Días vacíos al inicio
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="w-9 h-9" />);
-    }
-
-    // Días del mes
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isSelected = selectedDate && 
-        selectedDate.getDate() === day && 
-        selectedDate.getMonth() === month && 
-        selectedDate.getFullYear() === year;
-      
-      const isToday = new Date().getDate() === day && 
-        new Date().getMonth() === month && 
-        new Date().getFullYear() === year;
-
-      days.push(
-        <button
-          key={day}
-          onClick={() => {
-            const newDate = new Date(year, month, day);
-            setSelectedDate(newDate);
-            setTempDate(newDate);
-          }}
-          className={`
-            w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all
-            ${isSelected 
-              ? "bg-sky-500 text-white font-bold" 
-              : "text-white hover:bg-slate-700"
-            }
-            ${isToday && !isSelected ? "border border-sky-500 text-sky-400" : ""}
-          `}
-        >
-          {day}
-        </button>
-      );
-    }
-
-    return days;
-  };
-
-  // Renderizar meses
-  const renderMonths = () => {
-    return (
-      <div className="grid grid-cols-4 gap-2 p-2">
-        {months.map((monthName, index) => {
-          const isSelected = selectedDate && 
-            selectedDate.getMonth() === index && 
-            selectedDate.getFullYear() === tempDate.getFullYear();
-          
-          return (
-            <button
-              key={monthName}
-              onClick={() => {
-                const newDate = new Date(tempDate.getFullYear(), index, tempDate.getDate());
-                setTempDate(newDate);
-                setSelectedDate(newDate);
-                setViewMode("day");
-              }}
-              className={`
-                p-3 rounded-lg text-sm font-medium transition-all
-                ${isSelected 
-                  ? "bg-sky-500 text-white" 
-                  : "text-white hover:bg-slate-700"
-                }
-              `}
-            >
-              {monthName.substring(0, 3)}
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Renderizar años
-  const renderYears = () => {
-    return (
-      <div className="grid grid-cols-5 gap-2 p-2 max-h-64 overflow-y-auto">
-        {years.map((year) => {
-          const isSelected = selectedDate && selectedDate.getFullYear() === year;
-          
-          return (
-            <button
-              key={year}
-              onClick={() => {
-                const newDate = new Date(year, tempDate.getMonth(), tempDate.getDate());
-                setTempDate(newDate);
-                setSelectedDate(newDate);
-                setViewMode("month");
-              }}
-              className={`
-                p-3 rounded-lg text-sm font-medium transition-all
-                ${isSelected 
-                  ? "bg-sky-500 text-white" 
-                  : "text-white hover:bg-slate-700"
-                }
-              `}
-            >
-              {year}
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Confirmar fecha
-  const handleConfirm = () => {
-    setSelectedDate(tempDate);
-    if (onDateChange) {
-      onDateChange(tempDate);
-    }
-    setIsOpen(false);
-    setViewMode("day");
-  };
-
-  // Cancelar
-  const handleCancel = () => {
-    setTempDate(selectedDate || new Date());
-    setViewMode("day");
+  const handleDateClick = (day: number) => {
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    onDateChange(newDate);
     setIsOpen(false);
   };
 
-  // Navegación entre meses
-  const goToPrevMonth = () => {
-    const newDate = new Date(tempDate.getFullYear(), tempDate.getMonth() - 1, 1);
-    setTempDate(newDate);
-  };
-
-  const goToNextMonth = () => {
-    const newDate = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 1);
-    setTempDate(newDate);
-  };
+  const handleInputClick = () => setIsOpen(!isOpen);
 
   return (
-    <Popover open={isOpen} onOpenChange={(open) => {
-      setIsOpen(open);
-      if (!open) {
-        setTempDate(selectedDate || new Date());
-        setViewMode("day");
-      }
-    }}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={`
-            w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:text-white transition-all
-            ${!selectedDate ? "text-slate-400" : ""}
-          `}
-          disabled={disabled}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {selectedDate ? (
-            format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: es })
-          ) : (
-            <span>{placeholder}</span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 bg-white border-slate-200 rounded-xl" align="start">
-        <div className="flex flex-col">
-          {/* Header según el modo de vista */}
-          <div className="flex items-center justify-between p-3 border-b border-slate-700 bg-slate-800/50">
-            {viewMode === "day" && (
-              <>
-                <button
-                  onClick={goToPrevMonth}
-                  className="p-2 rounded-lg hover:bg-slate-700 text-white transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("month")}
-                  className="text-white font-medium hover:text-sky-400 transition-colors"
-                >
-                  {months[tempDate.getMonth()]} {tempDate.getFullYear()}
-                </button>
-                <button
-                  onClick={goToNextMonth}
-                  className="p-2 rounded-lg hover:bg-slate-700 text-white transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </>
-            )}
-            {viewMode === "month" && (
-              <>
-                <button
-                  onClick={() => setViewMode("year")}
-                  className="p-2 rounded-lg hover:bg-slate-700 text-white transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-white font-medium">Seleccionar mes</span>
-                <button
-                  onClick={() => setViewMode("day")}
-                  className="p-2 rounded-lg hover:bg-slate-700 text-white transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </>
-            )}
-            {viewMode === "year" && (
-              <>
-                <span className="text-white font-medium col-start-2 text-center">Seleccionar año</span>
-                <div className="w-8" />
-              </>
-            )}
-          </div>
-
-          {/* Contenido según el modo */}
-          <div className="min-h-[280px]">
-            {viewMode === "day" && (
-              <>
-                {/* Días de la semana */}
-                <div className="grid grid-cols-7 gap-1 p-2 border-b border-slate-700/50">
-                  {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
-                    <div key={i} className="w-9 h-6 flex items-center justify-center text-xs text-slate-400 font-medium">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                {/* Días del calendario */}
-                <div className="grid grid-cols-7 gap-1 p-2">
-                  {renderDays()}
-                </div>
-              </>
-            )}
-            {viewMode === "month" && renderMonths()}
-            {viewMode === "year" && renderYears()}
-          </div>
-
-          {/* Footer con botones */}
-          <div className="flex items-center justify-between p-3 border-t border-slate-700 bg-slate-800/50">
+    <div className={cn("relative", className)}>
+      <div
+        onClick={handleInputClick}
+        className="w-full min-h-[40px] px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer flex items-center justify-between hover:border-zinc-600 transition-colors"
+      >
+        <span className={date ? "text-white" : "text-zinc-500"}>
+          {date ? format(date, "dd/MM/yyyy", { locale: es }) : placeholder || "Seleccionar fecha"}
+        </span>
+        <div className="flex gap-1">
+          {date && (
             <button
-              onClick={handleCancel}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-sm"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDateChange(new Date());
+              }}
+              className="text-xs text-zinc-400 hover:text-white px-1"
             >
-              <X className="w-4 h-4" />
-              Cancelar
+              Hoy
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 mt-2 w-[280px] bg-white rounded-xl shadow-xl border border-zinc-200 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-2 bg-zinc-50 border-b border-zinc-200">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-1 rounded-lg hover:bg-zinc-200 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-zinc-700" />
+            </button>
+            <span className="font-semibold text-zinc-900">
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </span>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="p-1 rounded-lg hover:bg-zinc-200 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-zinc-700" />
+            </button>
+          </div>
+
+          {/* Days of week */}
+          <div className="grid grid-cols-7 gap-1 p-2 bg-zinc-50 border-b border-zinc-200">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="text-center text-xs font-medium text-zinc-500 py-1">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid grid-cols-7 gap-1 p-2">
+            {/* Empty cells for days before first day of month */}
+            {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+              <div key={`empty-${index}`} className="h-8" />
+            ))}
+
+            {/* Days of month */}
+            {Array.from({ length: days }).map((_, index) => {
+              const day = index + 1;
+              const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              const isSelected = date && isSameDay(currentDate, date);
+              const isTodayDate = isToday(currentDate);
+
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleDateClick(day)}
+                  className={cn(
+                    "h-8 rounded-lg text-sm font-medium transition-all",
+                    isSelected
+                      ? "bg-zinc-900 text-white"
+                      : isTodayDate
+                        ? "bg-zinc-200 text-zinc-900"
+                        : "text-zinc-900 hover:bg-zinc-100"
+                  )}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Footer with quick actions */}
+          <div className="flex justify-between px-3 py-2 bg-zinc-50 border-t border-zinc-200">
+            <button
+              type="button"
+              onClick={() => {
+                onDateChange(new Date());
+                setIsOpen(false);
+              }}
+              className="text-xs text-zinc-600 hover:text-zinc-900 font-medium"
+            >
+              Hoy
             </button>
             <button
-              onClick={handleConfirm}
-              className="flex items-center gap-1 px-4 py-2 rounded-lg bg-sky-500 text-white font-medium hover:bg-sky-600 transition-colors text-sm"
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="text-xs text-zinc-600 hover:text-zinc-900 font-medium"
             >
-              <Check className="w-4 h-4" />
-              Aceptar
+              Cerrar
             </button>
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
-}
+};
 
 export default DatePicker;
