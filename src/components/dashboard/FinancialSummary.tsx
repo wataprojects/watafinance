@@ -18,15 +18,17 @@ const formatCurrency = (amount: number) => {
 const FinancialSummary = () => {
   const currentMonth = new Date().getMonth() + 1;
   const currentMonthStr = currentMonth.toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear();
   
   const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const currentYear = new Date().getFullYear();
+  const years = [2024, 2025, 2026, 2027, 2028];
   
   const months = [
     { value: "01", label: "Enero" },
@@ -45,7 +47,7 @@ const FinancialSummary = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedYear]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,11 +58,11 @@ const FinancialSummary = () => {
       return;
     }
 
-    const year = currentYear;
+    const year = selectedYear;
     const startDate = `${year}-${selectedMonth}-01`;
     const endDate = `${year}-${selectedMonth}-31`;
 
-    // Fetch incomes for the selected month
+    // Fetch incomes for the selected month and year
     const incomesResult = await supabase
       .from("incomes")
       .select("amount, date")
@@ -68,7 +70,7 @@ const FinancialSummary = () => {
       .gte("date", startDate)
       .lte("date", endDate);
 
-    // Fetch expenses for the selected month
+    // Fetch expenses for the selected month and year
     const expensesResult = await supabase
       .from("expenses")
       .select("amount, date")
@@ -76,7 +78,7 @@ const FinancialSummary = () => {
       .gte("date", startDate)
       .lte("date", endDate);
 
-    // Fetch debts (only "i_owe" type for the selected month)
+    // Fetch debts (only "i_owe" type - debts user owes)
     const debtsResult = await supabase
       .from("debts")
       .select("current_amount, created_at, category")
@@ -97,9 +99,10 @@ const FinancialSummary = () => {
     setLoading(false);
   };
 
+  // Total incomes for the selected month
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
-  // Total expenses for the month
+  // Total expenses for the selected month
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   
   // Total debts (i_owe) - sum all active debts user owes
@@ -121,20 +124,34 @@ const FinancialSummary = () => {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-white">
-            Resumen {selectedMonthLabel} {currentYear}
+            Resumen {selectedMonthLabel} {selectedYear}
           </CardTitle>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[140px] bg-zinc-800 border-zinc-700 text-white text-sm">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-sm">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-white">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[120px] bg-zinc-800 border-zinc-700 text-white text-sm">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value} className="text-white">
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
