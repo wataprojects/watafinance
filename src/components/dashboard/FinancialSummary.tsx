@@ -111,7 +111,7 @@ const FinancialSummary = () => {
   // Total loans monthly payments
   const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
   
-  // Total gastos = expenses + debts + loans
+  // Total gastos = expenses + debts + loans (this goes in the "Gastos" block)
   const totalGastos = totalExpenses + totalDebts + totalLoans;
   
   const balance = totalIncome - totalGastos;
@@ -161,7 +161,7 @@ const FinancialSummary = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Ingresos row */}
+            {/* Ingresos row - 4 blocks */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-2">
@@ -179,8 +179,13 @@ const FinancialSummary = () => {
                   <span className="text-xs text-red-400 font-medium">Gastos</span>
                 </div>
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(totalExpenses)}
+                  {formatCurrency(totalGastos)}
                 </p>
+                {totalDebts > 0 || totalLoans > 0 ? (
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    (Gastos: {formatCurrency(totalExpenses)} + Deudas: {formatCurrency(totalDebts)} + Préstamos: {formatCurrency(totalLoans)})
+                  </p>
+                ) : null}
               </div>
 
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
@@ -200,19 +205,6 @@ const FinancialSummary = () => {
                 </div>
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(totalLoans)}
-                </p>
-              </div>
-            </div>
-
-            {/* Total Gastos (expenses + debts + loans) */}
-            <div className={`${totalGastos > totalIncome ? "bg-red-900/20" : "bg-zinc-800/50"} rounded-xl p-4 border ${totalGastos > totalIncome ? "border-red-800" : "border-zinc-700"}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className={`w-5 h-5 ${totalGastos > totalIncome ? "text-red-500" : "text-red-500"}`} />
-                  <span className={`text-sm font-medium ${totalGastos > totalIncome ? "text-red-400" : "text-red-400"}`}>Total Gastos (Gastos + Deudas + Préstamos)</span>
-                </div>
-                <p className={`text-2xl font-bold ${totalGastos > totalIncome ? "text-red-500" : "text-red-500"}`}>
-                  {formatCurrency(totalGastos)}
                 </p>
               </div>
             </div>
