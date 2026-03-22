@@ -2,14 +2,12 @@
 
 import * as React from "react";
 import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, isSameDay, isToday } from "date-fns";
-import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface DatePickerProps {
   date: Date;
-  onDateChange: (date: Date) => void;
+  onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
   className?: string;
 }
@@ -45,7 +43,7 @@ const DatePicker = ({ date, onDateChange, placeholder, className }: DatePickerPr
         className="w-full min-h-[40px] px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer flex items-center justify-between hover:border-zinc-600 transition-colors"
       >
         <span className={date ? "text-white" : "text-zinc-500"}>
-          {date ? format(date, "dd/MM/yyyy", { locale: es }) : placeholder || "Seleccionar fecha"}
+          {date ? format(date, "dd/MM/yyyy") : placeholder || "Seleccionar fecha"}
         </span>
         <div className="flex gap-1">
           {date && (
