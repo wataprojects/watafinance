@@ -44,6 +44,7 @@ const DebtsPage = () => {
   const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("all");
+  const [saving, setSaving] = useState(false);
   
   const [newDebt, setNewDebt] = useState({
     person_name: "",
@@ -107,8 +108,19 @@ const DebtsPage = () => {
   };
 
   const handleAddDebt = async () => {
+    if (saving) return;
+    if (!newDebt.person_name || !newDebt.amount) {
+      alert("Por favor, completa los campos obligatorios");
+      return;
+    }
+
+    setSaving(true);
+    
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      setSaving(false);
+      return;
+    }
 
     const { error } = await supabase.from("debts").insert({
       user_id: session.user.id,
@@ -119,11 +131,12 @@ const DebtsPage = () => {
       interest_rate: null,
       monthly_payment: null,
       category: newDebt.debt_type,
-      date: formatDateToISO(newDebt.date),
-      due_date: newDebt.due_date ? formatDateToISO(newDebt.due_date) : null,
     });
 
-    if (!error) {
+    if (error) {
+      console.error("Error al guardar deuda:", error);
+      alert("Error al guardar: " + error.message);
+    } else {
       setIsDialogOpen(false);
       setNewDebt({
         person_name: "",
@@ -139,6 +152,7 @@ const DebtsPage = () => {
       });
       fetchDebts(session.user.id);
     }
+    setSaving(false);
   };
 
   const handleCreateInvestment = async () => {
@@ -278,7 +292,7 @@ const DebtsPage = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Persona</label>
+                  <label className="text-sm text-zinc-400 mb-1 block">Persona *</label>
                   <Input
                     placeholder="Nombre"
                     value={newDebt.person_name}
@@ -287,7 +301,7 @@ const DebtsPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Cantidad (€)</label>
+                  <label className="text-sm text-zinc-400 mb-1 block">Cantidad (€) *</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -303,13 +317,6 @@ const DebtsPage = () => {
                     value={newDebt.description}
                     onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
                     className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
-                  <DatePicker
-                    date={newDebt.date}
-                    onDateChange={(date) => setNewDebt({ ...newDebt, date })}
                   />
                 </div>
 
@@ -497,8 +504,12 @@ const DebtsPage = () => {
                   </Dialog>
                 </div>
 
-                <Button onClick={handleAddDebt} className="w-full bg-amber-500 hover:bg-amber-600 text-black">
-                  Registrar deuda
+                <Button 
+                  onClick={handleAddDebt} 
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Registrar deuda"}
                 </Button>
               </div>
             </DialogContent>
