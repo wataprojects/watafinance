@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Banknote, User, Calendar as CalendarIcon, ChevronRight, TrendingUp, Building, TrendingDown as TrendingDownIcon } from "lucide-react";
+import { Plus, Banknote, User, ChevronRight, TrendingUp, Building, TrendingDown as TrendingDownIcon, X, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -41,6 +41,8 @@ const DebtsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
+  const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
+  const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("all");
   
   const [newDebt, setNewDebt] = useState({
@@ -139,6 +141,36 @@ const DebtsPage = () => {
     }
   };
 
+  const handleCreateInvestment = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+    const { data, error } = await supabase.from("investments").insert({
+      user_id: session.user.id, name: newInvestment.name, type: newInvestment.type,
+      initial_value: parseFloat(newInvestment.initial_value),
+      current_value: parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
+    }).select().single();
+    if (!error && data) {
+      setInvestments([...investments, { id: data.id, name: data.name }]);
+      setNewDebt({ ...newDebt, investment_id: data.id });
+      setIsNewInvestmentOpen(false);
+      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+    }
+  };
+
+  const handleCreatePatrimony = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
+    const { data, error } = await supabase.from("patrimony").insert({
+      user_id: session.user.id, name: newPatrimonyAsset.name, category: newPatrimonyAsset.category, value: parseFloat(newPatrimonyAsset.value),
+    }).select().single();
+    if (!error && data) {
+      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
+      setNewDebt({ ...newDebt, patrimony_id: data.id });
+      setIsNewPatrimonyOpen(false);
+      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
+    }
+  };
+
   const filteredDebts = debts.filter((debt) => {
     const isTheyOwe = debt.category === "they_owe";
     const isIOwe = debt.category === "i_owe";
@@ -177,6 +209,18 @@ const DebtsPage = () => {
     { value: "other", label: "Otros" },
   ];
 
+  const getInvestmentLabel = () => {
+    if (newDebt.investment_id === "none") return "Sin vincular";
+    const inv = investments.find(i => i.id === newDebt.investment_id);
+    return inv ? inv.name : "Sin vincular";
+  };
+
+  const getPatrimonyLabel = () => {
+    if (newDebt.patrimony_id === "none") return "Sin vincular";
+    const pat = patrimony.find(p => p.id === newDebt.patrimony_id);
+    return pat ? pat.name : "Sin vincular";
+  };
+
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
@@ -197,6 +241,12 @@ const DebtsPage = () => {
                 <DialogTitle className="text-white">Nueva deuda</DialogTitle>
                 <p className="text-zinc-400 text-sm">Registra quién debe a quién</p>
               </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <div className="space-y-4 mt-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-2 block">Tipo de deuda</label>
@@ -262,6 +312,191 @@ const DebtsPage = () => {
                     onDateChange={(date) => setNewDebt({ ...newDebt, date })}
                   />
                 </div>
+
+                {/* Vinculación a Inversión */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
+                  <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                          newDebt.investment_id !== "none" 
+                            ? "border-emerald-500/50 bg-emerald-500/10" 
+                            : "border-zinc-700 hover:border-zinc-600"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          newDebt.investment_id !== "none" 
+                            ? "bg-emerald-500/20" 
+                            : "bg-zinc-700"
+                        }`}>
+                          <TrendingUp className={`w-4 h-4 ${newDebt.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+                        </div>
+                        <span className={`font-medium ${newDebt.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                          {getInvestmentLabel()}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsInvestmentDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewDebt({ ...newDebt, investment_id: "none" });
+                            setIsInvestmentDialogOpen(false);
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                            newDebt.investment_id === "none"
+                              ? "border-zinc-500 bg-zinc-800"
+                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                            <Link2 className="w-4 h-4 text-zinc-400" />
+                          </div>
+                          <span className="text-zinc-400 font-medium">Sin vincular</span>
+                        </button>
+
+                        {investments.map((inv) => (
+                          <button
+                            key={inv.id}
+                            type="button"
+                            onClick={() => {
+                              setNewDebt({ ...newDebt, investment_id: inv.id });
+                              setIsInvestmentDialogOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                              newDebt.investment_id === inv.id
+                                ? "border-emerald-500 bg-emerald-500/20"
+                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                              <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <span className="text-white font-medium">{inv.name}</span>
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsInvestmentDialogOpen(false);
+                            setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                          }}
+                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Vinculación a Patrimonio */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
+                  <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                          newDebt.patrimony_id !== "none" 
+                            ? "border-sky-500/50 bg-sky-500/10" 
+                            : "border-zinc-700 hover:border-zinc-600"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          newDebt.patrimony_id !== "none" 
+                            ? "bg-sky-500/20" 
+                            : "bg-zinc-700"
+                        }`}>
+                          <Building className={`w-4 h-4 ${newDebt.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+                        </div>
+                        <span className={`font-medium ${newDebt.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                          {getPatrimonyLabel()}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsPatrimonyDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewDebt({ ...newDebt, patrimony_id: "none" });
+                            setIsPatrimonyDialogOpen(false);
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                            newDebt.patrimony_id === "none"
+                              ? "border-zinc-500 bg-zinc-800"
+                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                            <Link2 className="w-4 h-4 text-zinc-400" />
+                          </div>
+                          <span className="text-zinc-400 font-medium">Sin vincular</span>
+                        </button>
+
+                        {patrimony.map((pat) => (
+                          <button
+                            key={pat.id}
+                            type="button"
+                            onClick={() => {
+                              setNewDebt({ ...newDebt, patrimony_id: pat.id });
+                              setIsPatrimonyDialogOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                              newDebt.patrimony_id === pat.id
+                                ? "border-sky-500 bg-sky-500/20"
+                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-sky-400" />
+                            </div>
+                            <span className="text-white font-medium">{pat.name}</span>
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPatrimonyDialogOpen(false);
+                            setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                          }}
+                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-sky-400" />
+                          <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
                 <Button onClick={handleAddDebt} className="w-full bg-amber-500 hover:bg-amber-600 text-black">
                   Registrar deuda
                 </Button>
@@ -371,6 +606,57 @@ const DebtsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal nueva inversión */}
+      <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewInvestmentOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
+              <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            </div>
+            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal nuevo patrimonio */}
+      <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <button 
+            onClick={() => setIsNewPatrimonyOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-3 mt-2">
+            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+              <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <Button onClick={handleCreatePatrimony} className="w-full bg-sky-500 hover:bg-sky-600 text-white">Crear</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
