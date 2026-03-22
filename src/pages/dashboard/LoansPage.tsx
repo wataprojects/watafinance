@@ -710,7 +710,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             </DialogHeader>
             <button 
               onClick={() => setIsLoanTypeDialogOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              className="absolute right-4 top-4 p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white z-50"
             >
               <X className="w-4 h-4" />
             </button>
@@ -886,7 +886,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             </DialogHeader>
             <button 
               onClick={() => setIsInvestmentDialogOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              className="absolute right-4 top-4 p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white z-50"
             >
               <X className="w-4 h-4" />
             </button>
@@ -978,7 +978,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             </DialogHeader>
             <button 
               onClick={() => setIsPatrimonyDialogOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              className="absolute right-4 top-4 p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white z-50"
             >
               <X className="w-4 h-4" />
             </button>
