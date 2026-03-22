@@ -13,7 +13,8 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
-  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2, ChevronDown, PieChart
+  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2, ChevronDown, PieChart,
+  Pencil, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -112,6 +113,9 @@ const ExpensesPage = () => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -121,7 +125,7 @@ const ExpensesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [showSubscriptions, setShowSubscriptions] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
@@ -129,6 +133,17 @@ const ExpensesPage = () => {
   const [filterYear, setFilterYear] = useState<string>(currentYear);
   
   const [newExpense, setNewExpense] = useState({
+    source: "",
+    amount: "",
+    is_recurring: false,
+    category: "groceries",
+    date: new Date(),
+    investment_id: "none",
+    patrimony_id: "none",
+  });
+
+  const [editExpense, setEditExpense] = useState({
+    id: "",
     source: "",
     amount: "",
     is_recurring: false,
@@ -161,18 +176,18 @@ const ExpensesPage = () => {
   const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
+    { value: "01", label: "Ene" },
+    { value: "02", label: "Feb" },
+    { value: "03", label: "Mar" },
+    { value: "04", label: "Abr" },
+    { value: "05", label: "May" },
+    { value: "06", label: "Jun" },
+    { value: "07", label: "Jul" },
+    { value: "08", label: "Ago" },
+    { value: "09", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dic" },
   ];
 
   const categoryColors = [
@@ -277,6 +292,67 @@ const ExpensesPage = () => {
     }
     
     setIsSubmitting(false);
+  };
+
+  const handleEditExpense = async () => {
+    if (isSubmitting || !selectedExpense) return;
+
+    setIsSubmitting(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.from("expenses").update({
+      amount: parseFloat(editExpense.amount),
+      description: editExpense.source,
+      category: editExpense.category,
+      date: formatDateToISO(editExpense.date),
+    }).eq("id", selectedExpense.id);
+
+    if (!error) {
+      setIsEditDialogOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses(session.user.id);
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!selectedExpense) return;
+
+    const { error } = await supabase.from("expenses").delete().eq("id", selectedExpense.id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) fetchExpenses(session.user.id);
+    }
+  };
+
+  const openEditDialog = (expense: any) => {
+    setSelectedExpense(expense);
+    const expenseDate = new Date(expense.date + 'T00:00:00');
+    setEditExpense({
+      id: expense.id,
+      source: expense.description || "",
+      amount: expense.amount.toString(),
+      is_recurring: false,
+      category: expense.category,
+      date: expenseDate,
+      investment_id: "none",
+      patrimony_id: "none",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (expense: any) => {
+    setSelectedExpense(expense);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleCreateCustomCategory = () => {
@@ -420,7 +496,7 @@ const ExpensesPage = () => {
             <DialogTrigger asChild>
               <Button className="bg-red-500 hover:bg-red-600 text-white">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Gasto
+                Nuevo
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
@@ -433,376 +509,78 @@ const ExpensesPage = () => {
               >
                 <X className="w-4 h-4" />
               </button>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Fuente de gasto</label>
-                  <Input
-                    placeholder="Ej: Supermercado, Luz, Gasolina..."
-                    value={newExpense.source}
-                    onChange={(e) => setNewExpense({ ...newExpense, source: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Importe *</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={newExpense.amount}
-                    onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-
-                {/* Selector de Categoría con botón */}
-                <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
-                  <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3 hover:border-zinc-600 transition-all"
-                      >
-                        {(() => {
-                          const cat = getSelectedCategoryInfo(newExpense.category);
-                          const Icon = cat.icon;
-                          return (
-                            <>
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                                <Icon className={`w-5 h-5 ${cat.textColor}`} />
-                              </div>
-                              <span className="text-white font-medium">{cat.label}</span>
-                              <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
-                            </>
-                          );
-                        })()}
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
-                      </DialogHeader>
-                      <button 
-                        onClick={() => setIsCategoryDialogOpen(false)}
-                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="space-y-3 mt-4">
-                        <div className="grid grid-cols-3 gap-2">
-                          {expenseCategories.map((cat) => {
-                            const Icon = cat.icon;
-                            const isSelected = newExpense.category === cat.value;
-                            return (
-                              <button
-                                key={cat.value}
-                                type="button"
-                                onClick={() => {
-                                  setNewExpense({ ...newExpense, category: cat.value });
-                                  setIsCategoryDialogOpen(false);
-                                }}
-                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                                  isSelected
-                                    ? "border-red-500 bg-red-500/20"
-                                    : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                                }`}
-                              >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                                  <Icon className={`w-5 h-5 ${cat.textColor}`} />
-                                </div>
-                                <span className={`text-xs font-medium ${isSelected ? "text-white" : "text-zinc-400"}`}>
-                                  {cat.label}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        
-                        {/* Botón para crear categoría personalizada */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCategoryDialogOpen(false);
-                            setTimeout(() => {
-                              setIsCreateCategoryDialogOpen(true);
-                            }, 100);
-                          }}
-                          className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-red-500 hover:bg-red-500/10 transition-all"
-                        >
-                          <Plus className="w-5 h-5 text-red-400" />
-                          <span className="text-red-400 font-medium">Crear categoría</span>
-                        </button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">¿Es recurrente?</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setNewExpense({ ...newExpense, is_recurring: true })}
-                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                        newExpense.is_recurring 
-                          ? "border-red-500 bg-red-500/20" 
-                          : "border-zinc-700 bg-zinc-800"
-                      }`}
-                    >
-                      <RecurringIcon className={`w-5 h-5 ${newExpense.is_recurring ? "text-red-400" : "text-zinc-400"}`} />
-                      <span className={`font-medium ${newExpense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewExpense({ ...newExpense, is_recurring: false })}
-                      className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                        !newExpense.is_recurring 
-                          ? "border-zinc-500 bg-zinc-700" 
-                          : "border-zinc-700 bg-zinc-800"
-                      }`}
-                    >
-                      <DollarSign className={`w-5 h-5 ${!newExpense.is_recurring ? "text-white" : "text-zinc-400"}`} />
-                      <span className={`font-medium ${!newExpense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
-                  <DatePicker
-                    date={newExpense.date}
-                    onDateChange={(date) => setNewExpense({ ...newExpense, date })}
-                  />
-                </div>
-
-                {/* Vinculación a Inversión - Botón estilo selector */}
-                <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
-                  <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button
-                        type="button"
-                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                          newExpense.investment_id !== "none" 
-                            ? "border-emerald-500/50 bg-emerald-500/10" 
-                            : "border-zinc-700 hover:border-zinc-600"
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          newExpense.investment_id !== "none" 
-                            ? "bg-emerald-500/20" 
-                            : "bg-zinc-700"
-                        }`}>
-                          <TrendingUp className={`w-4 h-4 ${newExpense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
-                        </div>
-                        <span className={`font-medium ${newExpense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
-                          {getInvestmentLabel()}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
-                      </DialogHeader>
-                      <button 
-                        onClick={() => setIsInvestmentDialogOpen(false)}
-                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="space-y-3 mt-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewExpense({ ...newExpense, investment_id: "none" });
-                            setIsInvestmentDialogOpen(false);
-                          }}
-                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                            newExpense.investment_id === "none"
-                              ? "border-zinc-500 bg-zinc-800"
-                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
-                            <Link2 className="w-4 h-4 text-zinc-400" />
-                          </div>
-                          <span className="text-zinc-400 font-medium">Sin vincular</span>
-                        </button>
-
-                        {investments.map((inv) => (
-                          <button
-                            key={inv.id}
-                            type="button"
-                            onClick={() => {
-                              setNewExpense({ ...newExpense, investment_id: inv.id });
-                              setIsInvestmentDialogOpen(false);
-                            }}
-                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                              newExpense.investment_id === inv.id
-                                ? "border-emerald-500 bg-emerald-500/20"
-                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                              <TrendingUp className="w-4 h-4 text-emerald-400" />
-                            </div>
-                            <span className="text-white font-medium">{inv.name}</span>
-                          </button>
-                        ))}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsInvestmentDialogOpen(false);
-                            setTimeout(() => setIsNewInvestmentOpen(true), 100);
-                          }}
-                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
-                        >
-                          <Plus className="w-4 h-4 text-emerald-400" />
-                          <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
-                        </button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                {/* Vinculación a Patrimonio - Botón estilo selector */}
-                <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
-                  <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button
-                        type="button"
-                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                          newExpense.patrimony_id !== "none" 
-                            ? "border-sky-500/50 bg-sky-500/10" 
-                            : "border-zinc-700 hover:border-zinc-600"
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          newExpense.patrimony_id !== "none" 
-                            ? "bg-sky-500/20" 
-                            : "bg-zinc-700"
-                        }`}>
-                          <Building className={`w-4 h-4 ${newExpense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
-                        </div>
-                        <span className={`font-medium ${newExpense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
-                          {getPatrimonyLabel()}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
-                      </DialogHeader>
-                      <button 
-                        onClick={() => setIsPatrimonyDialogOpen(false)}
-                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="space-y-3 mt-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewExpense({ ...newExpense, patrimony_id: "none" });
-                            setIsPatrimonyDialogOpen(false);
-                          }}
-                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                            newExpense.patrimony_id === "none"
-                              ? "border-zinc-500 bg-zinc-800"
-                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
-                            <Link2 className="w-4 h-4 text-zinc-400" />
-                          </div>
-                          <span className="text-zinc-400 font-medium">Sin vincular</span>
-                        </button>
-
-                        {patrimony.map((pat) => (
-                          <button
-                            key={pat.id}
-                            type="button"
-                            onClick={() => {
-                              setNewExpense({ ...newExpense, patrimony_id: pat.id });
-                              setIsPatrimonyDialogOpen(false);
-                            }}
-                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                              newExpense.patrimony_id === pat.id
-                                ? "border-sky-500 bg-sky-500/20"
-                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
-                              <Building className="w-4 h-4 text-sky-400" />
-                            </div>
-                            <span className="text-white font-medium">{pat.name}</span>
-                          </button>
-                        ))}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsPatrimonyDialogOpen(false);
-                            setTimeout(() => setIsNewPatrimonyOpen(true), 100);
-                          }}
-                          className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
-                        >
-                          <Plus className="w-4 h-4 text-sky-400" />
-                          <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
-                        </button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                <Button 
-                  onClick={handleAddExpense} 
-                  className="w-full bg-red-500 hover:bg-red-600 text-white"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Guardando..." : "Guardar"}
-                </Button>
-              </div>
+              <ExpenseForm 
+                expense={newExpense} 
+                setExpense={setNewExpense} 
+                onSubmit={handleAddExpense}
+                isSubmitting={isSubmitting}
+                isNew={true}
+                investments={investments}
+                patrimony={patrimony}
+                isNewInvestmentOpen={isNewInvestmentOpen}
+                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                isNewPatrimonyOpen={isNewPatrimonyOpen}
+                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                newInvestment={newInvestment}
+                setNewInvestment={setNewInvestment}
+                newPatrimonyAsset={newPatrimonyAsset}
+                setNewPatrimonyAsset={setNewPatrimonyAsset}
+                handleCreateInvestment={handleCreateInvestment}
+                handleCreatePatrimony={handleCreatePatrimony}
+                investmentTypes={investmentTypes}
+                patrimonyCategories={patrimonyCategories}
+                isCategoryDialogOpen={isCategoryDialogOpen}
+                setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                isInvestmentDialogOpen={isInvestmentDialogOpen}
+                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                getSelectedCategoryInfo={getSelectedCategoryInfo}
+                customCategories={customCategories}
+                availableIcons={availableIcons}
+                categoryColors={categoryColors}
+                newCustomCategory={newCustomCategory}
+                setNewCustomCategory={setNewCustomCategory}
+                handleCreateCustomCategory={handleCreateCustomCategory}
+              />
             </DialogContent>
           </Dialog>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="flex-1 bg-zinc-800 border-zinc-700 text-white">
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
               <SelectValue placeholder="Año" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              <SelectItem value="all" className="text-white text-xs">Todos</SelectItem>
               {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+                <SelectItem key={year} value={year.toString()} className="text-white text-xs">{year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="flex-1 bg-zinc-800 border-zinc-700 text-white">
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
               <SelectValue placeholder="Mes" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
               {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+                <SelectItem key={month.value} value={month.value} className="text-white text-xs">{month.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardContent className="p-6 text-center">
-            <CreditCard className="w-8 h-8 mx-auto mb-2 text-red-500" />
-            <p className="text-4xl font-bold text-red-500">{formatCurrency(totalWithLoans)}</p>
-            <p className="text-zinc-400">Total de Gastos</p>
+        <Card className="bg-zinc-900 border-zinc-800 mb-4">
+          <CardContent className="p-4 text-center">
+            <CreditCard className="w-6 h-6 mx-auto mb-1 text-red-500" />
+            <p className="text-2xl font-bold text-red-500">{formatCurrency(totalWithLoans)}</p>
+            <p className="text-zinc-400 text-xs">Total de Gastos</p>
             {totalLoans > 0 && (
-              <p className="text-xs text-cyan-400 mt-1">
-                (+ {formatCurrency(totalLoans)} en préstamos)
+              <p className="text-[10px] text-cyan-400 mt-1">
+                (+ {formatCurrency(totalLoans)} préstamos)
               </p>
             )}
           </CardContent>
@@ -810,63 +588,60 @@ const ExpensesPage = () => {
 
         {/* Resumen de Préstamos */}
         {loans.length > 0 && (
-          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 mb-6">
+          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 mb-4">
             <CardHeader className="pb-2">
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <Landmark className="w-5 h-5 text-cyan-400" />
-                Resumen de Préstamos
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <Landmark className="w-4 h-4 text-cyan-400" />
+                Préstamos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {loans.map((loan) => {
                   const typeInfo = getLoanTypeInfo(loan.loan_type);
                   return (
-                    <div key={loan.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
-                          <Landmark className={`w-5 h-5 ${typeInfo.textColor}`} />
+                    <div key={loan.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
+                          <Landmark className={`w-4 h-4 ${typeInfo.textColor}`} />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{loan.borrower_name}</p>
-                          <p className="text-xs text-zinc-400">{loan.bank} • {typeInfo.label}</p>
+                          <p className="font-medium text-white text-sm">{loan.borrower_name}</p>
+                          <p className="text-[10px] text-zinc-400">{loan.bank}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-cyan-400">{formatCurrency(loan.monthly_payment)}/mes</p>
-                        <p className="text-xs text-zinc-400">Pendiente: {formatCurrency(loan.current_amount)}</p>
+                        <p className="font-bold text-cyan-400 text-sm">{formatCurrency(loan.monthly_payment)}/mes</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <div className="mt-4 pt-3 border-t border-zinc-700">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Total Préstamos</span>
-                  <span className="text-xl font-bold text-cyan-400">{formatCurrency(totalLoans)}/mes</span>
-                </div>
+              <div className="mt-2 pt-2 border-t border-zinc-700 flex justify-between">
+                <span className="text-zinc-400 text-xs">Total</span>
+                <span className="text-sm font-bold text-cyan-400">{formatCurrency(totalLoans)}/mes</span>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Suscripciones */}
-        <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800 mb-6">
+        <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800 mb-4">
           <CardHeader className="pb-2">
             <button 
               onClick={() => setShowSubscriptions(!showSubscriptions)}
               className="w-full flex items-center justify-between"
             >
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <Smartphone className="w-5 h-5 text-pink-400" />
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <Smartphone className="w-4 h-4 text-pink-400" />
                 Suscripciones
               </CardTitle>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
+                <span className="text-lg font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
                 {showSubscriptions ? (
-                  <ChevronDown className="w-5 h-5 text-zinc-400" />
+                  <ChevronDown className="w-4 h-4 text-zinc-400" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-zinc-400" />
+                  <ChevronRight className="w-4 h-4 text-zinc-400" />
                 )}
               </div>
             </button>
@@ -874,16 +649,15 @@ const ExpensesPage = () => {
           {showSubscriptions && (
             <CardContent>
               {subscriptions.length === 0 ? (
-                <p className="text-zinc-500 text-center py-4">No hay suscripciones registradas</p>
+                <p className="text-zinc-500 text-center py-2 text-xs">Sin suscripciones</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {subscriptions.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
+                    <div key={sub.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
                       <div>
-                        <p className="font-medium text-white">{sub.description}</p>
-                        <p className="text-xs text-zinc-400">{new Date(sub.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                        <p className="font-medium text-white text-xs">{sub.description}</p>
                       </div>
-                      <p className="font-bold text-pink-400">{formatCurrency(sub.amount)}</p>
+                      <p className="font-bold text-pink-400 text-xs">{formatCurrency(sub.amount)}</p>
                     </div>
                   ))}
                 </div>
@@ -892,30 +666,30 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        {/* Por Categoría */}
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+        {/* Por Categoría - EXPANDED BY DEFAULT */}
+        <Card className="bg-zinc-900 border-zinc-800 mb-4">
           <CardHeader className="pb-2">
             <button 
               onClick={() => setShowCategories(!showCategories)}
               className="w-full flex items-center justify-between"
             >
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <PieChart className="w-5 h-5 text-orange-400" />
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <PieChart className="w-4 h-4 text-orange-400" />
                 Por Categoría
               </CardTitle>
               {showCategories ? (
-                <ChevronDown className="w-5 h-5 text-zinc-400" />
+                <ChevronDown className="w-4 h-4 text-zinc-400" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-zinc-400" />
+                <ChevronRight className="w-4 h-4 text-zinc-400" />
               )}
             </button>
           </CardHeader>
           {showCategories && (
             <CardContent>
               {Object.keys(expensesByCategory).length === 0 ? (
-                <p className="text-zinc-500 text-center py-4">No hay gastos registrados</p>
+                <p className="text-zinc-500 text-center py-2 text-xs">Sin gastos</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {Object.entries(expensesByCategory).map(([category, amount]) => {
                     const cat = getCategoryInfo(category);
                     const Icon = cat.icon;
@@ -923,19 +697,18 @@ const ExpensesPage = () => {
                     const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
                     
                     return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                            <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                      <div key={category} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                        <div className="flex items-center gap-1">
+                          <div className={`w-6 h-6 rounded flex items-center justify-center ${cat.color}`}>
+                            <Icon className={`w-3 h-3 ${cat.textColor}`} />
                           </div>
                           <div>
-                            <p className="font-medium text-white">{cat.label}</p>
-                            <p className="text-xs text-zinc-400">{percentage.toFixed(1)}% del total</p>
+                            <p className="font-medium text-white text-[10px] leading-tight">{cat.label}</p>
+                            <p className="text-[9px] text-orange-400">{incomePercentage.toFixed(0)}%</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-white">{formatCurrency(amount)}</p>
-                          <p className="text-xs text-orange-400">{incomePercentage.toFixed(1)}% de ingresos</p>
+                          <p className="font-bold text-white text-xs">{formatCurrency(amount)}</p>
                         </div>
                       </div>
                     );
@@ -948,34 +721,50 @@ const ExpensesPage = () => {
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingDown className="w-5 h-5 text-red-500" />
-              Historial de Gastos
+            <CardTitle className="text-white flex items-center gap-2 text-sm">
+              <TrendingDown className="w-4 h-4 text-red-500" />
+              Historial
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-zinc-500 text-center">Cargando...</p>
+              <p className="text-zinc-500 text-center text-xs">Cargando...</p>
             ) : filteredExpenses.length === 0 ? (
-              <p className="text-zinc-500 text-center">No hay gastos registrados</p>
+              <p className="text-zinc-500 text-center text-xs">Sin gastos</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredExpenses.map((expense) => {
                   const cat = getCategoryInfo(expense.category);
                   const Icon = cat.icon;
                   return (
-                    <div key={expense.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                          <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                    <div key={expense.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
+                          <Icon className={`w-4 h-4 ${cat.textColor}`} />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{expense.description || cat.label}</p>
-                          <p className="text-xs text-zinc-500">{new Date(expense.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                          <p className="font-medium text-white text-sm">{expense.description || cat.label}</p>
+                          <p className="text-[10px] text-zinc-500">{new Date(expense.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-red-500">-{formatCurrency(expense.amount)}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="font-bold text-red-500 text-sm">-{formatCurrency(expense.amount)}</p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => openEditDialog(expense)}
+                            className="p-1 rounded hover:bg-zinc-700 transition-colors"
+                          >
+                            <Pencil className="w-3 h-3 text-zinc-400" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteDialog(expense)}
+                            className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-400" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -986,10 +775,95 @@ const ExpensesPage = () => {
         </Card>
       </div>
 
+      {/* Modal edición gasto */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Gasto</DialogTitle>
+          </DialogHeader>
+          <button 
+            onClick={() => setIsEditDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <ExpenseForm 
+            expense={editExpense} 
+            setExpense={setEditExpense} 
+            onSubmit={handleEditExpense}
+            isSubmitting={isSubmitting}
+            isNew={false}
+            investments={investments}
+            patrimony={patrimony}
+            isNewInvestmentOpen={isNewInvestmentOpen}
+            setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+            isNewPatrimonyOpen={isNewPatrimonyOpen}
+            setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+            newInvestment={newInvestment}
+            setNewInvestment={setNewInvestment}
+            newPatrimonyAsset={newPatrimonyAsset}
+            setNewPatrimonyAsset={setNewPatrimonyAsset}
+            handleCreateInvestment={handleCreateInvestment}
+            handleCreatePatrimony={handleCreatePatrimony}
+            investmentTypes={investmentTypes}
+            patrimonyCategories={patrimonyCategories}
+            isCategoryDialogOpen={isCategoryDialogOpen}
+            setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+            isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+            setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+            isInvestmentDialogOpen={isInvestmentDialogOpen}
+            setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+            isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+            setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+            getSelectedCategoryInfo={getSelectedCategoryInfo}
+            customCategories={customCategories}
+            availableIcons={availableIcons}
+            categoryColors={categoryColors}
+            newCustomCategory={newCustomCategory}
+            setNewCustomCategory={setNewCustomCategory}
+            handleCreateCustomCategory={handleCreateCustomCategory}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal eliminación */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Eliminar Gasto</DialogTitle>
+          </DialogHeader>
+          <button 
+            onClick={() => setIsDeleteDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-4 mt-4">
+            <p className="text-zinc-300 text-sm">
+              ¿Eliminar este gasto?
+            </p>
+            {selectedExpense && (
+              <div className="p-3 bg-zinc-800/50 rounded-lg">
+                <p className="text-white font-medium">{selectedExpense.description}</p>
+                <p className="text-red-400 font-bold">{formatCurrency(selectedExpense.amount)}</p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">
+                Cancelar
+              </Button>
+              <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal nueva inversión */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-white text-sm">Nueva Inversión</DialogTitle></DialogHeader>
           <button 
             onClick={() => setIsNewInvestmentOpen(false)}
             className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
@@ -997,18 +871,18 @@ const ExpensesPage = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-            <div><label className="text-sm text-zinc-400 mb-1 block">Tipo</label>
+            <div><label className="text-xs text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newInvestment.name} onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" /></div>
+            <div><label className="text-xs text-zinc-400 mb-1 block">Tipo</label>
               <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>))}</SelectContent>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{investmentTypes.map((t) => (<SelectItem key={t.value} value={t.value} className="text-white text-xs">{t.label}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><label className="text-xs text-zinc-400 mb-1 block">Inicial</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" /></div>
+              <div><label className="text-xs text-zinc-400 mb-1 block">Actual</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" /></div>
             </div>
-            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black">Crear</Button>
+            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black text-sm">Crear</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1016,7 +890,7 @@ const ExpensesPage = () => {
       {/* Modal nuevo patrimonio */}
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-white text-sm">Nuevo Patrimonio</DialogTitle></DialogHeader>
           <button 
             onClick={() => setIsNewPatrimonyOpen(false)}
             className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
@@ -1024,90 +898,143 @@ const ExpensesPage = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="space-y-3 mt-2">
-            <div><label className="text-sm text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-            <div><label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+            <div><label className="text-xs text-zinc-400 mb-1 block">Nombre</label><Input placeholder="Nombre" value={newPatrimonyAsset.name} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" /></div>
+            <div><label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
               <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white">{c.label}</SelectItem>))}</SelectContent>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">{patrimonyCategories.map((c) => (<SelectItem key={c.value} value={c.value} className="text-white text-xs">{c.label}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div><label className="text-sm text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-            <Button onClick={handleCreatePatrimony} className="w-full bg-sky-500 hover:bg-sky-600 text-white">Crear</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal crear categoría personalizada */}
-      <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
-          </DialogHeader>
-          <button 
-            onClick={() => setIsCreateCategoryDialogOpen(false)}
-            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
-              <Input
-                placeholder="Nombre de la categoría"
-                value={newCustomCategory.name}
-                onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
-              <div className="grid grid-cols-5 gap-2">
-                {availableIcons.map((iconOpt) => {
-                  const Icon = iconOpt.icon;
-                  return (
-                    <button
-                      key={iconOpt.value}
-                      type="button"
-                      onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
-                      className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
-                        newCustomCategory.icon === iconOpt.value
-                          ? "border-red-500 bg-red-500/20"
-                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-red-400" : "text-zinc-400"}`} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-zinc-400 mb-2 block">Color</label>
-              <div className="grid grid-cols-5 gap-2">
-                {categoryColors.map((color) => (
-                  <button
-                    key={color.label}
-                    type="button"
-                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value, textColor: color.textColor })}
-                    className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
-                      newCustomCategory.color === color.value
-                        ? "border-white"
-                        : "border-zinc-700"
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full ${color.value}`} />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Button onClick={handleCreateCustomCategory} className="w-full bg-red-500 hover:bg-red-600 text-white">
-              Crear Categoría
-            </Button>
+            <div><label className="text-xs text-zinc-400 mb-1 block">Valor</label><Input type="number" placeholder="0.00" value={newPatrimonyAsset.value} onChange={(e) => setNewPatrimonyAsset({ ...newPatrimonyAsset, value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" /></div>
+            <Button onClick={handleCreatePatrimony} className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm">Crear</Button>
           </div>
         </DialogContent>
       </Dialog>
 
       <BottomNav />
+    </div>
+  );
+};
+
+// Componente reutilizable para el formulario de gastos
+const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, investmentTypes, patrimonyCategories, isCategoryDialogOpen, setIsCategoryDialogOpen, isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedCategoryInfo, customCategories, availableIcons, categoryColors, newCustomCategory, setNewCustomCategory, handleCreateCustomCategory }: any) => {
+  const getInvestmentLabel = () => expense.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === expense.investment_id)?.name || "Sin vincular";
+  const getPatrimonyLabel = () => expense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
+
+  return (
+    <div className="space-y-3 mt-2">
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Concepto</label>
+        <Input
+          placeholder="Ej: Supermercado..."
+          value={expense.source}
+          onChange={(e) => setExpense({ ...expense, source: e.target.value })}
+          className="bg-zinc-800 border-zinc-700 text-white text-sm"
+        />
+      </div>
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Importe</label>
+        <Input
+          type="number"
+          placeholder="0.00"
+          value={expense.amount}
+          onChange={(e) => setExpense({ ...expense, amount: e.target.value })}
+          className="bg-zinc-800 border-zinc-700 text-white text-sm"
+        />
+      </div>
+
+      {/* Selector de Categoría */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="w-full p-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg flex items-center gap-2 hover:border-zinc-600 transition-all"
+            >
+              {(() => {
+                const cat = getSelectedCategoryInfo(expense.category);
+                const Icon = cat.icon;
+                return (
+                  <>
+                    <div className={`w-6 h-6 rounded flex items-center justify-center ${cat.color}`}>
+                      <Icon className={`w-3 h-3 ${cat.textColor}`} />
+                    </div>
+                    <span className="text-white text-sm">{cat.label}</span>
+                    <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
+                  </>
+                );
+              })()}
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[70vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white text-sm">Categoría</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsCategoryDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {expenseCategories.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = expense.category === cat.value;
+                return (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => {
+                      setExpense({ ...expense, category: cat.value });
+                      setIsCategoryDialogOpen(false);
+                    }}
+                    className={`p-2 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                      isSelected
+                        ? "border-red-500 bg-red-500/20"
+                        : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded flex items-center justify-center ${cat.color}`}>
+                      <Icon className={`w-4 h-4 ${cat.textColor}`} />
+                    </div>
+                    <span className={`text-[10px] font-medium ${isSelected ? "text-white" : "text-zinc-400"}`}>
+                      {cat.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsCategoryDialogOpen(false);
+                setTimeout(() => setIsCreateCategoryDialogOpen(true), 100);
+              }}
+              className="w-full p-2 rounded-lg border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-1 hover:border-red-500 hover:bg-red-500/10 transition-all mt-2"
+            >
+              <Plus className="w-4 h-4 text-red-400" />
+              <span className="text-red-400 text-xs">Crear</span>
+            </button>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
+        <DatePicker
+          date={expense.date}
+          onDateChange={(date) => setExpense({ ...expense, date })}
+        />
+      </div>
+
+      <Button 
+        onClick={onSubmit} 
+        className="w-full bg-red-500 hover:bg-red-600 text-white text-sm py-4"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Guardando..." : isNew ? "Guardar" : "Guardar cambios"}
+      </Button>
     </div>
   );
 };
