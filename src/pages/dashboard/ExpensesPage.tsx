@@ -13,7 +13,7 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
-  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2
+  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2, ChevronDown, PieChart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -109,6 +109,7 @@ const ExpensesPage = () => {
   const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
@@ -119,6 +120,8 @@ const ExpensesPage = () => {
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const [showSubscriptions, setShowSubscriptions] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
@@ -197,6 +200,7 @@ const ExpensesPage = () => {
       fetchExpenses(session.user.id);
       fetchLoans(session.user.id);
       fetchOptions(session.user.id);
+      fetchIncomes(session.user.id);
     }
   };
 
@@ -207,6 +211,14 @@ const ExpensesPage = () => {
     ]);
     if (invResult.data) setInvestments(invResult.data);
     if (patResult.data) setPatrimony(patResult.data);
+  };
+
+  const fetchIncomes = async (userId: string) => {
+    const { data } = await supabase
+      .from("incomes")
+      .select("amount")
+      .eq("user_id", userId);
+    if (data) setIncomes(data);
   };
 
   const fetchLoans = async (userId: string) => {
@@ -299,6 +311,20 @@ const ExpensesPage = () => {
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
   const totalWithLoans = totalExpenses + totalLoans;
+  
+  // Total de ingresos
+  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+
+  // Suscripciones (gastos recurrentes)
+  const subscriptions = filteredExpenses.filter(e => e.category === "subscriptions");
+  const totalSubscriptions = subscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+  // Gastos por categoría
+  const expensesByCategory = filteredExpenses.reduce((acc, e) => {
+    if (!acc[e.category]) acc[e.category] = 0;
+    acc[e.category] += parseFloat(e.amount);
+    return acc;
+  }, {} as Record<string, number>);
 
   const allCategories = [...expenseCategories, ...customCategories];
 
@@ -823,6 +849,102 @@ const ExpensesPage = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Suscripciones */}
+        <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800 mb-6">
+          <CardHeader className="pb-2">
+            <button 
+              onClick={() => setShowSubscriptions(!showSubscriptions)}
+              className="w-full flex items-center justify-between"
+            >
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                <Smartphone className="w-5 h-5 text-pink-400" />
+                Suscripciones
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
+                {showSubscriptions ? (
+                  <ChevronDown className="w-5 h-5 text-zinc-400" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-zinc-400" />
+                )}
+              </div>
+            </button>
+          </CardHeader>
+          {showSubscriptions && (
+            <CardContent>
+              {subscriptions.length === 0 ? (
+                <p className="text-zinc-500 text-center py-4">No hay suscripciones registradas</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {subscriptions.map((sub) => (
+                    <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
+                      <div>
+                        <p className="font-medium text-white">{sub.description}</p>
+                        <p className="text-xs text-zinc-400">{new Date(sub.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                      </div>
+                      <p className="font-bold text-pink-400">{formatCurrency(sub.amount)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Por Categoría */}
+        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+          <CardHeader className="pb-2">
+            <button 
+              onClick={() => setShowCategories(!showCategories)}
+              className="w-full flex items-center justify-between"
+            >
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                <PieChart className="w-5 h-5 text-orange-400" />
+                Por Categoría
+              </CardTitle>
+              {showCategories ? (
+                <ChevronDown className="w-5 h-5 text-zinc-400" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-zinc-400" />
+              )}
+            </button>
+          </CardHeader>
+          {showCategories && (
+            <CardContent>
+              {Object.keys(expensesByCategory).length === 0 ? (
+                <p className="text-zinc-500 text-center py-4">No hay gastos registrados</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(expensesByCategory).map(([category, amount]) => {
+                    const cat = getCategoryInfo(category);
+                    const Icon = cat.icon;
+                    const percentage = totalWithLoans > 0 ? (amount / totalWithLoans) * 100 : 0;
+                    const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
+                    
+                    return (
+                      <div key={category} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                            <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                          </div>
+                          <div>
+                            <p className="font-medium text-white">{cat.label}</p>
+                            <p className="text-xs text-zinc-400">{percentage.toFixed(1)}% del total</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-white">{formatCurrency(amount)}</p>
+                          <p className="text-xs text-orange-400">{incomePercentage.toFixed(1)}% de ingresos</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
