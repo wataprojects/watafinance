@@ -119,8 +119,6 @@ const InvestmentsPage = () => {
     capital_invested: "",
     start_date: new Date(),
     notes: "",
-    return_percentage: "",
-    monthly_contribution: "",
   });
 
   const [newCustomCategory, setNewCustomCategory] = useState({
@@ -168,8 +166,6 @@ const InvestmentsPage = () => {
       capital_invested: newInvestment.capital_invested ? parseFloat(newInvestment.capital_invested) : null,
       start_date: formatDateToISO(newInvestment.start_date),
       notes: newInvestment.notes || null,
-      return_percentage: newInvestment.return_percentage ? parseFloat(newInvestment.return_percentage) : null,
-      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : null,
     });
 
     if (!error) {
@@ -182,8 +178,6 @@ const InvestmentsPage = () => {
         capital_invested: "",
         start_date: new Date(),
         notes: "",
-        return_percentage: "",
-        monthly_contribution: "",
       });
       fetchInvestments(session.user.id);
     }
@@ -383,29 +377,6 @@ const InvestmentsPage = () => {
                     className="bg-zinc-800 border-zinc-700 text-white"
                     rows={3}
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-zinc-400 mb-1 block">Retorno (%)</label>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={newInvestment.return_percentage}
-                      onChange={(e) => setNewInvestment({ ...newInvestment, return_percentage: e.target.value })}
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual</label>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={newInvestment.monthly_contribution}
-                      onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                  </div>
                 </div>
 
                 <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600">
