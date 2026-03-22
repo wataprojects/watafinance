@@ -12,7 +12,7 @@ import {
   Laptop, Home, Briefcase, Film, Coins, Warehouse, Car, Bitcoin, 
   Fuel, MoreHorizontal, ChevronRight, X, DollarSign, Wallet, CreditCard,
   PiggyBank, Building, Globe, Smartphone, Music, BookOpen, Car as CarIcon,
-  Plane, Sparkles, Flame, Shield, Wifi, Heart, ShoppingCart, Shirt, Link2
+  Plane, Sparkles, Flame, Shield, Wifi, Heart, ShoppingCart, Shirt, Link2, Landmark
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -105,11 +105,13 @@ const patrimonyCategories = [
 const InvestmentsPage = () => {
   const navigate = useNavigate();
   const [investments, setInvestments] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
@@ -121,6 +123,7 @@ const InvestmentsPage = () => {
     category: "digital",
     initial_value: "",
     current_value: "",
+    loan_id: "none",
     patrimony_id: "none",
   });
 
@@ -147,13 +150,17 @@ const InvestmentsPage = () => {
       navigate("/login");
     } else {
       fetchInvestments(session.user.id);
-      fetchPatrimony(session.user.id);
+      fetchOptions(session.user.id);
     }
   };
 
-  const fetchPatrimony = async (userId: string) => {
-    const { data } = await supabase.from("patrimony").select("id, name, category").eq("user_id", userId);
-    if (data) setPatrimony(data);
+  const fetchOptions = async (userId: string) => {
+    const [loansResult, patrimonyResult] = await Promise.all([
+      supabase.from("loans").select("id, borrower_name, bank").eq("user_id", userId).eq("status", "active"),
+      supabase.from("patrimony").select("id, name, category").eq("user_id", userId),
+    ]);
+    if (loansResult.data) setLoans(loansResult.data);
+    if (patrimonyResult.data) setPatrimony(patrimonyResult.data);
   };
 
   const fetchInvestments = async (userId: string) => {
@@ -195,6 +202,7 @@ const InvestmentsPage = () => {
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
+      loan_id: newInvestment.loan_id !== "none" ? newInvestment.loan_id : null,
     });
 
     if (insertError) {
@@ -210,6 +218,7 @@ const InvestmentsPage = () => {
       category: "digital",
       initial_value: "",
       current_value: "",
+      loan_id: "none",
       patrimony_id: "none",
     });
     setError("");
@@ -253,6 +262,12 @@ const InvestmentsPage = () => {
     setNewInvestment({ ...newInvestment, category: categoryValue });
     setIsCreateCategoryDialogOpen(false);
     setNewCustomCategory({ name: "", icon: "MoreHorizontal", color: "bg-purple-500/20", textColor: "text-purple-400" });
+  };
+
+  const getLoanLabel = () => {
+    if (newInvestment.loan_id === "none") return "Vincular a préstamo";
+    const loan = loans.find(l => l.id === newInvestment.loan_id);
+    return loan ? `${loan.borrower_name} - ${loan.bank}` : "Vincular a préstamo";
   };
 
   const getPatrimonyLabel = () => {
@@ -412,6 +427,93 @@ const InvestmentsPage = () => {
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
+                </div>
+
+                {/* Vincular a Préstamo */}
+                <div>
+                  <label className="text-sm text-zinc-400 mb-2 block">Vincular a préstamo</label>
+                  <Dialog open={isLoanDialogOpen} onOpenChange={setIsLoanDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                          newInvestment.loan_id !== "none" 
+                            ? "border-cyan-500/50 bg-cyan-500/10" 
+                            : "border-zinc-700 hover:border-zinc-600"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          newInvestment.loan_id !== "none" 
+                            ? "bg-cyan-500/20" 
+                            : "bg-zinc-700"
+                        }`}>
+                          <Landmark className={`w-4 h-4 ${newInvestment.loan_id !== "none" ? "text-cyan-400" : "text-zinc-400"}`} />
+                        </div>
+                        <span className={`font-medium ${newInvestment.loan_id !== "none" ? "text-cyan-400" : "text-zinc-400"}`}>
+                          {getLoanLabel()}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Vincular a Préstamo</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsLoanDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewInvestment({ ...newInvestment, loan_id: "none" });
+                            setIsLoanDialogOpen(false);
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                            newInvestment.loan_id === "none"
+                              ? "border-zinc-500 bg-zinc-800"
+                              : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                            <Link2 className="w-4 h-4 text-zinc-400" />
+                          </div>
+                          <span className="text-zinc-400 font-medium">Sin vincular</span>
+                        </button>
+
+                        {loans.map((loan) => (
+                          <button
+                            key={loan.id}
+                            type="button"
+                            onClick={() => {
+                              setNewInvestment({ ...newInvestment, loan_id: loan.id });
+                              setIsLoanDialogOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                              newInvestment.loan_id === loan.id
+                                ? "border-cyan-500 bg-cyan-500/20"
+                                : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                              <Landmark className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-white font-medium">{loan.borrower_name}</span>
+                              <p className="text-xs text-zinc-400">{loan.bank}</p>
+                            </div>
+                          </button>
+                        ))}
+
+                        {loans.length === 0 && (
+                          <p className="text-zinc-500 text-center py-4">No hay préstamos activos</p>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 {/* Vincular a Patrimonio */}
