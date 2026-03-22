@@ -5,9 +5,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, LineChart } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { 
+  Plus, TrendingUp, TrendingDown, BarChart3, PieChart, LineChart, 
+  Laptop, Home, Briefcase, Film, Coins, Warehouse, Car, Bitcoin, 
+  Fuel, MoreHorizontal, ChevronRight, X, DollarSign, Wallet, CreditCard,
+  PiggyBank, Building, Globe, Smartphone, Music, BookOpen, Car as CarIcon,
+  Plane, Sparkles, Flame, Shield, Wifi, Heart, ShoppingCart, Shirt
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 
@@ -20,18 +28,106 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+interface CategoryOption {
+  value: string;
+  label: string;
+  icon: any;
+  color: string;
+  textColor: string;
+}
+
+const availableIcons = [
+  { value: "Laptop", icon: Laptop },
+  { value: "Home", icon: Home },
+  { value: "Briefcase", icon: Briefcase },
+  { value: "Film", icon: Film },
+  { value: "Coins", icon: Coins },
+  { value: "Warehouse", icon: Warehouse },
+  { value: "Car", icon: Car },
+  { value: "Bitcoin", icon: Bitcoin },
+  { value: "Fuel", icon: Fuel },
+  { value: "MoreHorizontal", icon: MoreHorizontal },
+  { value: "DollarSign", icon: DollarSign },
+  { value: "Wallet", icon: Wallet },
+  { value: "CreditCard", icon: CreditCard },
+  { value: "PiggyBank", icon: PiggyBank },
+  { value: "Building", icon: Building },
+  { value: "Globe", icon: Globe },
+  { value: "Smartphone", icon: Smartphone },
+  { value: "Music", icon: Music },
+  { value: "BookOpen", icon: BookOpen },
+  { value: "CarIcon", icon: CarIcon },
+  { value: "Plane", icon: Plane },
+  { value: "Sparkles", icon: Sparkles },
+  { value: "Flame", icon: Flame },
+  { value: "Shield", icon: Shield },
+  { value: "Wifi", icon: Wifi },
+  { value: "Heart", icon: Heart },
+  { value: "ShoppingCart", icon: ShoppingCart },
+  { value: "Shirt", icon: Shirt },
+];
+
+const investmentCategories: CategoryOption[] = [
+  { value: "digital", label: "Digital", icon: Laptop, color: "bg-blue-500/20", textColor: "text-blue-400" },
+  { value: "inmuebles", label: "Inmuebles", icon: Home, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
+  { value: "bolsa", label: "Bolsa", icon: BarChart3, color: "bg-purple-500/20", textColor: "text-purple-400" },
+  { value: "negocio", label: "Negocio", icon: Briefcase, color: "bg-amber-500/20", textColor: "text-amber-400" },
+  { value: "contenido", label: "Contenido", icon: Film, color: "bg-rose-500/20", textColor: "text-rose-400" },
+  { value: "oro", label: "Oro", icon: Coins, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
+  { value: "plata", label: "Plata", icon: Coins, color: "bg-slate-500/20", textColor: "text-slate-400" },
+  { value: "trasteros", label: "Trasteros", icon: Warehouse, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
+  { value: "parkings", label: "Parkings", icon: Car, color: "bg-indigo-500/20", textColor: "text-indigo-400" },
+  { value: "crypto", label: "Crypto", icon: Bitcoin, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "petroleo", label: "Petroleum", icon: Fuel, color: "bg-red-500/20", textColor: "text-red-400" },
+  { value: "otros", label: "Otros", icon: MoreHorizontal, color: "bg-zinc-500/20", textColor: "text-zinc-400" },
+];
+
+const categoryColors = [
+  { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
+  { value: "bg-emerald-500/20", textColor: "text-emerald-400", label: "Verde" },
+  { value: "bg-purple-500/20", textColor: "text-purple-400", label: "Morado" },
+  { value: "bg-cyan-500/20", textColor: "text-cyan-400", label: "Cian" },
+  { value: "bg-amber-500/20", textColor: "text-amber-400", label: "Ámbar" },
+  { value: "bg-green-500/20", textColor: "text-green-400", label: "Verde claro" },
+  { value: "bg-slate-500/20", textColor: "text-slate-400", label: "Gris" },
+  { value: "bg-pink-500/20", textColor: "text-pink-400", label: "Rosa" },
+  { value: "bg-orange-500/20", textColor: "text-orange-400", label: "Naranja" },
+  { value: "bg-red-500/20", textColor: "text-red-400", label: "Rojo" },
+];
+
 const InvestmentsPage = () => {
   const navigate = useNavigate();
   const [investments, setInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  
   const [newInvestment, setNewInvestment] = useState({
     name: "",
-    type: "stocks",
+    category: "digital",
     initial_value: "",
     current_value: "",
+    capital_invested: "",
+    start_date: new Date(),
+    notes: "",
     return_percentage: "",
     monthly_contribution: "",
+  });
+
+  const [newCustomCategory, setNewCustomCategory] = useState({
+    name: "",
+    icon: "MoreHorizontal",
+    color: "bg-purple-500/20",
+    textColor: "text-purple-400",
   });
 
   useEffect(() => {
@@ -66,9 +162,12 @@ const InvestmentsPage = () => {
     const { error } = await supabase.from("investments").insert({
       user_id: session.user.id,
       name: newInvestment.name,
-      type: newInvestment.type,
+      type: newInvestment.category,
       initial_value: parseFloat(newInvestment.initial_value),
       current_value: parseFloat(newInvestment.current_value),
+      capital_invested: newInvestment.capital_invested ? parseFloat(newInvestment.capital_invested) : null,
+      start_date: formatDateToISO(newInvestment.start_date),
+      notes: newInvestment.notes || null,
       return_percentage: newInvestment.return_percentage ? parseFloat(newInvestment.return_percentage) : null,
       monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : null,
     });
@@ -77,9 +176,12 @@ const InvestmentsPage = () => {
       setIsDialogOpen(false);
       setNewInvestment({
         name: "",
-        type: "stocks",
+        category: "digital",
         initial_value: "",
         current_value: "",
+        capital_invested: "",
+        start_date: new Date(),
+        notes: "",
         return_percentage: "",
         monthly_contribution: "",
       });
@@ -87,43 +189,39 @@ const InvestmentsPage = () => {
     }
   };
 
+  const handleCreateCustomCategory = () => {
+    if (!newCustomCategory.name) return;
+    
+    const categoryValue = `custom_${newCustomCategory.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const iconData = availableIcons.find(i => i.value === newCustomCategory.icon);
+    const newCategory: CategoryOption = {
+      value: categoryValue,
+      label: newCustomCategory.name,
+      icon: iconData?.icon || MoreHorizontal,
+      color: newCustomCategory.color,
+      textColor: newCustomCategory.textColor,
+    };
+    
+    setCustomCategories([...customCategories, newCategory]);
+    setNewInvestment({ ...newInvestment, category: categoryValue });
+    setIsCreateCategoryDialogOpen(false);
+    setNewCustomCategory({ name: "", icon: "MoreHorizontal", color: "bg-purple-500/20", textColor: "text-purple-400" });
+  };
+
   const totalValue = investments.reduce((sum, i) => sum + parseFloat(i.current_value), 0);
   const totalInitial = investments.reduce((sum, i) => sum + parseFloat(i.initial_value), 0);
   const totalReturn = totalValue - totalInitial;
   const returnPercentage = totalInitial > 0 ? (totalReturn / totalInitial) * 100 : 0;
 
-  const getTypeIcon = (type: string) => {
-    const icons: Record<string, any> = {
-      stocks: BarChart3,
-      etf: PieChart,
-      crypto: LineChart,
-      bonds: TrendingUp,
-      real_estate: TrendingUp,
-      other: TrendingUp,
-    };
-    return icons[type] || TrendingUp;
+  const getCategoryInfo = (categoryValue: string) => {
+    return [...investmentCategories, ...customCategories].find(c => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
   };
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      stocks: "bg-blue-500/20 text-blue-400",
-      etf: "bg-purple-500/20 text-purple-400",
-      crypto: "bg-yellow-500/20 text-yellow-400",
-      bonds: "bg-emerald-500/20 text-emerald-400",
-      real_estate: "bg-rose-500/20 text-rose-400",
-      other: "bg-slate-500/20 text-slate-400",
-    };
-    return colors[type] || "bg-slate-500/20 text-slate-400";
+  const getSelectedCategoryInfo = (categoryValue: string) => {
+    return [...investmentCategories, ...customCategories].find(c => c.value === categoryValue) || investmentCategories[0];
   };
 
-  const types = [
-    { value: "stocks", label: "Acciones" },
-    { value: "etf", label: "ETF" },
-    { value: "crypto", label: "Criptomonedas" },
-    { value: "bonds", label: "Bonos" },
-    { value: "real_estate", label: "Bienes Raíces" },
-    { value: "other", label: "Otros" },
-  ];
+  const allCategories = [...investmentCategories, ...customCategories];
 
   return (
     <div className="min-h-screen bg-black pb-28">
@@ -141,13 +239,19 @@ const InvestmentsPage = () => {
                 Nueva Inversión
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-white">Agregar Inversión</DialogTitle>
               </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm text-zinc-300">Nombre</label>
+                  <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
                   <Input
                     placeholder="Nombre de la inversión"
                     value={newInvestment.name}
@@ -155,32 +259,103 @@ const InvestmentsPage = () => {
                     className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
+
+                {/* Selector de Categoría */}
                 <div>
-                  <label className="text-sm text-zinc-300">Tipo</label>
-                  <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
-                      {types.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
+                  <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3 hover:border-zinc-600 transition-all"
+                      >
+                        {(() => {
+                          const cat = getSelectedCategoryInfo(newInvestment.category);
+                          const Icon = cat.icon;
+                          return (
+                            <>
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                                <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                              </div>
+                              <span className="text-white font-medium">{cat.label}</span>
+                              <ChevronRight className="w-5 h-5 text-zinc-400 ml-auto" />
+                            </>
+                          );
+                        })()}
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Seleccionar Categoría</DialogTitle>
+                      </DialogHeader>
+                      <button 
+                        onClick={() => setIsCategoryDialogOpen(false)}
+                        className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          {investmentCategories.map((cat) => {
+                            const Icon = cat.icon;
+                            const isSelected = newInvestment.category === cat.value;
+                            return (
+                              <button
+                                key={cat.value}
+                                type="button"
+                                onClick={() => {
+                                  setNewInvestment({ ...newInvestment, category: cat.value });
+                                  setIsCategoryDialogOpen(false);
+                                }}
+                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                                  isSelected
+                                    ? "border-purple-500 bg-purple-500/20"
+                                    : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                                }`}
+                              >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                                  <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                                </div>
+                                <span className={`text-xs font-medium ${isSelected ? "text-white" : "text-zinc-400"}`}>
+                                  {cat.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Botón para crear categoría personalizada */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCategoryDialogOpen(false);
+                            setTimeout(() => {
+                              setIsCreateCategoryDialogOpen(true);
+                            }, 100);
+                          }}
+                          className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+                        >
+                          <Plus className="w-5 h-5 text-purple-400" />
+                          <span className="text-purple-400 font-medium">Crear categoría</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-zinc-300">Valor Inicial</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Capital Invertido (€)</label>
                     <Input
                       type="number"
                       placeholder="0.00"
-                      value={newInvestment.initial_value}
-                      onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
+                      value={newInvestment.capital_invested}
+                      onChange={(e) => setNewInvestment({ ...newInvestment, capital_invested: e.target.value })}
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-zinc-300">Valor Actual</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Valor Actual</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -190,9 +365,29 @@ const InvestmentsPage = () => {
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Fecha de Inicio</label>
+                  <DatePicker
+                    date={newInvestment.start_date}
+                    onDateChange={(date) => setNewInvestment({ ...newInvestment, start_date: date || new Date() })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Notas</label>
+                  <Textarea
+                    placeholder="Notas sobre la inversión..."
+                    value={newInvestment.notes}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, notes: e.target.value })}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    rows={3}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-zinc-300">Retorno (%)</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Retorno (%)</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -202,7 +397,7 @@ const InvestmentsPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-zinc-300">Aportación Mensual</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -212,6 +407,7 @@ const InvestmentsPage = () => {
                     />
                   </div>
                 </div>
+
                 <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600">
                   Guardar
                 </Button>
@@ -269,18 +465,19 @@ const InvestmentsPage = () => {
             ) : (
               <div className="space-y-3">
                 {investments.map((inv) => {
-                  const Icon = getTypeIcon(inv.type);
+                  const cat = getCategoryInfo(inv.type);
+                  const Icon = cat.icon;
                   const returnVal = parseFloat(inv.current_value) - parseFloat(inv.initial_value);
                   const returnPct = parseFloat(inv.initial_value) > 0 ? (returnVal / parseFloat(inv.initial_value)) * 100 : 0;
                   return (
                     <div key={inv.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getTypeColor(inv.type)}`}>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${cat.color}`}>
                           <Icon className="w-6 h-6" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{inv.name}</p>
-                          <p className="text-xs text-zinc-400">{inv.type}</p>
+                          <p className="text-xs text-zinc-400">{cat.label}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -297,6 +494,77 @@ const InvestmentsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal crear categoría personalizada */}
+      <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Nueva Categoría</DialogTitle>
+          </DialogHeader>
+          <button 
+            onClick={() => setIsCreateCategoryDialogOpen(false)}
+            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
+              <Input
+                placeholder="Nombre de la categoría"
+                value={newCustomCategory.name}
+                onChange={(e) => setNewCustomCategory({ ...newCustomCategory, name: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Icono</label>
+              <div className="grid grid-cols-5 gap-2">
+                {availableIcons.map((iconOpt) => {
+                  const Icon = iconOpt.icon;
+                  return (
+                    <button
+                      key={iconOpt.value}
+                      type="button"
+                      onClick={() => setNewCustomCategory({ ...newCustomCategory, icon: iconOpt.value })}
+                      className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        newCustomCategory.icon === iconOpt.value
+                          ? "border-purple-500 bg-purple-500/20"
+                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${newCustomCategory.icon === iconOpt.value ? "text-purple-400" : "text-zinc-400"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-2 block">Color</label>
+              <div className="grid grid-cols-5 gap-2">
+                {categoryColors.map((color) => (
+                  <button
+                    key={color.label}
+                    type="button"
+                    onClick={() => setNewCustomCategory({ ...newCustomCategory, color: color.value, textColor: color.textColor })}
+                    className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                      newCustomCategory.color === color.value
+                        ? "border-white"
+                        : "border-zinc-700"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full ${color.value}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleCreateCustomCategory} className="w-full bg-purple-500 hover:bg-purple-600">
+              Crear Categoría
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
