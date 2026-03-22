@@ -12,7 +12,7 @@ interface DatePickerProps {
   className?: string;
 }
 
-const DatePicker = ({ date, onDateChange, placeholder, className }: DatePickerProps) => {
+export function DatePicker({ date, onDateChange, placeholder, className }: DatePickerProps) {
   const [currentMonth, setCurrentMonth] = React.useState(date || new Date());
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -151,6 +151,6 @@ const DatePicker = ({ date, onDateChange, placeholder, className }: DatePickerPr
       )}
     </div>
   );
-};
+}
 
 export default DatePicker;
