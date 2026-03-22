@@ -689,7 +689,7 @@ const ExpensesPage = () => {
               {Object.keys(expensesByCategory).length === 0 ? (
                 <p className="text-zinc-500 text-center py-2 text-xs">Sin gastos</p>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {Object.entries(expensesByCategory).map(([category, amount]) => {
                     const cat = getCategoryInfo(category);
                     const Icon = cat.icon;
@@ -697,18 +697,28 @@ const ExpensesPage = () => {
                     const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
                     
                     return (
-                      <div key={category} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                        <div className="flex items-center gap-1">
-                          <div className={`w-6 h-6 rounded flex items-center justify-center ${cat.color}`}>
-                            <Icon className={`w-3 h-3 ${cat.textColor}`} />
+                      <div key={category} className="p-3 bg-zinc-800/50 rounded-xl space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
+                            <Icon className={`w-4 h-4 ${cat.textColor}`} />
                           </div>
-                          <div>
-                            <p className="font-medium text-white text-[10px] leading-tight">{cat.label}</p>
-                            <p className="text-[9px] text-orange-400">{incomePercentage.toFixed(0)}%</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-white text-sm truncate">{cat.label}</p>
+                            <p className="text-xs text-orange-400">{incomePercentage.toFixed(1)}% de ingresos</p>
                           </div>
+                          <p className="font-bold text-white text-sm">{formatCurrency(amount)}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-white text-xs">{formatCurrency(amount)}</p>
+                        {/* Barra de progreso */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-zinc-500">{percentage.toFixed(1)}% del total</span>
+                          </div>
+                          <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     );
