@@ -110,13 +110,15 @@ const InvestmentsPage = () => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   
   const [newInvestment, setNewInvestment] = useState({
     name: "",
     category: "digital",
     initial_value: "",
     current_value: "",
-    capital_invested: "",
+    monthly_contribution: "",
     start_date: new Date(),
     notes: "",
   });
@@ -154,33 +156,55 @@ const InvestmentsPage = () => {
   };
 
   const handleAddInvestment = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!newInvestment.name || !newInvestment.initial_value || !newInvestment.current_value) {
+      setError("Por favor, completa los campos obligatorios");
+      return;
+    }
 
-    const { error } = await supabase.from("investments").insert({
+    setSaving(true);
+    setError("");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setSaving(false);
+      return;
+    }
+
+    // Calcular el porcentaje de retorno
+    const initial = parseFloat(newInvestment.initial_value);
+    const current = parseFloat(newInvestment.current_value);
+    const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
+
+    const { error: insertError } = await supabase.from("investments").insert({
       user_id: session.user.id,
       name: newInvestment.name,
       type: newInvestment.category,
-      initial_value: parseFloat(newInvestment.initial_value),
-      current_value: parseFloat(newInvestment.current_value),
-      capital_invested: newInvestment.capital_invested ? parseFloat(newInvestment.capital_invested) : null,
-      start_date: formatDateToISO(newInvestment.start_date),
-      notes: newInvestment.notes || null,
+      initial_value: initial,
+      current_value: current,
+      return_percentage: returnPct,
+      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : null,
     });
 
-    if (!error) {
-      setIsDialogOpen(false);
-      setNewInvestment({
-        name: "",
-        category: "digital",
-        initial_value: "",
-        current_value: "",
-        capital_invested: "",
-        start_date: new Date(),
-        notes: "",
-      });
-      fetchInvestments(session.user.id);
+    if (insertError) {
+      console.error("Error al guardar inversión:", insertError);
+      setError("Error al guardar: " + insertError.message);
+      setSaving(false);
+      return;
     }
+
+    setIsDialogOpen(false);
+    setNewInvestment({
+      name: "",
+      category: "digital",
+      initial_value: "",
+      current_value: "",
+      monthly_contribution: "",
+      start_date: new Date(),
+      notes: "",
+    });
+    setError("");
+    fetchInvestments(session.user.id);
+    setSaving(false);
   };
 
   const handleCreateCustomCategory = () => {
@@ -202,8 +226,8 @@ const InvestmentsPage = () => {
     setNewCustomCategory({ name: "", icon: "MoreHorizontal", color: "bg-purple-500/20", textColor: "text-purple-400" });
   };
 
-  const totalValue = investments.reduce((sum, i) => sum + parseFloat(i.current_value), 0);
-  const totalInitial = investments.reduce((sum, i) => sum + parseFloat(i.initial_value), 0);
+  const totalValue = investments.reduce((sum, i) => sum + parseFloat(i.current_value || 0), 0);
+  const totalInitial = investments.reduce((sum, i) => sum + parseFloat(i.initial_value || 0), 0);
   const totalReturn = totalValue - totalInitial;
   const returnPercentage = totalInitial > 0 ? (totalReturn / totalInitial) * 100 : 0;
 
@@ -214,8 +238,6 @@ const InvestmentsPage = () => {
   const getSelectedCategoryInfo = (categoryValue: string) => {
     return [...investmentCategories, ...customCategories].find(c => c.value === categoryValue) || investmentCategories[0];
   };
-
-  const allCategories = [...investmentCategories, ...customCategories];
 
   return (
     <div className="min-h-screen bg-black pb-28">
@@ -245,7 +267,7 @@ const InvestmentsPage = () => {
               </button>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
+                  <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
                   <Input
                     placeholder="Nombre de la inversión"
                     value={newInvestment.name}
@@ -318,14 +340,11 @@ const InvestmentsPage = () => {
                           })}
                         </div>
                         
-                        {/* Botón para crear categoría personalizada */}
                         <button
                           type="button"
                           onClick={() => {
                             setIsCategoryDialogOpen(false);
-                            setTimeout(() => {
-                              setIsCreateCategoryDialogOpen(true);
-                            }, 100);
+                            setTimeout(() => setIsCreateCategoryDialogOpen(true), 100);
                           }}
                           className="w-full p-4 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
                         >
@@ -339,17 +358,17 @@ const InvestmentsPage = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-zinc-400 mb-1 block">Capital Invertido (€)</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Valor Inicial (€) *</label>
                     <Input
                       type="number"
                       placeholder="0.00"
-                      value={newInvestment.capital_invested}
-                      onChange={(e) => setNewInvestment({ ...newInvestment, capital_invested: e.target.value })}
+                      value={newInvestment.initial_value}
+                      onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-zinc-400 mb-1 block">Valor Actual</label>
+                    <label className="text-sm text-zinc-400 mb-1 block">Valor Actual (€) *</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -361,26 +380,28 @@ const InvestmentsPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Fecha de Inicio</label>
-                  <DatePicker
-                    date={newInvestment.start_date}
-                    onDateChange={(date) => setNewInvestment({ ...newInvestment, start_date: date || new Date() })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Notas</label>
-                  <Textarea
-                    placeholder="Notas sobre la inversión..."
-                    value={newInvestment.notes}
-                    onChange={(e) => setNewInvestment({ ...newInvestment, notes: e.target.value })}
+                  <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual (€)</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newInvestment.monthly_contribution}
+                    onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
                     className="bg-zinc-800 border-zinc-700 text-white"
-                    rows={3}
                   />
                 </div>
 
-                <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600">
-                  Guardar
+                {error && (
+                  <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleAddInvestment} 
+                  className="w-full bg-purple-500 hover:bg-purple-600"
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
             </DialogContent>
@@ -438,8 +459,8 @@ const InvestmentsPage = () => {
                 {investments.map((inv) => {
                   const cat = getCategoryInfo(inv.type);
                   const Icon = cat.icon;
-                  const returnVal = parseFloat(inv.current_value) - parseFloat(inv.initial_value);
-                  const returnPct = parseFloat(inv.initial_value) > 0 ? (returnVal / parseFloat(inv.initial_value)) * 100 : 0;
+                  const returnVal = parseFloat(inv.current_value || 0) - parseFloat(inv.initial_value || 0);
+                  const returnPct = parseFloat(inv.initial_value || 0) > 0 ? (returnVal / parseFloat(inv.initial_value || 0)) * 100 : 0;
                   return (
                     <div key={inv.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center gap-3">
@@ -466,7 +487,7 @@ const InvestmentsPage = () => {
         </Card>
       </div>
 
-      {/* Modal crear categoría personalizada */}
+      {/* Modal crear categoría */}
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
