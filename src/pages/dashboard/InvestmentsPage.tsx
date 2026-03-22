@@ -195,17 +195,43 @@ const InvestmentsPage = () => {
     const current = parseFloat(newInvestment.current_value);
     const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
 
-    const { error: insertError } = await supabase.from("investments").insert({
+    // Primero intentamos con loan_id
+    let insertData: any = {
       user_id: session.user.id,
       name: newInvestment.name,
       type: newInvestment.category,
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
-      loan_id: newInvestment.loan_id !== "none" ? newInvestment.loan_id : null,
-    });
+    };
 
-    if (insertError) {
+    // Añadir loan_id solo si no es "none" y hay un valor válido
+    if (newInvestment.loan_id !== "none" && newInvestment.loan_id) {
+      insertData.loan_id = newInvestment.loan_id;
+    }
+
+    const { error: insertError } = await supabase.from("investments").insert(insertData);
+
+    // Si falla por tema de columna loan_id, intentamos sin ella
+    if (insertError && insertError.message.includes("loan_id")) {
+      console.log("La columna loan_id no existe, guardando sin ella...");
+      
+      const { error: retryError } = await supabase.from("investments").insert({
+        user_id: session.user.id,
+        name: newInvestment.name,
+        type: newInvestment.category,
+        initial_value: initial,
+        current_value: current,
+        return_percentage: returnPct,
+      });
+
+      if (retryError) {
+        console.error("Error al guardar inversión:", retryError);
+        setError("Error al guardar: " + retryError.message);
+        setSaving(false);
+        return;
+      }
+    } else if (insertError) {
       console.error("Error al guardar inversión:", insertError);
       setError("Error al guardar: " + insertError.message);
       setSaving(false);
