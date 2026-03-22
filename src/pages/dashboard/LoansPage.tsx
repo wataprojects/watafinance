@@ -99,7 +99,7 @@ const LoansPage = () => {
   
   const [newLoan, setNewLoan] = useState({
     loan_type: "personal" as LoanType,
-    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
+    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
     start_date: defaultDate, end_date: null as Date | null, 
     investment_id: "none", patrimony_id: "none", notes: "",
     tin: "", tae: "", 
@@ -110,7 +110,7 @@ const LoansPage = () => {
   const [editLoan, setEditLoan] = useState({
     id: "",
     loan_type: "personal" as LoanType,
-    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
+    name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
     start_date: defaultDate, end_date: null as Date | null, 
     investment_id: "none", patrimony_id: "none", notes: "",
     tin: "", tae: "", 
@@ -147,12 +147,26 @@ const LoansPage = () => {
 
   const validateForm = (loan: any) => {
     const newErrors: Record<string, string> = {};
-    if (!loan.name?.trim()) newErrors.name = "Obligatorio";
-    if (!loan.bank?.trim()) newErrors.bank = "Obligatorio";
-    if (!loan.total_amount || parseFloat(loan.total_amount) <= 0) newErrors.total_amount = "Obligatorio";
-    if (!loan.pending_amount || parseFloat(loan.pending_amount) <= 0) newErrors.pending_amount = "Obligatorio";
-    if (!loan.monthly_payment || parseFloat(loan.monthly_payment) <= 0) newErrors.monthly_payment = "Obligatorio";
-    if (!loan.collection_day) newErrors.collection_day = "Obligatorio";
+    
+    if (!loan.name || !loan.name.trim()) {
+      newErrors.name = "El nombre es obligatorio";
+    }
+    if (!loan.bank || !loan.bank.trim()) {
+      newErrors.bank = "El banco es obligatorio";
+    }
+    if (!loan.total_amount || parseFloat(loan.total_amount) <= 0) {
+      newErrors.total_amount = "El importe total es obligatorio";
+    }
+    if (!loan.pending_amount || parseFloat(loan.pending_amount) <= 0) {
+      newErrors.pending_amount = "El capital pendiente es obligatorio";
+    }
+    if (!loan.monthly_payment || parseFloat(loan.monthly_payment) <= 0) {
+      newErrors.monthly_payment = "La cuota mensual es obligatoria";
+    }
+    if (!loan.collection_day) {
+      newErrors.collection_day = "El día de cobro es obligatorio";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -179,13 +193,13 @@ const LoansPage = () => {
 
     const loanData = {
       user_id: session.user.id,
-      borrower_name: newLoan.name,
-      bank: newLoan.bank,
+      borrower_name: newLoan.name.trim(),
+      bank: newLoan.bank.trim(),
       initial_amount: parseFloat(newLoan.total_amount),
       current_amount: parseFloat(newLoan.pending_amount),
       interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
       monthly_payment: parseFloat(newLoan.monthly_payment),
-      collection_day: newLoan.collection_day ? parseInt(newLoan.collection_day) : null,
+      collection_day: newLoan.collection_day ? parseInt(newLoan.collection_day) : 1,
       start_date: formatDateToISO(newLoan.start_date),
       end_date: formatDateToISO(newLoan.end_date),
       opening_commission: newLoan.opening_commission ? parseFloat(newLoan.opening_commission) : null,
@@ -209,7 +223,7 @@ const LoansPage = () => {
     } else {
       setIsDialogOpen(false);
       setNewLoan({
-        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "",
+        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1",
         start_date: new Date(), end_date: null, investment_id: "none", patrimony_id: "none", notes: "",
         tin: "", tae: "", opening_commission: "", early_repayment: "", delay_interest: "",
         subrogation: "", novation: "", valuation: "", insurance: "", cancellation: "", study: "",
@@ -236,13 +250,13 @@ const LoansPage = () => {
     }
 
     const loanData = {
-      borrower_name: editLoan.name,
-      bank: editLoan.bank,
+      borrower_name: editLoan.name.trim(),
+      bank: editLoan.bank.trim(),
       initial_amount: parseFloat(editLoan.total_amount),
       current_amount: parseFloat(editLoan.pending_amount),
       interest_rate: editLoan.tin ? parseFloat(editLoan.tin) : null,
       monthly_payment: parseFloat(editLoan.monthly_payment),
-      collection_day: editLoan.collection_day ? parseInt(editLoan.collection_day) : null,
+      collection_day: editLoan.collection_day ? parseInt(editLoan.collection_day) : 1,
       start_date: formatDateToISO(editLoan.start_date),
       end_date: formatDateToISO(editLoan.end_date),
       opening_commission: editLoan.opening_commission ? parseFloat(editLoan.opening_commission) : null,
@@ -300,7 +314,7 @@ const LoansPage = () => {
       total_amount: loan.initial_amount?.toString() || "",
       pending_amount: loan.current_amount?.toString() || "",
       monthly_payment: loan.monthly_payment?.toString() || "",
-      collection_day: loan.collection_day?.toString() || "",
+      collection_day: loan.collection_day?.toString() || "1",
       start_date: safeParseDate(loan.start_date),
       end_date: loan.end_date ? safeParseDate(loan.end_date) : null,
       investment_id: "none",
@@ -753,13 +767,23 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
-          <Input placeholder="Ej: Hipoteca casa" value={loan.name} onChange={(e) => setLoan({ ...loan, name: e.target.value })}
-            className={`bg-zinc-800 border-zinc-700 text-white ${errors.name ? "border-red-500" : ""}`} />
+          <Input 
+            placeholder="Ej: Hipoteca casa" 
+            value={loan.name} 
+            onChange={(e) => setLoan({ ...loan, name: e.target.value })}
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.name ? "border-red-500" : ""}`} 
+          />
+          {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
         </div>
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Banco *</label>
-          <Input placeholder="Ej: BBVA, Santander" value={loan.bank} onChange={(e) => setLoan({ ...loan, bank: e.target.value })}
-            className={`bg-zinc-800 border-zinc-700 text-white ${errors.bank ? "border-red-500" : ""}`} />
+          <Input 
+            placeholder="Ej: BBVA, Santander" 
+            value={loan.bank} 
+            onChange={(e) => setLoan({ ...loan, bank: e.target.value })}
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.bank ? "border-red-500" : ""}`} 
+          />
+          {errors.bank && <p className="text-red-400 text-xs mt-1">{errors.bank}</p>}
         </div>
       </div>
 
@@ -767,13 +791,25 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Importe total (€) *</label>
-          <Input type="number" placeholder="€ 0.00" value={loan.total_amount} onChange={(e) => setLoan({ ...loan, total_amount: e.target.value })}
-            className={`bg-zinc-800 border-zinc-700 text-white ${errors.total_amount ? "border-red-500" : ""}`} />
+          <Input 
+            type="number" 
+            placeholder="€ 0.00" 
+            value={loan.total_amount} 
+            onChange={(e) => setLoan({ ...loan, total_amount: e.target.value })}
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.total_amount ? "border-red-500" : ""}`} 
+          />
+          {errors.total_amount && <p className="text-red-400 text-xs mt-1">{errors.total_amount}</p>}
         </div>
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Capital pendiente (€) *</label>
-          <Input type="number" placeholder="€ 0.00" value={loan.pending_amount} onChange={(e) => setLoan({ ...loan, pending_amount: e.target.value })}
-            className={`bg-zinc-800 border-zinc-700 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />
+          <Input 
+            type="number" 
+            placeholder="€ 0.00" 
+            value={loan.pending_amount} 
+            onChange={(e) => setLoan({ ...loan, pending_amount: e.target.value })}
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.pending_amount ? "border-red-500" : ""}`} 
+          />
+          {errors.pending_amount && <p className="text-red-400 text-xs mt-1">{errors.pending_amount}</p>}
         </div>
       </div>
 
@@ -781,8 +817,14 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Cuota mensual (€) *</label>
-          <Input type="number" placeholder="€ 0.00" value={loan.monthly_payment} onChange={(e) => setLoan({ ...loan, monthly_payment: e.target.value })}
-            className={`bg-zinc-800 border-zinc-700 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />
+          <Input 
+            type="number" 
+            placeholder="€ 0.00" 
+            value={loan.monthly_payment} 
+            onChange={(e) => setLoan({ ...loan, monthly_payment: e.target.value })}
+            className={`bg-zinc-800 border-zinc-700 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} 
+          />
+          {errors.monthly_payment && <p className="text-red-400 text-xs mt-1">{errors.monthly_payment}</p>}
         </div>
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Día de cobro *</label>
@@ -794,6 +836,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
               {collectionDays.map((day: number) => (<SelectItem key={day} value={day.toString()} className="text-white">{day}</SelectItem>))}
             </SelectContent>
           </Select>
+          {errors.collection_day && <p className="text-red-400 text-xs mt-1">{errors.collection_day}</p>}
         </div>
       </div>
 
