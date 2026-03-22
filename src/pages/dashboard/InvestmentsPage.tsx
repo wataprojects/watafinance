@@ -126,13 +126,13 @@ const InvestmentsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Inversiones</h1>
-            <p className="text-slate-500">Gestiona tu portafolio de inversiones</p>
+            <h1 className="text-2xl font-bold text-white">Inversiones</h1>
+            <p className="text-purple-400 text-sm">Gestiona tu portafolio de inversiones</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -141,27 +141,27 @@ const InvestmentsPage = () => {
                 Nueva Inversión
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-zinc-900 border-zinc-800">
               <DialogHeader>
                 <DialogTitle className="text-white">Agregar Inversión</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm text-slate-300">Nombre</label>
+                  <label className="text-sm text-zinc-300">Nombre</label>
                   <Input
                     placeholder="Nombre de la inversión"
                     value={newInvestment.name}
                     onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-300">Tipo</label>
+                  <label className="text-sm text-zinc-300">Tipo</label>
                   <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
                       {types.map((t) => (
                         <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                       ))}
@@ -170,45 +170,45 @@ const InvestmentsPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">Valor Inicial</label>
+                    <label className="text-sm text-zinc-300">Valor Inicial</label>
                     <Input
                       type="number"
                       placeholder="0.00"
                       value={newInvestment.initial_value}
                       onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">Valor Actual</label>
+                    <label className="text-sm text-zinc-300">Valor Actual</label>
                     <Input
                       type="number"
                       placeholder="0.00"
                       value={newInvestment.current_value}
                       onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">Retorno (%)</label>
+                    <label className="text-sm text-zinc-300">Retorno (%)</label>
                     <Input
                       type="number"
                       placeholder="0.00"
                       value={newInvestment.return_percentage}
                       onChange={(e) => setNewInvestment({ ...newInvestment, return_percentage: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">Aportación Mensual</label>
+                    <label className="text-sm text-zinc-300">Aportación Mensual</label>
                     <Input
                       type="number"
                       placeholder="0.00"
                       value={newInvestment.monthly_contribution}
                       onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
                 </div>
@@ -222,14 +222,14 @@ const InvestmentsPage = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-4 text-center">
               <BarChart3 className="w-6 h-6 mx-auto mb-2 text-purple-400" />
               <p className="text-2xl font-bold text-white">{formatCurrency(totalValue)}</p>
-              <p className="text-xs text-slate-400">Valor Total</p>
+              <p className="text-xs text-zinc-400">Valor Total</p>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-4 text-center">
               {totalReturn >= 0 ? (
                 <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-400" />
@@ -239,22 +239,22 @@ const InvestmentsPage = () => {
               <p className={`text-2xl font-bold ${totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {totalReturn >= 0 ? "+" : ""}{formatCurrency(totalReturn)}
               </p>
-              <p className="text-xs text-slate-400">Retorno Total</p>
+              <p className="text-xs text-zinc-400">Retorno Total</p>
             </CardContent>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-4 text-center">
               <PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" />
               <p className={`text-2xl font-bold ${returnPercentage >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {returnPercentage >= 0 ? "+" : ""}{returnPercentage.toFixed(1)}%
               </p>
-              <p className="text-xs text-slate-400">Porcentaje</p>
+              <p className="text-xs text-zinc-400">Porcentaje</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Lista de inversiones */}
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-purple-400" />
@@ -263,9 +263,9 @@ const InvestmentsPage = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-slate-400 text-center">Cargando...</p>
+              <p className="text-zinc-400 text-center">Cargando...</p>
             ) : investments.length === 0 ? (
-              <p className="text-slate-400 text-center">No hay inversiones registradas</p>
+              <p className="text-zinc-400 text-center">No hay inversiones registradas</p>
             ) : (
               <div className="space-y-3">
                 {investments.map((inv) => {
@@ -273,14 +273,14 @@ const InvestmentsPage = () => {
                   const returnVal = parseFloat(inv.current_value) - parseFloat(inv.initial_value);
                   const returnPct = parseFloat(inv.initial_value) > 0 ? (returnVal / parseFloat(inv.initial_value)) * 100 : 0;
                   return (
-                    <div key={inv.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                    <div key={inv.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getTypeColor(inv.type)}`}>
                           <Icon className="w-6 h-6" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{inv.name}</p>
-                          <p className="text-xs text-slate-400">{inv.type}</p>
+                          <p className="text-xs text-zinc-400">{inv.type}</p>
                         </div>
                       </div>
                       <div className="text-right">
