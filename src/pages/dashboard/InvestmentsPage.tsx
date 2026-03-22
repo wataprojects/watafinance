@@ -122,7 +122,6 @@ const InvestmentsPage = () => {
     category: "digital",
     initial_value: "",
     current_value: "",
-    monthly_contribution: "",
     start_date: new Date(),
     notes: "",
     loan_id: "none",
@@ -198,7 +197,6 @@ const InvestmentsPage = () => {
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
-      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : null,
       loan_id: newInvestment.loan_id !== "none" ? newInvestment.loan_id : null,
       patrimony_id: newInvestment.patrimony_id !== "none" ? newInvestment.patrimony_id : null,
     });
@@ -216,7 +214,6 @@ const InvestmentsPage = () => {
       category: "digital",
       initial_value: "",
       current_value: "",
-      monthly_contribution: "",
       start_date: new Date(),
       notes: "",
       loan_id: "none",
@@ -409,17 +406,6 @@ const InvestmentsPage = () => {
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual (€)</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={newInvestment.monthly_contribution}
-                    onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
                 </div>
 
                 {/* Vincular a Préstamo */}
