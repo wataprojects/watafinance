@@ -6,14 +6,15 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DatePickerProps {
-  date: Date;
+  date?: Date | null;
   onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
   className?: string;
 }
 
 export function DatePicker({ date, onDateChange, placeholder, className }: DatePickerProps) {
-  const [currentMonth, setCurrentMonth] = React.useState(date || new Date());
+  const validDate = date && !isNaN(date.getTime()) ? date : new Date();
+  const [currentMonth, setCurrentMonth] = React.useState(validDate);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -44,8 +45,8 @@ export function DatePicker({ date, onDateChange, placeholder, className }: DateP
         onClick={handleInputClick}
         className="w-full min-h-[40px] px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer flex items-center justify-between hover:border-zinc-600 transition-colors"
       >
-        <span className={date ? "text-white" : "text-zinc-500"}>
-          {date ? format(date, "dd/MM/yyyy") : placeholder || "Seleccionar fecha"}
+        <span className={date && !isNaN(date.getTime()) ? "text-white" : "text-zinc-500"}>
+          {date && !isNaN(date.getTime()) ? format(date, "dd/MM/yyyy") : placeholder || "Seleccionar fecha"}
         </span>
         <div className="flex gap-1">
           {date && (

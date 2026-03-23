@@ -551,7 +551,10 @@ const LoansPage = () => {
                       </div>
                       <div className="flex justify-between mt-1">
                         <p className="text-xs text-zinc-500">{progress.toFixed(1)}% pagado</p>
-                        {loan.end_date && <p className="text-xs text-zinc-500">Fin: {new Date(loan.end_date).toLocaleDateString('es-ES')}</p>}
+                        {loan.end_date && (() => {
+                          const endDate = new Date(loan.end_date + 'T00:00:00');
+                          return !isNaN(endDate.getTime()) && <p className="text-xs text-zinc-500">Fin: {endDate.toLocaleDateString('es-ES')}</p>;
+                        })()}
                       </div>
                     </div>
                   );

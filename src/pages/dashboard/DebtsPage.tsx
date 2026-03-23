@@ -29,6 +29,12 @@ const formatDateToISO = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const safeDate = (dateStr: string | null | undefined): Date => {
+  if (!dateStr) return new Date();
+  const date = new Date(dateStr + 'T00:00:00');
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe" | "settled";
 
@@ -229,8 +235,8 @@ const DebtsPage = () => {
       amount: debt.current_amount?.toString() || debt.initial_amount?.toString() || "",
       description: debt.creditor || "",
       debt_type: debt.category === "they_owe" ? "they_owe" : "i_owe",
-      date: new Date(debt.created_at + 'T00:00:00'),
-      due_date: debt.due_date ? new Date(debt.due_date + 'T00:00:00') : null,
+      date: safeDate(debt.created_at),
+      due_date: debt.due_date ? safeDate(debt.due_date) : null,
       notes: debt.notes || "",
       investment_id: "none",
       patrimony_id: "none",
