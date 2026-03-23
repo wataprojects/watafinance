@@ -63,29 +63,9 @@ const availableIcons = [
   { value: "Wallet", icon: DollarSign },
   { value: "CreditCard", icon: CreditCard },
   { value: "Building", icon: Building },
-  { value: "Globe", icon: Globe },
-  { value: "BookOpen", icon: BookOpen },
-  { value: "Plane", icon: Plane },
-  { value: "Music", icon: Music },
   { value: "DollarSign", icon: DollarSign },
   { value: "MoreHorizontal", icon: MoreHorizontal },
 ];
-
-function Globe({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
-}
-
-function BookOpen({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
-}
-
-function Plane({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3h4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>;
-}
-
-function Music({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
-}
 
 const expenseCategories: CategoryOption[] = [
   { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20", textColor: "text-blue-400" },
@@ -261,7 +241,7 @@ const ExpensesPage = () => {
 
   const fetchExpenses = async (userId: string) => {
     setLoading(true);
-    const { data, error } = await supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false });
+    const { data } = await supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false });
     if (data) setExpenses(data);
     setLoading(false);
   };
@@ -321,6 +301,7 @@ const ExpensesPage = () => {
     }
   };
 
+  // ✅ FIX: precargar correctamente recurrencia + vínculos inversión/patrimonio
   const openEditDialog = (expense: any) => {
     setSelectedExpense(expense);
     const expenseDate = new Date(expense.date + 'T00:00:00');
@@ -328,12 +309,18 @@ const ExpensesPage = () => {
       id: expense.id,
       source: expense.description || "",
       amount: expense.amount.toString(),
-      is_recurring: expense.is_recurring === true || expense.is_recurring === 1 || expense.is_recurring === "true",
+      is_recurring:
+        expense.is_recurring === true ||
+        expense.is_recurring === 1 ||
+        expense.is_recurring === "true",
       category: expense.category,
       date: expenseDate,
       investment_id: expense.investment_id || "none",
       patrimony_id: expense.patrimony_id || "none",
-      has_scheduled_change: expense.has_scheduled_change === true || expense.has_scheduled_change === 1 || expense.has_scheduled_change === "true",
+      has_scheduled_change:
+        expense.has_scheduled_change === true ||
+        expense.has_scheduled_change === 1 ||
+        expense.has_scheduled_change === "true",
       scheduled_change_date: expense.scheduled_change_date ? new Date(expense.scheduled_change_date + 'T00:00:00') : null,
       scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
       scheduled_change_type: expense.scheduled_change_type || "increase",
