@@ -234,44 +234,21 @@ const InvestmentsPage = () => {
     const current = parseFloat(newInvestment.current_value);
     const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
 
-    const fullInsertData: any = {
+    const insertData: any = {
       user_id: session.user.id,
       name: newInvestment.name,
       type: newInvestment.category,
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
+      loan_id: newInvestment.loan_id !== "none" && newInvestment.loan_id ? newInvestment.loan_id : null,
+      patrimony_id: newInvestment.patrimony_id !== "none" && newInvestment.patrimony_id ? newInvestment.patrimony_id : null,
       capital_breakdown: newInvestment.capital_breakdown.length > 0 ? JSON.stringify(newInvestment.capital_breakdown) : null,
     };
 
-    if (newInvestment.loan_id !== "none" && newInvestment.loan_id) {
-      fullInsertData.loan_id = newInvestment.loan_id;
-    }
+    const { error: insertError } = await supabase.from("investments").insert(insertData);
 
-    const fallbackInsertData: any = {
-      user_id: session.user.id,
-      name: newInvestment.name,
-      type: newInvestment.category,
-      initial_value: initial,
-      current_value: current,
-      return_percentage: returnPct,
-    };
-
-    if (newInvestment.loan_id !== "none" && newInvestment.loan_id) {
-      fallbackInsertData.loan_id = newInvestment.loan_id;
-    }
-
-    const { error: insertError } = await supabase.from("investments").insert(fullInsertData);
-
-    if (insertError && (insertError.message.includes("capital_breakdown") || insertError.message.includes("loan_id"))) {
-      const { error: retryError } = await supabase.from("investments").insert(fallbackInsertData);
-
-      if (retryError) {
-        setError("Error al guardar: " + retryError.message);
-        setSaving(false);
-        return;
-      }
-    } else if (insertError) {
+    if (insertError) {
       setError("Error al guardar: " + insertError.message);
       setSaving(false);
       return;
@@ -312,40 +289,23 @@ const InvestmentsPage = () => {
     const current = parseFloat(editInvestment.current_value);
     const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
 
-    const fullUpdateData: any = {
+    const updateData: any = {
       name: editInvestment.name,
       type: editInvestment.category,
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
+      loan_id: editInvestment.loan_id !== "none" && editInvestment.loan_id ? editInvestment.loan_id : null,
+      patrimony_id: editInvestment.patrimony_id !== "none" && editInvestment.patrimony_id ? editInvestment.patrimony_id : null,
       capital_breakdown: editInvestment.capital_breakdown.length > 0 ? JSON.stringify(editInvestment.capital_breakdown) : null,
-    };
-
-    const fallbackUpdateData: any = {
-      name: editInvestment.name,
-      type: editInvestment.category,
-      initial_value: initial,
-      current_value: current,
-      return_percentage: returnPct,
     };
 
     const { error: updateError } = await supabase
       .from("investments")
-      .update(fullUpdateData)
+      .update(updateData)
       .eq("id", selectedInvestment.id);
 
-    if (updateError && updateError.message.includes("capital_breakdown")) {
-      const { error: retryError } = await supabase
-        .from("investments")
-        .update(fallbackUpdateData)
-        .eq("id", selectedInvestment.id);
-
-      if (retryError) {
-        setError("Error al guardar: " + retryError.message);
-        setSaving(false);
-        return;
-      }
-    } else if (updateError) {
+    if (updateError) {
       setError("Error al guardar: " + updateError.message);
       setSaving(false);
       return;
@@ -378,8 +338,8 @@ const InvestmentsPage = () => {
       category: investment.type || "digital",
       initial_value: investment.initial_value?.toString() || "",
       current_value: investment.current_value?.toString() || "",
-      loan_id: "none",
-      patrimony_id: "none",
+      loan_id: investment.loan_id || "none",
+      patrimony_id: investment.patrimony_id || "none",
       capital_breakdown: investment.capital_breakdown || [],
     });
     setIsEditDialogOpen(true);

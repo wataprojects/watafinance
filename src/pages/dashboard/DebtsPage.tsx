@@ -153,6 +153,8 @@ const DebtsPage = () => {
       interest_rate: null,
       monthly_payment: null,
       category: newDebt.debt_type,
+      investment_id: newDebt.investment_id === "none" ? null : newDebt.investment_id,
+      patrimony_id: newDebt.patrimony_id === "none" ? null : newDebt.patrimony_id,
     });
 
     if (error) {
@@ -198,6 +200,8 @@ const DebtsPage = () => {
       initial_amount: parseFloat(editDebt.amount),
       current_amount: parseFloat(editDebt.amount),
       category: editDebt.debt_type,
+      investment_id: editDebt.investment_id === "none" ? null : editDebt.investment_id,
+      patrimony_id: editDebt.patrimony_id === "none" ? null : editDebt.patrimony_id,
     }).eq("id", selectedDebt.id);
 
     if (error) {
@@ -238,8 +242,8 @@ const DebtsPage = () => {
       date: safeDate(debt.created_at),
       due_date: debt.due_date ? safeDate(debt.due_date) : null,
       notes: debt.notes || "",
-      investment_id: "none",
-      patrimony_id: "none",
+      investment_id: debt.investment_id || "none",
+      patrimony_id: debt.patrimony_id || "none",
     });
     setIsEditDialogOpen(true);
   };
