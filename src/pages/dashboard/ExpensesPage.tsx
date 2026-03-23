@@ -13,7 +13,7 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, ChevronRight, Link2, ChevronDown, PieChart,
-  Pencil, Trash2, Calendar, RecurringIcon
+  Pencil, Trash2, Calendar, RefreshCcw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -1069,7 +1069,7 @@ const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, inves
                 : "border-zinc-700 bg-zinc-800"
             }`}
           >
-            <RecurringIcon className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} />
+            <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
           </button>
           <button
