@@ -13,7 +13,7 @@ import {
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
   Train, UtensilsCrossed, Shirt, MoreHorizontal, X, ChevronRight, Link2, ChevronDown, PieChart,
-  Pencil, Trash2, Calendar, RefreshCcw
+  Pencil, Trash2, Calendar, RefreshCcw, Wallet, Landmark, Globe, BookOpen, Plane, Music
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -64,7 +64,6 @@ const availableIcons = [
   { value: "Wallet", icon: Wallet },
   { value: "CreditCard", icon: CreditCard },
   { value: "Building", icon: Building },
-  { value: "Laptop", icon: Laptop },
   { value: "Globe", icon: Globe },
   { value: "BookOpen", icon: BookOpen },
   { value: "Plane", icon: Plane },
