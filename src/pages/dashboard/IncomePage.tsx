@@ -252,6 +252,9 @@ const IncomePage = () => {
       category: newIncome.category,
       is_passive: newIncome.income_type === "passive",
       date: dateStr,
+      is_recurring: newIncome.is_recurring,
+      investment_id: newIncome.investment_id === "none" ? null : newIncome.investment_id,
+      patrimony_id: newIncome.patrimony_id === "none" ? null : newIncome.patrimony_id,
     });
 
     if (!error) {
@@ -282,6 +285,9 @@ const IncomePage = () => {
       category: editIncome.category,
       is_passive: editIncome.income_type === "passive",
       date: dateStr,
+      is_recurring: editIncome.is_recurring,
+      investment_id: editIncome.investment_id === "none" ? null : editIncome.investment_id,
+      patrimony_id: editIncome.patrimony_id === "none" ? null : editIncome.patrimony_id,
     }).eq("id", selectedIncome.id);
 
     if (!error) {

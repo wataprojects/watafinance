@@ -450,6 +450,17 @@ const ExpensesPage = () => {
       description: newExpense.source,
       category: newExpense.category,
       date: formatDateToISO(newExpense.date),
+      is_recurring: newExpense.is_recurring,
+      investment_id: newExpense.investment_id === "none" ? null : newExpense.investment_id,
+      patrimony_id: newExpense.patrimony_id === "none" ? null : newExpense.patrimony_id,
+      has_scheduled_change: newExpense.has_scheduled_change,
+      scheduled_change_date: newExpense.scheduled_change_date
+        ? formatDateToISO(newExpense.scheduled_change_date)
+        : null,
+      scheduled_new_amount: newExpense.scheduled_new_amount
+        ? parseFloat(newExpense.scheduled_new_amount)
+        : null,
+      scheduled_change_type: newExpense.scheduled_change_type,
     });
     if (!error) {
       setIsDialogOpen(false);
@@ -488,6 +499,17 @@ const ExpensesPage = () => {
         description: editExpense.source,
         category: editExpense.category,
         date: formatDateToISO(editExpense.date),
+        is_recurring: editExpense.is_recurring,
+        investment_id: editExpense.investment_id === "none" ? null : editExpense.investment_id,
+        patrimony_id: editExpense.patrimony_id === "none" ? null : editExpense.patrimony_id,
+        has_scheduled_change: editExpense.has_scheduled_change,
+        scheduled_change_date: editExpense.scheduled_change_date
+          ? formatDateToISO(editExpense.scheduled_change_date)
+          : null,
+        scheduled_new_amount: editExpense.scheduled_new_amount
+          ? parseFloat(editExpense.scheduled_new_amount)
+          : null,
+        scheduled_change_type: editExpense.scheduled_change_type,
       })
       .eq("id", selectedExpense.id);
     if (!error) {
