@@ -1036,10 +1036,6 @@ const InvestmentForm = ({
 
         {showBreakdown && (
           <div className="space-y-3 pt-2">
-            <p className="text-xs text-zinc-500">
-              Puedes seguir usando este desglose en pantalla aunque tu base de datos aún no tenga esa columna.
-            </p>
-            
             {investment.capital_breakdown.length > 0 && (
               <div className="space-y-2">
                 {investment.capital_breakdown.map((item: CapitalBreakdownItem) => (
