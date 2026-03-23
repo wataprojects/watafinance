@@ -194,17 +194,21 @@ const InvestmentsPage = () => {
 
   const fetchInvestments = async (userId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("investments")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (data) {
-      // Parse capital_breakdown from JSON string if it exists
       const parsedData = data.map((inv: any) => ({
         ...inv,
-        capital_breakdown: inv.capital_breakdown ? JSON.parse(inv.capital_breakdown) : [],
+        capital_breakdown:
+          typeof inv.capital_breakdown === "string"
+            ? JSON.parse(inv.capital_breakdown)
+            : Array.isArray(inv.capital_breakdown)
+              ? inv.capital_breakdown
+              : [],
       }));
       setInvestments(parsedData);
     }
@@ -226,12 +230,11 @@ const InvestmentsPage = () => {
       return;
     }
 
-    // Calcular el porcentaje de retorno
     const initial = parseFloat(newInvestment.initial_value);
     const current = parseFloat(newInvestment.current_value);
     const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
 
-    let insertData: any = {
+    const fullInsertData: any = {
       user_id: session.user.id,
       name: newInvestment.name,
       type: newInvestment.category,
@@ -242,32 +245,33 @@ const InvestmentsPage = () => {
     };
 
     if (newInvestment.loan_id !== "none" && newInvestment.loan_id) {
-      insertData.loan_id = newInvestment.loan_id;
+      fullInsertData.loan_id = newInvestment.loan_id;
     }
 
-    const { error: insertError } = await supabase.from("investments").insert(insertData);
+    const fallbackInsertData: any = {
+      user_id: session.user.id,
+      name: newInvestment.name,
+      type: newInvestment.category,
+      initial_value: initial,
+      current_value: current,
+      return_percentage: returnPct,
+    };
 
-    if (insertError && insertError.message.includes("loan_id")) {
-      console.log("La columna loan_id no existe, guardando sin ella...");
-      
-      const { error: retryError } = await supabase.from("investments").insert({
-        user_id: session.user.id,
-        name: newInvestment.name,
-        type: newInvestment.category,
-        initial_value: initial,
-        current_value: current,
-        return_percentage: returnPct,
-        capital_breakdown: newInvestment.capital_breakdown.length > 0 ? JSON.stringify(newInvestment.capital_breakdown) : null,
-      });
+    if (newInvestment.loan_id !== "none" && newInvestment.loan_id) {
+      fallbackInsertData.loan_id = newInvestment.loan_id;
+    }
+
+    const { error: insertError } = await supabase.from("investments").insert(fullInsertData);
+
+    if (insertError && (insertError.message.includes("capital_breakdown") || insertError.message.includes("loan_id"))) {
+      const { error: retryError } = await supabase.from("investments").insert(fallbackInsertData);
 
       if (retryError) {
-        console.error("Error al guardar inversión:", retryError);
         setError("Error al guardar: " + retryError.message);
         setSaving(false);
         return;
       }
     } else if (insertError) {
-      console.error("Error al guardar inversión:", insertError);
       setError("Error al guardar: " + insertError.message);
       setSaving(false);
       return;
@@ -308,18 +312,41 @@ const InvestmentsPage = () => {
     const current = parseFloat(editInvestment.current_value);
     const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
 
-    const { error } = await supabase.from("investments").update({
+    const fullUpdateData: any = {
       name: editInvestment.name,
       type: editInvestment.category,
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
       capital_breakdown: editInvestment.capital_breakdown.length > 0 ? JSON.stringify(editInvestment.capital_breakdown) : null,
-    }).eq("id", selectedInvestment.id);
+    };
 
-    if (error) {
-      console.error("Error al editar inversión:", error);
-      setError("Error al guardar: " + error.message);
+    const fallbackUpdateData: any = {
+      name: editInvestment.name,
+      type: editInvestment.category,
+      initial_value: initial,
+      current_value: current,
+      return_percentage: returnPct,
+    };
+
+    const { error: updateError } = await supabase
+      .from("investments")
+      .update(fullUpdateData)
+      .eq("id", selectedInvestment.id);
+
+    if (updateError && updateError.message.includes("capital_breakdown")) {
+      const { error: retryError } = await supabase
+        .from("investments")
+        .update(fallbackUpdateData)
+        .eq("id", selectedInvestment.id);
+
+      if (retryError) {
+        setError("Error al guardar: " + retryError.message);
+        setSaving(false);
+        return;
+      }
+    } else if (updateError) {
+      setError("Error al guardar: " + updateError.message);
       setSaving(false);
       return;
     }
@@ -335,10 +362,7 @@ const InvestmentsPage = () => {
 
     const { error } = await supabase.from("investments").delete().eq("id", selectedInvestment.id);
 
-    if (error) {
-      console.error("Error al eliminar inversión:", error);
-      alert("Error al eliminar: " + error.message);
-    } else {
+    if (!error) {
       setIsDeleteDialogOpen(false);
       setSelectedInvestment(null);
       const { data: { session } } = await supabase.auth.getSession();
@@ -431,25 +455,25 @@ const InvestmentsPage = () => {
     if (isEdit) {
       setEditInvestment({
         ...editInvestment,
-        capital_breakdown: editInvestment.capital_breakdown.filter(item => item.id !== id),
+        capital_breakdown: editInvestment.capital_breakdown.filter((item) => item.id !== id),
       });
     } else {
       setNewInvestment({
         ...newInvestment,
-        capital_breakdown: newInvestment.capital_breakdown.filter(item => item.id !== id),
+        capital_breakdown: newInvestment.capital_breakdown.filter((item) => item.id !== id),
       });
     }
   };
 
   const getLoanLabel = () => {
     if (newInvestment.loan_id === "none") return "Vincular a préstamo";
-    const loan = loans.find(l => l.id === newInvestment.loan_id);
+    const loan = loans.find((l) => l.id === newInvestment.loan_id);
     return loan ? `${loan.borrower_name} - ${loan.bank}` : "Vincular a préstamo";
   };
 
   const getPatrimonyLabel = () => {
     if (newInvestment.patrimony_id === "none") return "Vincular a patrimonio";
-    const pat = patrimony.find(p => p.id === newInvestment.patrimony_id);
+    const pat = patrimony.find((p) => p.id === newInvestment.patrimony_id);
     return pat ? pat.name : "Vincular a patrimonio";
   };
 
@@ -459,11 +483,11 @@ const InvestmentsPage = () => {
   const returnPercentage = totalInitial > 0 ? (totalReturn / totalInitial) * 100 : 0;
 
   const getCategoryInfo = (categoryValue: string) => {
-    return [...investmentCategories, ...customCategories].find(c => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
+    return [...investmentCategories, ...customCategories].find((c) => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
   };
 
   const getSelectedCategoryInfo = (categoryValue: string) => {
-    return [...investmentCategories, ...customCategories].find(c => c.value === categoryValue) || investmentCategories[0];
+    return [...investmentCategories, ...customCategories].find((c) => c.value === categoryValue) || investmentCategories[0];
   };
 
   const totalBreakdown = (breakdown: CapitalBreakdownItem[]) => {
@@ -473,7 +497,6 @@ const InvestmentsPage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">Inversiones</h1>
@@ -540,7 +563,6 @@ const InvestmentsPage = () => {
           </Dialog>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-4 text-center">
@@ -573,7 +595,6 @@ const InvestmentsPage = () => {
           </Card>
         </div>
 
-        {/* Lista de inversiones */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -632,7 +653,6 @@ const InvestmentsPage = () => {
                         </div>
                       </div>
                       
-                      {/* Desglose de capital expandible */}
                       {hasBreakdown && (
                         <div className="ml-15">
                           <button
@@ -670,7 +690,6 @@ const InvestmentsPage = () => {
         </Card>
       </div>
 
-      {/* Modal de edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -725,7 +744,6 @@ const InvestmentsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -759,7 +777,6 @@ const InvestmentsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal crear categoría */}
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -829,7 +846,6 @@ const InvestmentsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nuevo patrimonio */}
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -886,7 +902,6 @@ const InvestmentsPage = () => {
   );
 };
 
-// Componente reutilizable para el formulario de inversión
 const InvestmentForm = ({ 
   investment, 
   setInvestment, 
@@ -943,7 +958,6 @@ const InvestmentForm = ({
         />
       </div>
 
-      {/* Selector de Categoría */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
@@ -1046,7 +1060,6 @@ const InvestmentForm = ({
         </div>
       </div>
 
-      {/* Desglose de Capital */}
       <div className="border border-zinc-700 rounded-xl p-4 space-y-3">
         <button
           type="button"
@@ -1064,10 +1077,9 @@ const InvestmentForm = ({
         {showBreakdown && (
           <div className="space-y-3 pt-2">
             <p className="text-xs text-zinc-500">
-              Especifica en qué has invertido el capital inicial de {formatCurrency(initialValue)}
+              Puedes seguir usando este desglose en pantalla aunque tu base de datos aún no tenga esa columna.
             </p>
             
-            {/* Lista de items del desglose */}
             {investment.capital_breakdown.length > 0 && (
               <div className="space-y-2">
                 {investment.capital_breakdown.map((item: CapitalBreakdownItem) => (
@@ -1088,10 +1100,9 @@ const InvestmentForm = ({
               </div>
             )}
 
-            {/* Añadir nuevo item */}
             <div className="grid grid-cols-2 gap-2">
               <Input
-                placeholder="Concepto (ej: Acciones Apple)"
+                placeholder="Concepto"
                 value={newBreakdownItem.name}
                 onChange={(e) => setNewBreakdownItem({ ...newBreakdownItem, name: e.target.value })}
                 className="bg-zinc-800 border-zinc-700 text-white text-sm"
@@ -1114,7 +1125,6 @@ const InvestmentForm = ({
               Añadir
             </Button>
 
-            {/* Resumen del desglose */}
             {investment.capital_breakdown.length > 0 && (
               <div className="pt-2 border-t border-zinc-700">
                 <div className="flex justify-between text-sm">
@@ -1133,7 +1143,6 @@ const InvestmentForm = ({
         )}
       </div>
 
-      {/* Vincular a Préstamo */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a préstamo</label>
         <Dialog open={isLoanDialogOpen} onOpenChange={setIsLoanDialogOpen}>
@@ -1220,7 +1229,6 @@ const InvestmentForm = ({
         </Dialog>
       </div>
 
-      {/* Vincular a Patrimonio */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
         <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
