@@ -215,6 +215,14 @@ const LoansPage = () => {
       loan_type: newLoan.loan_type,
     };
 
+    // Guardar también investment_id y patrimony_id si existen
+    if (newLoan.investment_id && newLoan.investment_id !== "none") {
+      (loanData as any).investment_id = newLoan.investment_id;
+    }
+    if (newLoan.patrimony_id && newLoan.patrimony_id !== "none") {
+      (loanData as any).patrimony_id = newLoan.patrimony_id;
+    }
+
     const { error } = await supabase.from("loans").insert(loanData);
 
     if (error) {
@@ -272,6 +280,18 @@ const LoansPage = () => {
       loan_type: editLoan.loan_type,
     };
 
+    // Guardar también investment_id y patrimony_id si existen
+    if (editLoan.investment_id && editLoan.investment_id !== "none") {
+      (loanData as any).investment_id = editLoan.investment_id;
+    } else {
+      (loanData as any).investment_id = null;
+    }
+    if (editLoan.patrimony_id && editLoan.patrimony_id !== "none") {
+      (loanData as any).patrimony_id = editLoan.patrimony_id;
+    } else {
+      (loanData as any).patrimony_id = null;
+    }
+
     const { error } = await supabase.from("loans").update(loanData).eq("id", selectedLoan.id);
 
     if (error) {
@@ -306,6 +326,10 @@ const LoansPage = () => {
 
   const openEditDialog = (loan: any) => {
     setSelectedLoan(loan);
+    // Obtener los valores de investment_id y patrimony_id del préstamo
+    const loanInvestmentId = loan.investment_id || "none";
+    const loanPatrimonyId = loan.patrimony_id || "none";
+    
     setEditLoan({
       id: loan.id,
       loan_type: loan.loan_type || "personal",
@@ -317,8 +341,8 @@ const LoansPage = () => {
       collection_day: loan.collection_day?.toString() || "1",
       start_date: safeParseDate(loan.start_date),
       end_date: loan.end_date ? safeParseDate(loan.end_date) : null,
-      investment_id: loan.investment_id || "none",
-      patrimony_id: loan.patrimony_id || "none",
+      investment_id: loanInvestmentId,
+      patrimony_id: loanPatrimonyId,
       notes: loan.notes || "",
       tin: loan.interest_rate?.toString() || "",
       tae: "",
@@ -384,14 +408,16 @@ const LoansPage = () => {
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
   const getInvestmentLabel = (loan: any) => {
-    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
-    const inv = investments.find(i => i.id === loan.investment_id);
+    const invId = loan.investment_id;
+    if (!invId || invId === "none") return "Sin vincular";
+    const inv = investments.find(i => i.id === invId);
     return inv ? inv.name : "Sin vincular";
   };
 
   const getPatrimonyLabel = (loan: any) => {
-    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
-    const pat = patrimony.find(p => p.id === loan.patrimony_id);
+    const patId = loan.patrimony_id;
+    if (!patId || patId === "none") return "Sin vincular";
+    const pat = patrimony.find(p => p.id === patId);
     return pat ? pat.name : "Sin vincular";
   };
 
@@ -695,16 +721,36 @@ const LoansPage = () => {
 const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees, isLoanTypeDialogOpen, setIsLoanTypeDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedLoanTypeInfo }: any) => {
   const currentSpecificFees = specificFees[loan.loan_type] || [];
   
+  // Función para obtener el label de inversión vinculada
   const getInvestmentLabel = () => {
-    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
-    const inv = investments.find((i: any) => i.id === loan.investment_id);
+    const invId = loan.investment_id;
+    // Si no hay ID o es "none", mostrar "Sin vincular"
+    if (!invId || invId === "none") return "Sin vincular";
+    // Buscar la inversión en la lista
+    const inv = investments.find((i: any) => i.id === invId);
     return inv ? inv.name : "Sin vincular";
   };
   
+  // Función para obtener el label de patrimonio vinculado
   const getPatrimonyLabel = () => {
-    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
-    const pat = patrimony.find((p: any) => p.id === loan.patrimony_id);
+    const patId = loan.patrimony_id;
+    // Si no hay ID o es "none", mostrar "Sin vincular"
+    if (!patId || patId === "none") return "Sin vincular";
+    // Buscar el patrimonio en la lista
+    const pat = patrimony.find((p: any) => p.id === patId);
     return pat ? pat.name : "Sin vincular";
+  };
+
+  // Función para verificar si hay una inversión vinculada
+  const hasInvestment = () => {
+    const invId = loan.investment_id;
+    return invId && invId !== "none";
+  };
+
+  // Función para verificar si hay patrimonio vinculado
+  const hasPatrimony = () => {
+    const patId = loan.patrimony_id;
+    return patId && patId !== "none";
   };
 
   const handleStartDateChange = (date: Date | undefined) => {
@@ -923,19 +969,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.investment_id !== "none" && loan.investment_id
+                hasInvestment()
                   ? "border-emerald-500/50 bg-emerald-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.investment_id !== "none" && loan.investment_id
+                hasInvestment()
                   ? "bg-emerald-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <TrendingUp className={`w-4 h-4 ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`} />
+                <TrendingUp className={`w-4 h-4 ${hasInvestment() ? "text-emerald-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${hasInvestment() ? "text-emerald-400" : "text-zinc-400"}`}>
                 {getInvestmentLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -959,7 +1005,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsInvestmentDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  (loan.investment_id === "none" || !loan.investment_id)
+                  !hasInvestment()
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
@@ -1015,19 +1061,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.patrimony_id !== "none" && loan.patrimony_id
+                hasPatrimony()
                   ? "border-sky-500/50 bg-sky-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.patrimony_id !== "none" && loan.patrimony_id
+                hasPatrimony()
                   ? "bg-sky-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <Building className={`w-4 h-4 ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`} />
+                <Building className={`w-4 h-4 ${hasPatrimony() ? "text-sky-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${hasPatrimony() ? "text-sky-400" : "text-zinc-400"}`}>
                 {getPatrimonyLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -1051,7 +1097,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsPatrimonyDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  (loan.patrimony_id === "none" || !loan.patrimony_id)
+                  !hasPatrimony()
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
