@@ -135,7 +135,7 @@ const LoansPage = () => {
       supabase.from("patrimony").select("id, name").eq("user_id", userId),
     ]);
     if (invResult.data) setInvestments(invResult.data);
-    if (patResult.data) setPatrimony(patResult.data);
+    if (patResult.data) setPatrimony(patrimonyResult.data);
   };
 
   const fetchLoans = async (userId: string) => {
@@ -215,14 +215,6 @@ const LoansPage = () => {
       loan_type: newLoan.loan_type,
     };
 
-    // Guardar también investment_id y patrimony_id si existen
-    if (newLoan.investment_id && newLoan.investment_id !== "none") {
-      (loanData as any).investment_id = newLoan.investment_id;
-    }
-    if (newLoan.patrimony_id && newLoan.patrimony_id !== "none") {
-      (loanData as any).patrimony_id = newLoan.patrimony_id;
-    }
-
     const { error } = await supabase.from("loans").insert(loanData);
 
     if (error) {
@@ -279,18 +271,6 @@ const LoansPage = () => {
       notes: editLoan.notes || null,
       loan_type: editLoan.loan_type,
     };
-
-    // Guardar también investment_id y patrimony_id si existen
-    if (editLoan.investment_id && editLoan.investment_id !== "none") {
-      (loanData as any).investment_id = editLoan.investment_id;
-    } else {
-      (loanData as any).investment_id = null;
-    }
-    if (editLoan.patrimony_id && editLoan.patrimony_id !== "none") {
-      (loanData as any).patrimony_id = editLoan.patrimony_id;
-    } else {
-      (loanData as any).patrimony_id = null;
-    }
 
     const { error } = await supabase.from("loans").update(loanData).eq("id", selectedLoan.id);
 
@@ -721,33 +701,25 @@ const LoansPage = () => {
 const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees, isLoanTypeDialogOpen, setIsLoanTypeDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedLoanTypeInfo }: any) => {
   const currentSpecificFees = specificFees[loan.loan_type] || [];
   
-  // Función para obtener el label de inversión vinculada
   const getInvestmentLabel = () => {
     const invId = loan.investment_id;
-    // Si no hay ID o es "none", mostrar "Sin vincular"
     if (!invId || invId === "none") return "Sin vincular";
-    // Buscar la inversión en la lista
     const inv = investments.find((i: any) => i.id === invId);
     return inv ? inv.name : "Sin vincular";
   };
   
-  // Función para obtener el label de patrimonio vinculado
   const getPatrimonyLabel = () => {
     const patId = loan.patrimony_id;
-    // Si no hay ID o es "none", mostrar "Sin vincular"
     if (!patId || patId === "none") return "Sin vincular";
-    // Buscar el patrimonio en la lista
     const pat = patrimony.find((p: any) => p.id === patId);
     return pat ? pat.name : "Sin vincular";
   };
 
-  // Función para verificar si hay una inversión vinculada
   const hasInvestment = () => {
     const invId = loan.investment_id;
     return invId && invId !== "none";
   };
 
-  // Función para verificar si hay patrimonio vinculado
   const hasPatrimony = () => {
     const patId = loan.patrimony_id;
     return patId && patId !== "none";
