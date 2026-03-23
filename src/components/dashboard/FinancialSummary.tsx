@@ -102,7 +102,7 @@ const FinancialSummary = () => {
   // Total incomes for the selected month
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
-  // Total expenses for the selected month (SOLO GASTOS, sin deudas)
+  // Total expenses for the selected month
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   
   // Total debts (i_owe) - sum all active debts user owes
@@ -111,10 +111,10 @@ const FinancialSummary = () => {
   // Total loans monthly payments
   const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
   
-  // Total gastos = expenses + loans (las deudas se muestran por separado)
-  const totalGastos = totalExpenses + totalLoans;
-  
+  // Balance = Ingresos - (Gastos + Deudas + Préstamos)
+  const totalGastos = totalExpenses + totalDebts + totalLoans;
   const balance = totalIncome - totalGastos;
+  
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
 
   const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
@@ -161,12 +161,12 @@ const FinancialSummary = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Ingresos row - 4 blocks */}
+            {/* Ingresos Total row - 4 blocks */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-400 font-medium">Ingresos</span>
+                  <span className="text-xs text-green-400 font-medium">Ingresos Total</span>
                 </div>
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(totalIncome)}
@@ -176,22 +176,17 @@ const FinancialSummary = () => {
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="w-4 h-4 text-red-500" />
-                  <span className="text-xs text-red-400 font-medium">Gastos</span>
+                  <span className="text-xs text-red-400 font-medium">Gastos Generales</span>
                 </div>
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(totalGastos)}
+                  {formatCurrency(totalExpenses)}
                 </p>
-                {totalLoans > 0 ? (
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    (Gastos: {formatCurrency(totalExpenses)} + Préstamos: {formatCurrency(totalLoans)})
-                  </p>
-                ) : null}
               </div>
 
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs text-amber-400 font-medium">Deudas</span>
+                  <span className="text-xs text-amber-400 font-medium">Deudas Pendientes</span>
                 </div>
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(totalDebts)}
@@ -201,7 +196,7 @@ const FinancialSummary = () => {
               <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-cyan-500" />
-                  <span className="text-xs text-cyan-400 font-medium">Préstamos</span>
+                  <span className="text-xs text-cyan-400 font-medium">Cuotas de préstamos</span>
                 </div>
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(totalLoans)}
