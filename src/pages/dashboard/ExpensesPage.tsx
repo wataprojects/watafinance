@@ -354,15 +354,400 @@ const ExpensesPage = () => {
       id: expense.id,
       source: expense.description || "",
       amount: expense.amount.toString(),
-      is_recurring: false,
+      is_recurring: expense.is_recurring === true || expense.is_recurring === 1 || expense.is_recurring === "true",
       category: expense.category,
       date: expenseDate,
-      investment_id: "none",
-      patrimony_id: "none",
-      has_scheduled_change: false,
-      scheduled_change_date: null,
-      scheduled_new_amount: "",
-      scheduled_change_type: "increase",
+      investment_id: expense.investment_id || "none",
+      patrimony_id: expense.patrimony_id || "none",
+      has_scheduled_change: expense.has_scheduled_change === true || expense.has_scheduled_change === 1 || expense.has_scheduled_change === "true",
+      scheduled_change_date: expense.scheduled_change_date ? new Date(expense.scheduled_change_date + 'T00:00:00') : null,
+      scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
+      scheduled_change_type: expense.scheduled_change_type || "increase",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (expense: any) => {
+    setSelectedExpense(expense);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCreateCustomCategory = () => {
+    if (!newCustomCategory.name) return;
+    
+    const categoryValue = `custom_${newCustomCategory.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const iconData = availableIcons.find(i => i.value === newCustomCategory.icon);
+    const newCategory: CategoryOption = {
+      value: categoryValue,
+      label: newCustomCategory.name,
+      icon: iconData?.icon || ShoppingCart,
+      color: newCustomCategory.color,
+      textColor: new<dyad-write path="src/pages/dashboard/ExpensesPage.tsx">
+"use client";
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
+import { 
+  Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
+  TrendingUp, Building, TrendingDown as TrendingDownIcon,
+  Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, ChevronRight, Link2, ChevronDown, PieChart,
+  Pencil, Trash2, Calendar, RefreshCcw, Wallet, Landmark, Globe, BookOpen, Plane, Music
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import BottomNav from "@/components/dashboard/BottomNav";
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+interface CategoryOption {
+  value: string;
+  label: string;
+  icon: any;
+  color: string;
+  textColor: string;
+}
+
+// Iconos disponibles para categorías personalizadas
+const availableIcons = [
+  { value: "Home", icon: Home },
+  { value: "Zap", icon: Zap },
+  { value: "Heart", icon: Heart },
+  { value: "Shield", icon: Shield },
+  { value: "Wifi", icon: Wifi },
+  { value: "Smartphone", icon: Smartphone },
+  { value: "Flame", icon: Flame },
+  { value: "Sparkles", icon: Sparkles },
+  { value: "Car", icon: Car },
+  { value: "ShoppingCart", icon: ShoppingCart },
+  { value: "Film", icon: Film },
+  { value: "TrendingUp", icon: TrendingUp },
+  { value: "Megaphone", icon: Megaphone },
+  { value: "Train", icon: Train },
+  { value: "UtensilsCrossed", icon: UtensilsCrossed },
+  { value: "Shirt", icon: Shirt },
+  { value: "Briefcase", icon: Briefcase },
+  { value: "Wallet", icon: Wallet },
+  { value: "CreditCard", icon: CreditCard },
+  { value: "Building", icon: Building },
+  { value: "Globe", icon: Globe },
+  { value: "BookOpen", icon: BookOpen },
+  { value: "Plane", icon: Plane },
+  { value: "Music", icon: Music },
+  { value: "DollarSign", icon: DollarSign },
+  { value: "MoreHorizontal", icon: MoreHorizontal },
+];
+
+// Categorías para gastos - usando los mismos iconos que en la home
+const expenseCategories: CategoryOption[] = [
+  { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20", textColor: "text-blue-400" },
+  { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
+  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
+  { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20", textColor: "text-rose-400" },
+  { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20", textColor: "text-slate-400" },
+  { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20", textColor: "text-indigo-400" },
+  { value: "internet", label: "Internet", icon: Wifi, color: "bg-violet-500/20", textColor: "text-violet-400" },
+  { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20", textColor: "text-pink-400" },
+  { value: "gas", label: "Gas", icon: Flame, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "cleaning", label: "Limpieza", icon: Sparkles, color: "bg-teal-500/20", textColor: "text-teal-400" },
+  { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20", textColor: "text-red-400" },
+  { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20", textColor: "text-green-400" },
+  { value: "entertainment", label: "Ocio", icon: Film, color: "bg-purple-500/20", textColor: "text-purple-400" },
+  { value: "business_investment", label: "Inversión", icon: TrendingUp, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
+  { value: "advertising", label: "Publicidad", icon: Megaphone, color: "bg-rose-500/20", textColor: "text-rose-400" },
+  { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20", textColor: "text-sky-400" },
+  { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20", textColor: "text-pink-400" },
+];
+
+function DropletsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+    </svg>
+  );
+}
+
+const ExpensesPage = () => {
+  const navigate = useNavigate();
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [patrimony, setPatrimony] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [isNewInvestmentOpen, setIsNewInvestmentOpen] = useState(false);
+  const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
+  const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const [showSubscriptions, setShowSubscriptions] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
+  const [showScheduledChange, setShowScheduledChange] = useState(false);
+  
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear().toString();
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
+  
+  const [newExpense, setNewExpense] = useState({
+    source: "",
+    amount: "",
+    is_recurring: false,
+    category: "groceries",
+    date: new Date(),
+    investment_id: "none",
+    patrimony_id: "none",
+    // Campos para cambio programado
+    has_scheduled_change: false,
+    scheduled_change_date: null as Date | null,
+    scheduled_new_amount: "",
+    scheduled_change_type: "increase" as "increase" | "decrease",
+  });
+
+  const [editExpense, setEditExpense] = useState({
+    id: "",
+    source: "",
+    amount: "",
+    is_recurring: false,
+    category: "groceries",
+    date: new Date(),
+    investment_id: "none",
+    patrimony_id: "none",
+    // Campos para cambio programado
+    has_scheduled_change: false,
+    scheduled_change_date: null as Date | null,
+    scheduled_new_amount: "",
+    scheduled_change_type: "increase" as "increase" | "decrease",
+  });
+
+  const [newInvestment, setNewInvestment] = useState({
+    name: "",
+    type: "stocks",
+    initial_value: "",
+    current_value: "",
+  });
+  
+  const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
+    name: "",
+    category: "real_estate",
+    value: "",
+  });
+
+  const [newCustomCategory, setNewCustomCategory] = useState({
+    name: "",
+    icon: "ShoppingCart",
+    color: "bg-green-500/20",
+    textColor: "text-green-400",
+  });
+
+  const years = [2024, 2025, 2026, 2027, 2028];
+  const months = [
+    { value: "all", label: "Todos" },
+    { value: "01", label: "Ene" },
+    { value: "02", label: "Feb" },
+    { value: "03", label: "Mar" },
+    { value: "04", label: "Abr" },
+    { value: "05", label: "May" },
+    { value: "06", label: "Jun" },
+    { value: "07", label: "Jul" },
+    { value: "08", label: "Ago" },
+    { value: "09", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dic" },
+  ];
+
+  const categoryColors = [
+    { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
+    { value: "bg-emerald-500/20", textColor: "text-emerald-400", label: "Verde" },
+    { value: "bg-purple-500/20", textColor: "text-purple-400", label: "Morado" },
+    { value: "bg-cyan-500/20", textColor: "text-cyan-400", label: "Cian" },
+    { value: "bg-amber-500/20", textColor: "text-amber-400", label: "Ámbar" },
+    { value: "bg-green-500/20", textColor: "text-green-400", label: "Verde claro" },
+    { value: "bg-slate-500/20", textColor: "text-slate-400", label: "Gris" },
+    { value: "bg-pink-500/20", textColor: "text-pink-400", label: "Rosa" },
+    { value: "bg-orange-500/20", textColor: "text-orange-400", label: "Naranja" },
+    { value: "bg-red-500/20", textColor: "text-red-400", label: "Rojo" },
+  ];
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/login");
+    } else {
+      fetchExpenses(session.user.id);
+      fetchLoans(session.user.id);
+      fetchOptions(session.user.id);
+      fetchIncomes(session.user.id);
+    }
+  };
+
+  const fetchOptions = async (userId: string) => {
+    const [invResult, patResult] = await Promise.all([
+      supabase.from("investments").select("id, name").eq("user_id", userId),
+      supabase.from("patrimony").select("id, name").eq("user_id", userId),
+    ]);
+    if (invResult.data) setInvestments(invResult.data);
+    if (patResult.data) setPatrimony(patResult.data);
+  };
+
+  const fetchIncomes = async (userId: string) => {
+    const { data } = await supabase
+      .from("incomes")
+      .select("amount")
+      .eq("user_id", userId);
+    if (data) setIncomes(data);
+  };
+
+  const fetchLoans = async (userId: string) => {
+    const { data } = await supabase
+      .from("loans")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "active");
+    if (data) setLoans(data);
+  };
+
+  const fetchExpenses = async (userId: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date", { ascending: false });
+
+    if (data) setExpenses(data);
+    setLoading(false);
+  };
+
+  const handleAddExpense = async () => {
+    if (isSubmitting) return;
+    if (!newExpense.amount || !newExpense.source) return;
+
+    setIsSubmitting(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.from("expenses").insert({
+      user_id: session.user.id,
+      amount: parseFloat(newExpense.amount),
+      description: newExpense.source,
+      category: newExpense.category,
+      date: formatDateToISO(newExpense.date),
+    });
+
+    if (!error) {
+      setIsDialogOpen(false);
+      setNewExpense({
+        source: "",
+        amount: "",
+        is_recurring: false,
+        category: "groceries",
+        date: new Date(),
+        investment_id: "none",
+        patrimony_id: "none",
+        has_scheduled_change: false,
+        scheduled_change_date: null,
+        scheduled_new_amount: "",
+        scheduled_change_type: "increase",
+      });
+      fetchExpenses(session.user.id);
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const handleEditExpense = async () => {
+    if (isSubmitting || !selectedExpense) return;
+
+    setIsSubmitting(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.from("expenses").update({
+      amount: parseFloat(editExpense.amount),
+      description: editExpense.source,
+      category: editExpense.category,
+      date: formatDateToISO(editExpense.date),
+    }).eq("id", selectedExpense.id);
+
+    if (!error) {
+      setIsEditDialogOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses(session.user.id);
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!selectedExpense) return;
+
+    const { error } = await supabase.from("expenses").delete().eq("id", selectedExpense.id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) fetchExpenses(session.user.id);
+    }
+  };
+
+  const openEditDialog = (expense: any) => {
+    setSelectedExpense(expense);
+    const expenseDate = new Date(expense.date + 'T00:00:00');
+    setEditExpense({
+      id: expense.id,
+      source: expense.description || "",
+      amount: expense.amount.toString(),
+      is_recurring: expense.is_recurring === true || expense.is_recurring === 1 || expense.is_recurring === "true",
+      category: expense.category,
+      date: expenseDate,
+      investment_id: expense.investment_id || "none",
+      patrimony_id: expense.patrimony_id || "none",
+      has_scheduled_change: expense.has_scheduled_change === true || expense.has_scheduled_change === 1 || expense.has_scheduled_change === "true",
+      scheduled_change_date: expense.scheduled_change_date ? new Date(expense.scheduled_change_date + 'T00:00:00') : null,
+      scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
+      scheduled_change_type: expense.scheduled_change_type || "increase",
     });
     setIsEditDialogOpen(true);
   };
@@ -1152,7 +1537,7 @@ const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, inves
                       : "border-zinc-700 bg-zinc-800"
                   }`}
                 >
-                  <TrendingDown className={`w-4 h-4 ${expense.scheduled_change_type === "decrease" ? "text-green-400" : "text-zinc-400"}`} />
+                  <TrendingDownIcon className={`w-4 h-4 ${expense.scheduled_change_type === "decrease" ? "text-green-400" : "text-zinc-400"}`} />
                   <span className={`text-xs ${expense.scheduled_change_type === "decrease" ? "text-white" : "text-zinc-400"}`}>Disminuye</span>
                 </button>
               </div>

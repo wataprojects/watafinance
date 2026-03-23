@@ -311,12 +311,12 @@ const IncomePage = () => {
       id: income.id,
       source: income.description || "",
       amount: income.amount.toString(),
-      is_recurring: false,
+      is_recurring: income.is_recurring === true || income.is_recurring === 1 || income.is_recurring === "true",
       income_type: income.is_passive ? "passive" : "active",
       category: income.category,
       date: incomeDate,
-      investment_id: "none",
-      patrimony_id: "none",
+      investment_id: income.investment_id || "none",
+      patrimony_id: income.patrimony_id || "none",
     });
     setIsEditDialogOpen(true);
   };
@@ -603,7 +603,7 @@ const IncomePage = () => {
         </Card>
       </div>
 
-      {/* Modal edición - AHORA CON LA MISMA FUNCIONALIDAD QUE EL FORMULARIO DE CREACIÓN */}
+      {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -814,7 +814,7 @@ const IncomePage = () => {
   );
 };
 
-// Componente reutilizable para el formulario de ingresos - USADO TANTO PARA CREAR COMO PARA EDITAR
+// Componente reutilizable para el formulario de ingresos
 const IncomeForm = ({ 
   income, 
   setIncome, 
