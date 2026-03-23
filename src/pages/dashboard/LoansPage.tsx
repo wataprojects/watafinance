@@ -317,8 +317,8 @@ const LoansPage = () => {
       collection_day: loan.collection_day?.toString() || "1",
       start_date: safeParseDate(loan.start_date),
       end_date: loan.end_date ? safeParseDate(loan.end_date) : null,
-      investment_id: "none",
-      patrimony_id: "none",
+      investment_id: loan.investment_id || "none",
+      patrimony_id: loan.patrimony_id || "none",
       notes: loan.notes || "",
       tin: loan.interest_rate?.toString() || "",
       tae: "",
@@ -383,8 +383,17 @@ const LoansPage = () => {
   const totalDebt = activeLoans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
-  const getInvestmentLabel = (loan: any) => loan.investment_id === "none" ? "Sin vincular" : investments.find(i => i.id === loan.investment_id)?.name || "Sin vincular";
-  const getPatrimonyLabel = (loan: any) => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find(p => p.id === loan.patrimony_id)?.name || "Sin vincular";
+  const getInvestmentLabel = (loan: any) => {
+    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
+    const inv = investments.find(i => i.id === loan.investment_id);
+    return inv ? inv.name : "Sin vincular";
+  };
+
+  const getPatrimonyLabel = (loan: any) => {
+    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
+    const pat = patrimony.find(p => p.id === loan.patrimony_id);
+    return pat ? pat.name : "Sin vincular";
+  };
 
   const investmentTypes = [{ value: "stocks", label: "Acciones" }, { value: "etf", label: "ETF" }, { value: "crypto", label: "Criptomonedas" }, { value: "bonds", label: "Bonos" }, { value: "real_estate", label: "Bienes Raíces" }, { value: "other", label: "Otros" }];
   const patrimonyCategories = [{ value: "real_estate", label: "Bienes Raíces" }, { value: "vehicle", label: "Vehículos" }, { value: "investments", label: "Inversiones" }, { value: "savings", label: "Ahorros" }, { value: "business", label: "Negocios" }, { value: "other", label: "Otros" }];
@@ -686,8 +695,17 @@ const LoansPage = () => {
 const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees, showAdditionalFees, setShowAdditionalFees, isSaving, onSubmit, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, collectionDays, investmentTypes, patrimonyCategories, loanTypes, universalFees, additionalFees, specificFees, isLoanTypeDialogOpen, setIsLoanTypeDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedLoanTypeInfo }: any) => {
   const currentSpecificFees = specificFees[loan.loan_type] || [];
   
-  const getInvestmentLabel = () => loan.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === loan.investment_id)?.name || "Sin vincular";
-  const getPatrimonyLabel = () => loan.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === loan.patrimony_id)?.name || "Sin vincular";
+  const getInvestmentLabel = () => {
+    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
+    const inv = investments.find((i: any) => i.id === loan.investment_id);
+    return inv ? inv.name : "Sin vincular";
+  };
+  
+  const getPatrimonyLabel = () => {
+    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
+    const pat = patrimony.find((p: any) => p.id === loan.patrimony_id);
+    return pat ? pat.name : "Sin vincular";
+  };
 
   const handleStartDateChange = (date: Date | undefined) => {
     setLoan({ ...loan, start_date: date || new Date() });
@@ -905,19 +923,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.investment_id !== "none" 
+                loan.investment_id !== "none" && loan.investment_id
                   ? "border-emerald-500/50 bg-emerald-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.investment_id !== "none" 
+                loan.investment_id !== "none" && loan.investment_id
                   ? "bg-emerald-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <TrendingUp className={`w-4 h-4 ${loan.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+                <TrendingUp className={`w-4 h-4 ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`}>
                 {getInvestmentLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -941,7 +959,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsInvestmentDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  loan.investment_id === "none"
+                  (loan.investment_id === "none" || !loan.investment_id)
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
@@ -997,19 +1015,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.patrimony_id !== "none" 
+                loan.patrimony_id !== "none" && loan.patrimony_id
                   ? "border-sky-500/50 bg-sky-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.patrimony_id !== "none" 
+                loan.patrimony_id !== "none" && loan.patrimony_id
                   ? "bg-sky-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <Building className={`w-4 h-4 ${loan.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+                <Building className={`w-4 h-4 ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`}>
                 {getPatrimonyLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -1033,7 +1051,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsPatrimonyDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  loan.patrimony_id === "none"
+                  (loan.patrimony_id === "none" || !loan.patrimony_id)
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
