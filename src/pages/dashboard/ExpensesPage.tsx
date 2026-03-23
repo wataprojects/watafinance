@@ -74,6 +74,18 @@ const formatDateToISO = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const safeDate = (dateStr: string | null | undefined): Date => {
+  if (!dateStr) return new Date();
+  const date = new Date(dateStr + "T00:00:00");
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
+const formatDateSafe = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr + "T00:00:00");
+  return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
+};
+
 interface CategoryOption {
   value: string;
   label: string;
@@ -536,7 +548,7 @@ const ExpensesPage = () => {
   // ✅ FIX: precargar correctamente recurrencia + inversión/patrimonio
   const openEditDialog = (expense: any) => {
     setSelectedExpense(expense);
-    const expenseDate = new Date(expense.date + "T00:00:00");
+    const expenseDate = safeDate(expense.date);
     setEditExpense({
       id: expense.id,
       source: expense.description || "",
@@ -554,7 +566,7 @@ const ExpensesPage = () => {
         expense.has_scheduled_change === 1 ||
         expense.has_scheduled_change === "true",
       scheduled_change_date: expense.scheduled_change_date
-        ? new Date(expense.scheduled_change_date + "T00:00:00")
+        ? safeDate(expense.scheduled_change_date)
         : null,
       scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
       scheduled_change_type: expense.scheduled_change_type || "increase",
@@ -590,7 +602,9 @@ const ExpensesPage = () => {
   };
 
   const filteredExpenses = expenses.filter((expense) => {
+    if (!expense.date) return false;
     const expenseDate = new Date(expense.date + "T00:00:00");
+    if (isNaN(expenseDate.getTime())) return false;
     const expenseYear = expenseDate.getFullYear().toString();
     const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
     if (filterYear !== "all" && expenseYear !== filterYear) return false;
@@ -981,7 +995,7 @@ const ExpensesPage = () => {
                         <div>
                           <p className="font-medium text-white text-sm">{expense.description || cat.label}</p>
                           <p className="text-[10px] text-zinc-500">
-                            {new Date(expense.date + "T00:00:00").toLocaleDateString("es-ES")}
+                            {formatDateSafe(expense.date)}
                           </p>
                         </div>
                       </div>

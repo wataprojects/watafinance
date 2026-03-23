@@ -34,6 +34,18 @@ const formatDateToISO = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const safeDate = (dateStr: string | null | undefined): Date => {
+  if (!dateStr) return new Date();
+  const date = new Date(dateStr + 'T00:00:00');
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
+const formatDateSafe = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr + 'T00:00:00');
+  return isNaN(date.getTime()) ? '-' : date.toLocaleDateString("es-ES");
+};
+
 type FilterType = "all" | "active" | "passive";
 
 interface CategoryOption {
@@ -312,7 +324,7 @@ const IncomePage = () => {
 
   const openEditDialog = (income: any) => {
     setSelectedIncome(income);
-    const incomeDate = new Date(income.date + 'T00:00:00');
+    const incomeDate = safeDate(income.date);
     setEditIncome({
       id: income.id,
       source: income.description || "",
@@ -391,7 +403,9 @@ const IncomePage = () => {
   };
 
   const filteredIncomes = incomes.filter((income) => {
+    if (!income.date) return false;
     const incomeDate = new Date(income.date + 'T00:00:00');
+    if (isNaN(incomeDate.getTime())) return false;
     const incomeYear = incomeDate.getFullYear().toString();
     const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, '0');
     
@@ -577,7 +591,7 @@ const IncomePage = () => {
                         </div>
                         <div>
                           <p className="font-medium text-white">{income.description || cat.label}</p>
-                          <p className="text-xs text-zinc-500">{new Date(income.date + 'T00:00:00').toLocaleDateString("es-ES")}</p>
+                          <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
