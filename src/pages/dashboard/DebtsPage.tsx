@@ -69,6 +69,7 @@ const DebtsPage = () => {
     description: "",
     debt_type: "they_owe" as DebtType,
     date: new Date(),
+    due_date: null as Date | null,
     notes: "",
     investment_id: "none",
     patrimony_id: "none",
@@ -229,6 +230,7 @@ const DebtsPage = () => {
       description: debt.creditor || "",
       debt_type: debt.category === "they_owe" ? "they_owe" : "i_owe",
       date: new Date(debt.created_at + 'T00:00:00'),
+      due_date: debt.due_date ? new Date(debt.due_date + 'T00:00:00') : null,
       notes: debt.notes || "",
       investment_id: "none",
       patrimony_id: "none",
@@ -634,6 +636,14 @@ const DebtForm = ({ debt, setDebt, onSubmit, isSubmitting, isNew, investments, p
   const getInvestmentLabelLocal = () => debt.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === debt.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabelLocal = () => debt.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === debt.patrimony_id)?.name || "Sin vincular";
 
+  const handleStartDateChange = (date: Date | undefined) => {
+    setDebt({ ...debt, date: date || new Date() });
+  };
+
+  const handleDueDateChange = (date: Date | undefined) => {
+    setDebt({ ...debt, due_date: date || null });
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <div>
@@ -692,6 +702,25 @@ const DebtForm = ({ debt, setDebt, onSubmit, isSubmitting, isNew, investments, p
           onChange={(e) => setDebt({ ...debt, description: e.target.value })}
           className="bg-zinc-800 border-zinc-700 text-white"
         />
+      </div>
+
+      {/* Fechas */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha inicio</label>
+          <DatePicker
+            date={debt.date}
+            onDateChange={handleStartDateChange}
+          />
+        </div>
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha fin (opcional)</label>
+          <DatePicker
+            date={debt.due_date || undefined}
+            onDateChange={handleDueDateChange}
+            placeholder="Sin fecha"
+          />
+        </div>
       </div>
 
       {/* Vinculación a Inversión */}
