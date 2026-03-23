@@ -191,7 +191,7 @@ const LoansPage = () => {
       return;
     }
 
-    const loanData = {
+    const loanData: any = {
       user_id: session.user.id,
       borrower_name: newLoan.name.trim(),
       bank: newLoan.bank.trim(),
@@ -214,6 +214,14 @@ const LoansPage = () => {
       notes: newLoan.notes || null,
       loan_type: newLoan.loan_type,
     };
+
+    // Añadir vínculos si existen
+    if (newLoan.investment_id && newLoan.investment_id !== "none") {
+      loanData.investment_id = newLoan.investment_id;
+    }
+    if (newLoan.patrimony_id && newLoan.patrimony_id !== "none") {
+      loanData.patrimony_id = newLoan.patrimony_id;
+    }
 
     const { error } = await supabase.from("loans").insert(loanData);
 
@@ -249,7 +257,7 @@ const LoansPage = () => {
       return;
     }
 
-    const loanData = {
+    const loanData: any = {
       borrower_name: editLoan.name.trim(),
       bank: editLoan.bank.trim(),
       initial_amount: parseFloat(editLoan.total_amount),
@@ -271,6 +279,18 @@ const LoansPage = () => {
       notes: editLoan.notes || null,
       loan_type: editLoan.loan_type,
     };
+
+    // Actualizar vínculos si existen
+    if (editLoan.investment_id && editLoan.investment_id !== "none") {
+      loanData.investment_id = editLoan.investment_id;
+    } else {
+      loanData.investment_id = null;
+    }
+    if (editLoan.patrimony_id && editLoan.patrimony_id !== "none") {
+      loanData.patrimony_id = editLoan.patrimony_id;
+    } else {
+      loanData.patrimony_id = null;
+    }
 
     const { error } = await supabase.from("loans").update(loanData).eq("id", selectedLoan.id);
 
@@ -384,15 +404,23 @@ const LoansPage = () => {
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
   const getInvestmentLabel = (loan: any) => {
-    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
+    if (!loan.investment_id || loan.investment_id === "none") return "Sin vincular";
     const inv = investments.find(i => i.id === loan.investment_id);
     return inv ? inv.name : "Sin vincular";
   };
 
   const getPatrimonyLabel = (loan: any) => {
-    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
+    if (!loan.patrimony_id || loan.patrimony_id === "none") return "Sin vincular";
     const pat = patrimony.find(p => p.id === loan.patrimony_id);
     return pat ? pat.name : "Sin vincular";
+  };
+
+  const isInvestmentLinked = (loan: any) => {
+    return loan.investment_id && loan.investment_id !== "none";
+  };
+
+  const isPatrimonyLinked = (loan: any) => {
+    return loan.patrimony_id && loan.patrimony_id !== "none";
   };
 
   const investmentTypes = [{ value: "stocks", label: "Acciones" }, { value: "etf", label: "ETF" }, { value: "crypto", label: "Criptomonedas" }, { value: "bonds", label: "Bonos" }, { value: "real_estate", label: "Bienes Raíces" }, { value: "other", label: "Otros" }];
@@ -696,15 +724,22 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
   const currentSpecificFees = specificFees[loan.loan_type] || [];
   
   const getInvestmentLabel = () => {
-    if (loan.investment_id === "none" || !loan.investment_id) return "Sin vincular";
+    if (!loan.investment_id || loan.investment_id === "none") return "Sin vincular";
     const inv = investments.find((i: any) => i.id === loan.investment_id);
     return inv ? inv.name : "Sin vincular";
   };
   
   const getPatrimonyLabel = () => {
-    if (loan.patrimony_id === "none" || !loan.patrimony_id) return "Sin vincular";
+    if (!loan.patrimony_id || loan.patrimony_id === "none") return "Sin vincular";
     const pat = patrimony.find((p: any) => p.id === loan.patrimony_id);
     return pat ? pat.name : "Sin vincular";
+  };
+
+  const isLinked = (type: "investment" | "patrimony") => {
+    if (type === "investment") {
+      return loan.investment_id && loan.investment_id !== "none";
+    }
+    return loan.patrimony_id && loan.patrimony_id !== "none";
   };
 
   const handleStartDateChange = (date: Date | undefined) => {
@@ -923,19 +958,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.investment_id !== "none" && loan.investment_id
+                isLinked("investment")
                   ? "border-emerald-500/50 bg-emerald-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.investment_id !== "none" && loan.investment_id
+                isLinked("investment")
                   ? "bg-emerald-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <TrendingUp className={`w-4 h-4 ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`} />
+                <TrendingUp className={`w-4 h-4 ${isLinked("investment") ? "text-emerald-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.investment_id !== "none" && loan.investment_id ? "text-emerald-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${isLinked("investment") ? "text-emerald-400" : "text-zinc-400"}`}>
                 {getInvestmentLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -959,7 +994,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsInvestmentDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  (loan.investment_id === "none" || !loan.investment_id)
+                  !isLinked("investment")
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
@@ -1015,19 +1050,19 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
             <button
               type="button"
               className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
-                loan.patrimony_id !== "none" && loan.patrimony_id
+                isLinked("patrimony")
                   ? "border-sky-500/50 bg-sky-500/10" 
                   : "border-zinc-700 hover:border-zinc-600"
               }`}
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                loan.patrimony_id !== "none" && loan.patrimony_id
+                isLinked("patrimony")
                   ? "bg-sky-500/20" 
                   : "bg-zinc-700"
               }`}>
-                <Building className={`w-4 h-4 ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`} />
+                <Building className={`w-4 h-4 ${isLinked("patrimony") ? "text-sky-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${loan.patrimony_id !== "none" && loan.patrimony_id ? "text-sky-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${isLinked("patrimony") ? "text-sky-400" : "text-zinc-400"}`}>
                 {getPatrimonyLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -1051,7 +1086,7 @@ const LoanForm = ({ loan, setLoan, errors, showSpecificFees, setShowSpecificFees
                   setIsPatrimonyDialogOpen(false);
                 }}
                 className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                  (loan.patrimony_id === "none" || !loan.patrimony_id)
+                  !isLinked("patrimony")
                     ? "border-zinc-500 bg-zinc-800"
                     : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                 }`}
