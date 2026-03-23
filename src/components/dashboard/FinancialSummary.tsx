@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Landmark, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -102,7 +102,7 @@ const FinancialSummary = () => {
   // Total incomes for the selected month
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
-  // Total expenses for the selected month
+  // Total expenses for the selected month (SOLO GASTOS, sin deudas)
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   
   // Total debts (i_owe) - sum all active debts user owes
@@ -111,8 +111,8 @@ const FinancialSummary = () => {
   // Total loans monthly payments
   const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
   
-  // Total gastos = expenses + debts + loans (this goes in the "Gastos" block)
-  const totalGastos = totalExpenses + totalDebts + totalLoans;
+  // Total gastos = expenses + loans (las deudas se muestran por separado)
+  const totalGastos = totalExpenses + totalLoans;
   
   const balance = totalIncome - totalGastos;
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
@@ -181,9 +181,9 @@ const FinancialSummary = () => {
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(totalGastos)}
                 </p>
-                {totalDebts > 0 || totalLoans > 0 ? (
+                {totalLoans > 0 ? (
                   <p className="text-[10px] text-zinc-500 mt-1">
-                    (Gastos: {formatCurrency(totalExpenses)} + Deudas: {formatCurrency(totalDebts)} + Préstamos: {formatCurrency(totalLoans)})
+                    (Gastos: {formatCurrency(totalExpenses)} + Préstamos: {formatCurrency(totalLoans)})
                   </p>
                 ) : null}
               </div>
