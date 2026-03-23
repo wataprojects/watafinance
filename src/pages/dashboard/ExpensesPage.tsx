@@ -12,9 +12,8 @@ import {
   Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Utensils, Zap, Film, 
   TrendingUp, Building, TrendingDown as TrendingDownIcon,
   Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone,
-  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, Landmark, TrendingDown as RecurringIcon,
-  Wallet, Globe, Laptop, BookOpen, Plane, Music, ChevronRight, Link2, ChevronDown, PieChart,
-  Pencil, Trash2
+  Train, UtensilsCrossed, Shirt, MoreHorizontal, X, ChevronRight, Link2, ChevronDown, PieChart,
+  Pencil, Trash2, Calendar, RecurringIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -126,6 +125,7 @@ const ExpensesPage = () => {
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
   const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [showCategories, setShowCategories] = useState(true);
+  const [showScheduledChange, setShowScheduledChange] = useState(false);
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
@@ -140,6 +140,11 @@ const ExpensesPage = () => {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+    // Campos para cambio programado
+    has_scheduled_change: false,
+    scheduled_change_date: null as Date | null,
+    scheduled_new_amount: "",
+    scheduled_change_type: "increase" as "increase" | "decrease",
   });
 
   const [editExpense, setEditExpense] = useState({
@@ -151,6 +156,11 @@ const ExpensesPage = () => {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+    // Campos para cambio programado
+    has_scheduled_change: false,
+    scheduled_change_date: null as Date | null,
+    scheduled_new_amount: "",
+    scheduled_change_type: "increase" as "increase" | "decrease",
   });
 
   const [newInvestment, setNewInvestment] = useState({
@@ -287,6 +297,10 @@ const ExpensesPage = () => {
         date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
+        has_scheduled_change: false,
+        scheduled_change_date: null,
+        scheduled_new_amount: "",
+        scheduled_change_type: "increase",
       });
       fetchExpenses(session.user.id);
     }
@@ -346,6 +360,10 @@ const ExpensesPage = () => {
       date: expenseDate,
       investment_id: "none",
       patrimony_id: "none",
+      has_scheduled_change: false,
+      scheduled_change_date: null,
+      scheduled_new_amount: "",
+      scheduled_change_type: "increase",
     });
     setIsEditDialogOpen(true);
   };
@@ -544,6 +562,8 @@ const ExpensesPage = () => {
                 newCustomCategory={newCustomCategory}
                 setNewCustomCategory={setNewCustomCategory}
                 handleCreateCustomCategory={handleCreateCustomCategory}
+                showScheduledChange={showScheduledChange}
+                setShowScheduledChange={setShowScheduledChange}
               />
             </DialogContent>
           </Dialog>
@@ -832,6 +852,8 @@ const ExpensesPage = () => {
             newCustomCategory={newCustomCategory}
             setNewCustomCategory={setNewCustomCategory}
             handleCreateCustomCategory={handleCreateCustomCategory}
+            showScheduledChange={showScheduledChange}
+            setShowScheduledChange={setShowScheduledChange}
           />
         </DialogContent>
       </Dialog>
@@ -927,9 +949,13 @@ const ExpensesPage = () => {
 };
 
 // Componente reutilizable para el formulario de gastos
-const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, investmentTypes, patrimonyCategories, isCategoryDialogOpen, setIsCategoryDialogOpen, isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedCategoryInfo, customCategories, availableIcons, categoryColors, newCustomCategory, setNewCustomCategory, handleCreateCustomCategory }: any) => {
+const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, investments, patrimony, isNewInvestmentOpen, setIsNewInvestmentOpen, isNewPatrimonyOpen, setIsNewPatrimonyOpen, newInvestment, setNewInvestment, newPatrimonyAsset, setNewPatrimonyAsset, handleCreateInvestment, handleCreatePatrimony, investmentTypes, patrimonyCategories, isCategoryDialogOpen, setIsCategoryDialogOpen, isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen, isInvestmentDialogOpen, setIsInvestmentDialogOpen, isPatrimonyDialogOpen, setIsPatrimonyDialogOpen, getSelectedCategoryInfo, customCategories, availableIcons, categoryColors, newCustomCategory, setNewCustomCategory, handleCreateCustomCategory, showScheduledChange, setShowScheduledChange }: any) => {
   const getInvestmentLabel = () => expense.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === expense.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabel = () => expense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
+
+  const handleScheduledChangeDate = (date: Date | undefined) => {
+    setExpense({ ...expense, scheduled_change_date: date || null });
+  };
 
   return (
     <div className="space-y-3 mt-2">
@@ -1030,12 +1056,302 @@ const ExpenseForm = ({ expense, setExpense, onSubmit, isSubmitting, isNew, inves
         </Dialog>
       </div>
 
+      {/* Tipo de gasto: Recurrente vs Puntual */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Tipo de gasto</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setExpense({ ...expense, is_recurring: true })}
+            className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+              expense.is_recurring 
+                ? "border-pink-500 bg-pink-500/20" 
+                : "border-zinc-700 bg-zinc-800"
+            }`}
+          >
+            <RecurringIcon className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} />
+            <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpense({ ...expense, is_recurring: false })}
+            className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+              !expense.is_recurring 
+                ? "border-zinc-500 bg-zinc-700" 
+                : "border-zinc-700 bg-zinc-800"
+            }`}
+          >
+            <DollarSign className={`w-5 h-5 ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`} />
+            <span className={`font-medium text-xs ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Cambio de importe programado (opcional) */}
+      <div className="border border-zinc-700 rounded-xl p-3">
+        <button 
+          type="button"
+          onClick={() => setShowScheduledChange(!showScheduledChange)}
+          className="flex items-center justify-between w-full"
+        >
+          <span className="text-sm font-medium text-orange-400">Cambio de importe programado</span>
+          {showScheduledChange ? (
+            <ChevronDown className="w-4 h-4 text-zinc-400" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-zinc-400" />
+          )}
+        </button>
+
+        {showScheduledChange && (
+          <div className="space-y-3 pt-3 mt-2 border-t border-zinc-700">
+            <p className="text-xs text-zinc-500">
+              Configura si este gasto cambiará en el futuro (ej: alquiler que sube cada año)
+            </p>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Fecha del cambio</label>
+                <DatePicker
+                  date={expense.scheduled_change_date || undefined}
+                  onDateChange={handleScheduledChangeDate}
+                  placeholder="Selecciona fecha"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Nuevo importe</label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={expense.scheduled_new_amount}
+                  onChange={(e) => setExpense({ ...expense, scheduled_new_amount: e.target.value })}
+                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-400 mb-2 block">Tipo de cambio</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExpense({ ...expense, scheduled_change_type: "increase" })}
+                  className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center gap-1 ${
+                    expense.scheduled_change_type === "increase"
+                      ? "border-red-500 bg-red-500/20"
+                      : "border-zinc-700 bg-zinc-800"
+                  }`}
+                >
+                  <TrendingUp className={`w-4 h-4 ${expense.scheduled_change_type === "increase" ? "text-red-400" : "text-zinc-400"}`} />
+                  <span className={`text-xs ${expense.scheduled_change_type === "increase" ? "text-white" : "text-zinc-400"}`}>Aumenta</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpense({ ...expense, scheduled_change_type: "decrease" })}
+                  className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center gap-1 ${
+                    expense.scheduled_change_type === "decrease"
+                      ? "border-green-500 bg-green-500/20"
+                      : "border-zinc-700 bg-zinc-800"
+                  }`}
+                >
+                  <TrendingDown className={`w-4 h-4 ${expense.scheduled_change_type === "decrease" ? "text-green-400" : "text-zinc-400"}`} />
+                  <span className={`text-xs ${expense.scheduled_change_type === "decrease" ? "text-white" : "text-zinc-400"}`}>Disminuye</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
         <DatePicker
           date={expense.date}
           onDateChange={(date) => setExpense({ ...expense, date })}
         />
+      </div>
+
+      {/* Vinculación a Inversión */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Vincular a inversión</label>
+        <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.investment_id !== "none" 
+                  ? "border-emerald-500/50 bg-emerald-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                expense.investment_id !== "none" 
+                  ? "bg-emerald-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <TrendingUp className={`w-4 h-4 ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                {getInvestmentLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsInvestmentDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, investment_id: "none" });
+                  setIsInvestmentDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.investment_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {investments.map((inv: any) => (
+                <button
+                  key={inv.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, investment_id: inv.id });
+                    setIsInvestmentDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.investment_id === inv.id
+                      ? "border-emerald-500 bg-emerald-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-white font-medium">{inv.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInvestmentDialogOpen(false);
+                  setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Vinculación a Patrimonio */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Vincular a patrimonio</label>
+        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.patrimony_id !== "none" 
+                  ? "border-sky-500/50 bg-sky-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                expense.patrimony_id !== "none" 
+                  ? "bg-sky-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <Building className={`w-4 h-4 ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                {getPatrimonyLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsPatrimonyDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, patrimony_id: "none" });
+                  setIsPatrimonyDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.patrimony_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {patrimony.map((pat: any) => (
+                <button
+                  key={pat.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, patrimony_id: pat.id });
+                    setIsPatrimonyDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.patrimony_id === pat.id
+                      ? "border-sky-500 bg-sky-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <span className="text-white font-medium">{pat.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPatrimonyDialogOpen(false);
+                  setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-sky-400" />
+                <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Button 
