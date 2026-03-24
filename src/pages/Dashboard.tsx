@@ -13,23 +13,6 @@ import BottomNav from "@/components/dashboard/BottomNav";
 import { LogOut, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const years = [2024, 2025, 2026, 2027, 2028];
-
-const months = [
-  { value: "01", label: "Enero" },
-  { value: "02", label: "Febrero" },
-  { value: "03", label: "Marzo" },
-  { value: "04", label: "Abril" },
-  { value: "05", label: "Mayo" },
-  { value: "06", label: "Junio" },
-  { value: "07", label: "Julio" },
-  { value: "08", label: "Agosto" },
-  { value: "09", label: "Septiembre" },
-  { value: "10", label: "Octubre" },
-  { value: "11", label: "Noviembre" },
-  { value: "12", label: "Diciembre" },
-];
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -103,37 +86,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Month/Year Selector - Full width */}
-      <div className="bg-zinc-900/80 border-b border-zinc-800 py-4">
-        <div className="w-full flex items-center gap-4 px-4">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-full max-w-[180px] bg-zinc-800 border-zinc-700 text-white">
-              <SelectValue placeholder="Año" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white">
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full max-w-[180px] bg-zinc-800 border-zinc-700 text-white">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Main Content */}
+      {/* Main Content - Los selectores ahora están dentro de FinancialSummary */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         <FinancialSummary
           selectedMonth={selectedMonth}
