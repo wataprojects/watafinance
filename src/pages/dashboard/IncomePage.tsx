@@ -461,14 +461,16 @@ const IncomePage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Ingresos</h1>
-            <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
-          </div>
-          
-          {/* Selectores de fecha - movidos aquí después del subtítulo */}
-          <div className="flex gap-2">
+        {/* Header - solo título y subtítulo */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Ingresos</h1>
+          <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
+        </div>
+
+        {/* Segunda línea: selectores de fecha + botón Nuevo + filtros tipo */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          {/* Selectores de fecha - juntos en móvil */}
+          <div className="flex gap-2 flex-1">
             <Select value={filterYear} onValueChange={setFilterYear}>
               <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
                 <SelectValue placeholder="Año" />
@@ -498,64 +500,66 @@ const IncomePage = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Botón Nuevo */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-500 hover:bg-green-600 text-black">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
+              </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <IncomeForm 
+                income={newIncome} 
+                setIncome={setNewIncome} 
+                onSubmit={handleAddIncome}
+                isSubmitting={false}
+                isNew={true}
+                investments={investments}
+                patrimony={patrimony}
+                isNewInvestmentOpen={isNewInvestmentOpen}
+                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                isNewPatrimonyOpen={isNewPatrimonyOpen}
+                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                newInvestment={newInvestment}
+                setNewInvestment={setNewInvestment}
+                newPatrimonyAsset={newPatrimonyAsset}
+                setNewPatrimonyAsset={setNewPatrimonyAsset}
+                handleCreateInvestment={handleCreateInvestment}
+                handleCreatePatrimony={handleCreatePatrimony}
+                investmentTypes={investmentTypes}
+                patrimonyCategories={patrimonyCategories}
+                isCategoryDialogOpen={isCategoryDialogOpen}
+                setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                isInvestmentDialogOpen={isInvestmentDialogOpen}
+                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                getSelectedCategoryInfo={getSelectedCategoryInfo}
+                customCategories={customCategories}
+                availableIcons={availableIcons}
+                categoryColors={categoryColors}
+                newCustomCategory={newCustomCategory}
+                setNewCustomCategory={setNewCustomCategory}
+                handleCreateCustomCategory={handleCreateCustomCategory}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-500 hover:bg-green-600 text-black mb-6">
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
-            </DialogHeader>
-            <button 
-              onClick={() => setIsDialogOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <IncomeForm 
-              income={newIncome} 
-              setIncome={setNewIncome} 
-              onSubmit={handleAddIncome}
-              isSubmitting={false}
-              isNew={true}
-              investments={investments}
-              patrimony={patrimony}
-              isNewInvestmentOpen={isNewInvestmentOpen}
-              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-              isNewPatrimonyOpen={isNewPatrimonyOpen}
-              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-              newInvestment={newInvestment}
-              setNewInvestment={setNewInvestment}
-              newPatrimonyAsset={newPatrimonyAsset}
-              setNewPatrimonyAsset={setNewPatrimonyAsset}
-              handleCreateInvestment={handleCreateInvestment}
-              handleCreatePatrimony={handleCreatePatrimony}
-              investmentTypes={investmentTypes}
-              patrimonyCategories={patrimonyCategories}
-              isCategoryDialogOpen={isCategoryDialogOpen}
-              setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-              isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-              setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-              isInvestmentDialogOpen={isInvestmentDialogOpen}
-              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-              getSelectedCategoryInfo={getSelectedCategoryInfo}
-              customCategories={customCategories}
-              availableIcons={availableIcons}
-              categoryColors={categoryColors}
-              newCustomCategory={newCustomCategory}
-              setNewCustomCategory={setNewCustomCategory}
-              handleCreateCustomCategory={handleCreateCustomCategory}
-            />
-          </DialogContent>
-        </Dialog>
-
+        {/* Filtros tipo de ingreso */}
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setFilterType("all")}
@@ -589,6 +593,7 @@ const IncomePage = () => {
           </button>
         </div>
 
+        {/* Card de totales */}
         <Card className="bg-zinc-900 border-zinc-800 mb-6">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
@@ -596,6 +601,7 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
+        {/* Historial */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">

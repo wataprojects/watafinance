@@ -371,14 +371,16 @@ const DebtsPage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Deudas</h1>
-            <p className="text-amber-400 text-sm">Gestiona tus deudas y cobros</p>
-          </div>
-          
-          {/* Selectores de fecha - movidos aquí después del subtítulo */}
-          <div className="flex gap-2">
+        {/* Header - solo título y subtítulo */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Deudas</h1>
+          <p className="text-amber-400 text-sm">Gestiona tus deudas y cobros</p>
+        </div>
+
+        {/* Segunda línea: selectores de fecha + botón Nueva */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          {/* Selectores de fecha */}
+          <div className="flex gap-2 flex-1">
             <Select value={filterYear} onValueChange={setFilterYear}>
               <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
                 <SelectValue placeholder="Año" />
@@ -408,74 +410,58 @@ const DebtsPage = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Botón Nueva */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-white">Nueva deuda</DialogTitle>
+                <p className="text-zinc-400 text-sm">Registra quién debe a quién</p>
+              </DialogHeader>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <DebtForm 
+                debt={newDebt} 
+                setDebt={setNewDebt} 
+                onSubmit={handleAddDebt}
+                isSubmitting={saving}
+                isNew={true}
+                investments={investments}
+                patrimony={patrimony}
+                isNewInvestmentOpen={isNewInvestmentOpen}
+                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                isNewPatrimonyOpen={isNewPatrimonyOpen}
+                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                newInvestment={newInvestment}
+                setNewInvestment={setNewInvestment}
+                newPatrimonyAsset={newPatrimonyAsset}
+                setNewPatrimonyAsset={setNewPatrimonyAsset}
+                handleCreateInvestment={handleCreateInvestment}
+                handleCreatePatrimony={handleCreatePatrimony}
+                investmentTypes={investmentTypes}
+                patrimonyCategories={patrimonyCategories}
+                isInvestmentDialogOpen={isInvestmentDialogOpen}
+                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                getInvestmentLabel={getInvestmentLabel}
+                getPatrimonyLabel={getPatrimonyLabel}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-black mb-6">
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Nueva deuda</DialogTitle>
-              <p className="text-zinc-400 text-sm">Registra quién debe a quién</p>
-            </DialogHeader>
-            <button 
-              onClick={() => setIsDialogOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <DebtForm 
-              debt={newDebt} 
-              setDebt={setNewDebt} 
-              onSubmit={handleAddDebt}
-              isSubmitting={saving}
-              isNew={true}
-              investments={investments}
-              patrimony={patrimony}
-              isNewInvestmentOpen={isNewInvestmentOpen}
-              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-              isNewPatrimonyOpen={isNewPatrimonyOpen}
-              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-              newInvestment={newInvestment}
-              setNewInvestment={setNewInvestment}
-              newPatrimonyAsset={newPatrimonyAsset}
-              setNewPatrimonyAsset={setNewPatrimonyAsset}
-              handleCreateInvestment={handleCreateInvestment}
-              handleCreatePatrimony={handleCreatePatrimony}
-              investmentTypes={investmentTypes}
-              patrimonyCategories={patrimonyCategories}
-              isInvestmentDialogOpen={isInvestmentDialogOpen}
-              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-              getInvestmentLabel={getInvestmentLabel}
-              getPatrimonyLabel={getPatrimonyLabel}
-            />
-          </DialogContent>
-        </Dialog>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="bg-green-900/30 border-green-800">
-            <CardContent className="p-6 text-center">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-              <p className="text-3xl font-bold text-green-500">{formatCurrency(totalTheyOwe)}</p>
-              <p className="text-green-400 text-sm">Me deben</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-red-900/30 border-red-800">
-            <CardContent className="p-6 text-center">
-              <TrendingDownIcon className="w-8 h-8 mx-auto mb-2 text-red-500" />
-              <p className="text-3xl font-bold text-red-500">{formatCurrency(totalIOwe)}</p>
-              <p className="text-red-400 text-sm">Debo yo</p>
-            </CardContent>
-          </Card>
-        </div>
-
+        {/* Filtros de tipo de deuda */}
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setFilterType("all")}
@@ -509,6 +495,26 @@ const DebtsPage = () => {
           </button>
         </div>
 
+        {/* Cards de totales */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Card className="bg-green-900/30 border-green-800">
+            <CardContent className="p-6 text-center">
+              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
+              <p className="text-3xl font-bold text-green-500">{formatCurrency(totalTheyOwe)}</p>
+              <p className="text-green-400 text-sm">Me deben</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-red-900/30 border-red-800">
+            <CardContent className="p-6 text-center">
+              <TrendingDownIcon className="w-8 h-8 mx-auto mb-2 text-red-500" />
+              <p className="text-3xl font-bold text-red-500">{formatCurrency(totalIOwe)}</p>
+              <p className="text-red-400 text-sm">Debo yo</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de deudas */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -611,7 +617,7 @@ const DebtsPage = () => {
             patrimonyCategories={patrimonyCategories}
             isInvestmentDialogOpen={isInvestmentDialogOpen}
             setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-            isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+            isPatrimonyOpen={isPatrimonyDialogOpen}
             setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
             getInvestmentLabel={getInvestmentLabel}
             getPatrimonyLabel={getPatrimonyLabel}
