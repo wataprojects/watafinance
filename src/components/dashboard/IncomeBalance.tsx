@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Home, TrendingUp } from "lucide-react";
+import { Briefcase, Home, TrendingUp, PieChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -49,7 +49,10 @@ const IncomeBalance = () => {
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-white">Balance Ingresos Pasivos/Activos</CardTitle>
+        <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+          <PieChart className="w-5 h-5" />
+          Balance Ingresos Pasivos/Activos
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
