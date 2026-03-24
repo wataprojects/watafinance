@@ -31,6 +31,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 }) => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,8 +67,16 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .gte("date", startDate)
       .lte("date", endDate);
 
+    // Fetch active loans for the user
+    const loansResult = await supabase
+      .from("loans")
+      .select("monthly_payment, status")
+      .eq("user_id", session.user.id)
+      .eq("status", "active");
+
     if (incomesResult.data) setIncomes(incomesResult.data);
     if (expensesResult.data) setExpenses(expensesResult.data);
+    if (loansResult.data) setLoans(loansResult.data);
     setLoading(false);
   };
 
@@ -77,8 +86,11 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   // Total expenses for the selected month
   const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   
-  // Total gastos = expenses + loans (loans monthly payment)
-  const totalGastos = totalExpenses;
+  // Total loans monthly payment (only active loans)
+  const totalLoansMonthly = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
+  
+  // Total gastos = expenses + loans monthly payment
+  const totalGastos = totalExpenses + totalLoansMonthly;
   
   // Balance = Ingresos - Gastos
   const balance = totalIncome - totalGastos;
