@@ -163,7 +163,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-4xl font-bold text-green-400">{coveragePercentage}%</span>
-                  <span className="text-xs text-white/60">de gastos</span>
+                  <span className="text-xs text-white/60 text-center px-2">Tus ingresos pasivos cubren un {coveragePercentage}% de tus gastos</span>
                 </div>
               </div>
             </div>
@@ -175,8 +175,8 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
               </p>
             </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
+            {/* Stats grid - 2 columnas sin patrimonio */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="text-center p-3 bg-white/5 rounded-xl">
                 <Zap className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
                 <p className="text-xs text-white/50">Pasivos</p>
@@ -186,11 +186,6 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
                 <Flame className="w-5 h-5 mx-auto mb-1 text-red-400" />
                 <p className="text-xs text-white/50">Gastos</p>
                 <p className="font-bold text-white text-sm">{formatCurrency(monthlyExpenses)}</p>
-              </div>
-              <div className="text-center p-3 bg-white/5 rounded-xl">
-                <Target className="w-5 h-5 mx-auto mb-1 text-green-400" />
-                <p className="text-xs text-white/50">Patrimonio</p>
-                <p className="font-bold text-green-400 text-sm">{formatCurrency(currentNetWorth)}</p>
               </div>
             </div>
 
