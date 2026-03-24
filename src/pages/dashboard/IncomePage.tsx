@@ -732,7 +732,7 @@ const IncomePage = () => {
           <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
         </div>
 
-        {/* Segunda línea: selectores de fecha + botón Nuevo + filtros tipo */}
+        {/* Segunda línea: selectores de fecha + botón Nuevo */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           {/* Selectores de fecha - juntos en móvil */}
           <div className="flex gap-2 flex-1">
@@ -824,40 +824,6 @@ const IncomePage = () => {
           </Dialog>
         </div>
 
-        {/* Filtros tipo de ingreso */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setFilterType("all")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "all"
-                ? "bg-green-500 text-black"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFilterType("passive")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "passive"
-                ? "bg-purple-500 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
-          >
-            Pasivos
-          </button>
-          <button
-            onClick={() => setFilterType("active")}
-            className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
-              filterType === "active"
-                ? "bg-blue-500 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
-          >
-            Activos
-          </button>
-        </div>
-
         {/* Card de totales con barra visual */}
         <Card className="bg-zinc-900 border-zinc-800 mb-4">
           <CardContent className="p-6 text-center">
@@ -894,7 +860,7 @@ const IncomePage = () => {
             {totalIncome > 0 ? (
               <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                 <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
-                {topCategories.map((cat, index) => {
+                {topCategories.map((cat) => {
                   const catInfo = getCategoryInfo(cat.category);
                   const Icon = catInfo.icon;
                   return (
@@ -952,7 +918,7 @@ const IncomePage = () => {
           </Card>
         )}
 
-        {/* Historial con agrupación por fecha */}
+        {/* Historial con filtros dentro del card */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -961,6 +927,40 @@ const IncomePage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Filtros tipo de ingreso dentro del historial */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setFilterType("all")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "all"
+                    ? "bg-green-500 text-black"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilterType("passive")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "passive"
+                    ? "bg-purple-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Pasivos
+              </button>
+              <button
+                onClick={() => setFilterType("active")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "active"
+                    ? "bg-blue-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Activos
+              </button>
+            </div>
+
             {loading ? (
               <p className="text-zinc-500 text-center">Cargando...</p>
             ) : filteredIncomes.length === 0 ? (
