@@ -155,7 +155,7 @@ const IncomeBalance: React.FC<IncomeBalanceProps> = ({ selectedMonth, selectedYe
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-500" />
-                  <span className="text-sm font-medium text-zinc-300">Meta FIRE: 70% pasivo</span>
+                  <span className="text-sm font-medium text-zinc-300">Objetivo: 70% de Ingresos Pasivos</span>
                 </div>
                 <span className="text-sm font-bold text-green-500">{passivePercentage}%</span>
               </div>
