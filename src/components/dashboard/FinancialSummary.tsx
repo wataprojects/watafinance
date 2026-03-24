@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import YearMonthPicker from "./YearMonthPicker";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -24,24 +24,6 @@ interface FinancialSummaryProps {
   setSelectedYear?: (year: string) => void;
   navigate?: (path: string) => void;
 }
-
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
-
-const months = [
-  { value: "01", label: "Enero" },
-  { value: "02", label: "Febrero" },
-  { value: "03", label: "Marzo" },
-  { value: "04", label: "Abril" },
-  { value: "05", label: "Mayo" },
-  { value: "06", label: "Junio" },
-  { value: "07", label: "Julio" },
-  { value: "08", label: "Agosto" },
-  { value: "09", label: "Septiembre" },
-  { value: "10", label: "Octubre" },
-  { value: "11", label: "Noviembre" },
-  { value: "12", label: "Diciembre" },
-];
 
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   selectedMonth,
@@ -132,42 +114,15 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Fila 1: Selectores de Año y Mes - Reemplazan los botones anteriores */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Selector de Año - Ocupa espacio donde estaba "Nuevo Ingreso" */}
-        <div className="relative">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white py-6 text-base font-semibold rounded-xl">
-              <SelectValue placeholder="Año" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white text-base py-3">
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Fila 1: Selectores de Año y Mes - Ahora con cuadrícula */}
+      <YearMonthPicker
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        setSelectedMonth={setSelectedMonth}
+        setSelectedYear={setSelectedYear}
+      />
 
-        {/* Selector de Mes - Ocupa espacio donde estaba "Nuevo Gasto" */}
-        <div className="relative">
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white py-6 text-base font-semibold rounded-xl">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white text-base py-3">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Fila 2: Botones de Acción - Ahora debajo de los selectores */}
+      {/* Fila 2: Botones de Acción */}
       <div className="grid grid-cols-2 gap-6">
         <Button 
           onClick={handleNewIncome}
