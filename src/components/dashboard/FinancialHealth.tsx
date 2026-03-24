@@ -145,7 +145,7 @@ const FinancialHealth = () => {
     // Fetch incomes for the month
     const incomesResult = await supabase
       .from("incomes")
-      .select("amount, is_passive, is_recurring")
+      .select("amount, is_passive, is_recurring, category")
       .eq("user_id", userId)
       .gte("date", startDate)
       .lte("date", endDate);
@@ -187,6 +187,19 @@ const FinancialHealth = () => {
     const allDebts = allDebtsResult.data || [];
     const totalDebtAmount = allDebts.reduce((sum, d) => sum + parseFloat(d.current_amount || 0), 0);
 
+    // NUEVA LÓGICA: Calcular fuentes de ingreso únicas y su peso
+    const incomeByCategory: Record<string, number> = {};
+    incomes.forEach(income => {
+      const cat = income.category || 'other';
+      incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount || 0);
+    });
+
+    const uniqueSources = Object.keys(incomeByCategory);
+    const totalIncomeCalculated = Object.values(incomeByCategory).reduce((sum, val) => sum + val, 0);
+    const dominantSourcePercentage = totalIncomeCalculated > 0 
+      ? Math.max(...Object.values(incomeByCategory)) / totalIncomeCalculated * 100 
+      : 0;
+
     const hasData = incomes.length > 0 || expenses.length > 0;
 
     return {
@@ -200,6 +213,10 @@ const FinancialHealth = () => {
       recurringIncome,
       totalDebtAmount,
       netBalance: totalIncome - totalExpensesWithLoans,
+      // Nuevos campos para estabilidad
+      uniqueSources,
+      totalIncomeCalculated,
+      dominantSourcePercentage,
     };
   };
 
@@ -212,6 +229,9 @@ const FinancialHealth = () => {
       recurringIncome,
       totalDebtAmount,
       netBalance,
+      uniqueSources,
+      totalIncomeCalculated,
+      dominantSourcePercentage,
     } = data;
 
     // 1. Balance mensual (25% weight)
@@ -253,12 +273,18 @@ const FinancialHealth = () => {
       ? Math.max(0, 100 - (debtLoadPercentage * 1.25))
       : 100;
 
-    // 5. Estabilidad (15% weight)
-    // What % of income is recurring
-    const stabilityPercentage = totalIncome > 0 
-      ? (recurringIncome / totalIncome) * 100 
-      : 0;
-    const stabilityScore = stabilityPercentage;
+    // 5. Estabilidad (15% weight) - NUEVA LÓGICA DE DIVERSIFICACIÓN
+    let stabilityScore: number;
+    if (uniqueSources.length === 1) {
+      // Una sola fuente = riesgo (0-40)
+      stabilityScore = 30;
+    } else if (uniqueSources.length > 1 && dominantSourcePercentage > 70) {
+      // Múltiples fuentes pero dominante >70% = mejora leve (50-70)
+      stabilityScore = 60;
+    } else {
+      // Múltiples fuentes con distribución razonable = bueno (70-100)
+      stabilityScore = Math.min(100, 70 + (100 - dominantSourcePercentage) * 0.5);
+    }
 
     return [
       {
@@ -292,9 +318,9 @@ const FinancialHealth = () => {
       {
         name: "Estabilidad",
         score: Math.round(stabilityScore),
-        value: stabilityPercentage,
+        value: dominantSourcePercentage,
         icon: <Shield className="w-4 h-4" />,
-        description: "Porcentaje de ingresos recurrentes"
+        description: "Diversificación de fuentes de ingreso"
       },
     ];
   };
@@ -332,7 +358,7 @@ const FinancialHealth = () => {
       fortalezas.push("Baja presión de deudas en tus finanzas");
     }
     if (stability.score >= 70) {
-      fortalezas.push("Tus ingresos son muy estables");
+      fortalezas.push("Tus ingresos están bien diversificados");
     }
 
     // A Mejorar (score < 60)
@@ -348,8 +374,28 @@ const FinancialHealth = () => {
     if (debt.score < 60 && data.totalIncome > 0) {
       aMejorar.push("Tienes demasiadas deudas");
     }
-    if (stability.score < 60 && data.totalIncome > 0) {
-      aMejorar.push("Tus ingresos son inestables");
+
+    // Estabilidad - NUEVA LÓGICA
+    if (data.totalIncome > 0) {
+      if (data.uniqueSources.length === 1) {
+        // Riesgo real: una sola fuente
+        if (stability.score < 60) {
+          aMejorar.push("Tienes una única fuente de ingresos");
+        }
+        if (stability.score < 40) {
+          riesgos.push("Tus ingresos dependen de una sola fuente");
+        }
+      } else if (data.dominantSourcePercentage > 70) {
+        // Mejora leve: múltiples fuentes pero dominante
+        if (stability.score < 70) {
+          aMejorar.push("Tienes varias fuentes, pero tu ingreso principal sigue siendo dominante");
+        }
+      } else {
+        // Ideal: buena diversificación
+        if (stability.score >= 70) {
+          fortalezas.push("Tus ingresos están bien diversificados");
+        }
+      }
     }
 
     // Riesgos (score < 40) - Los ingresos pasivos ya NO generan riesgo
@@ -359,12 +405,8 @@ const FinancialHealth = () => {
     if (savings.score < 40 && data.totalIncome > 0) {
       riesgos.push("Baja capacidad de ahorro");
     }
-    // Eliminado: riesgo por bajos ingresos pasivos - ahora es solo un indicador de progreso
     if (debt.score < 40 && data.totalIncome > 0) {
       riesgos.push("Alta presión de deudas en tus ingresos");
-    }
-    if (stability.score < 40 && data.totalIncome > 0) {
-      riesgos.push("Tus ingresos son muy variables");
     }
 
     // Recomendaciones (based on lowest scores)
@@ -383,7 +425,7 @@ const FinancialHealth = () => {
       recomendaciones.push("Prioriza pagar deudas de alto interés");
     }
     if (lowestMetric.name === "Estabilidad" && lowestMetric.score < 50) {
-      recomendaciones.push("Busca fuentes de ingreso más estables");
+      recomendaciones.push("Busca diversificar tus fuentes de ingreso");
     }
 
     // Add general recommendations if none generated - Enfoque positivo para ingresos pasivos
