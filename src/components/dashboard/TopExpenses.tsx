@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, Coffee, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase } from "lucide-react";
 
@@ -123,6 +130,15 @@ const getCategoryLabel = (category: string) => {
   return labels[category] || category;
 };
 
+// Función auxiliar para dividir gastos en grupos de 4
+const chunkArray = <T,>(array: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+};
+
 const TopExpenses = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +168,9 @@ const TopExpenses = () => {
   };
 
   const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  
+  // Dividir los gastos en grupos de 4
+  const expenseChunks = chunkArray(expenses, 4);
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
@@ -169,58 +188,83 @@ const TopExpenses = () => {
         ) : expenses.length === 0 ? (
           <p className="text-zinc-400 text-center py-4 text-sm">No hay gastos registrados</p>
         ) : (
-          <div 
-            className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
-            style={{ 
-              scrollbarWidth: 'none', 
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch'
-            }}
-          >
-            {expenses.map((expense, index) => {
-              const percentage = total > 0 ? Math.round((expense.amount / total) * 100) : 0;
-              const iconColor = getCategoryIconColor(expense.category);
-              const iconBg = getCategoryBgColor(expense.category);
-              
-              return (
-                <div 
-                  key={index} 
-                  className="flex-shrink-0 w-28 p-2 bg-zinc-800/50 rounded-xl space-y-2"
-                >
-                  {/* Icono y categoría */}
-                  <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
-                      <span className={iconColor}>
-                        {getCategoryIcon(expense.category)}
-                      </span>
+          <div className="relative">
+            <Carousel
+              orientation="vertical"
+              className="w-full"
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+            >
+              <CarouselContent className="-mt-1 h-[280px]">
+                {expenseChunks.map((chunk, chunkIndex) => (
+                  <CarouselItem key={chunkIndex} className="pt-1">
+                    <div className="space-y-2 p-1">
+                      {chunk.map((expense, index) => {
+                        const percentage = total > 0 ? Math.round((expense.amount / total) * 100) : 0;
+                        const iconColor = getCategoryIconColor(expense.category);
+                        const iconBg = getCategoryBgColor(expense.category);
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl"
+                          >
+                            {/* Icono de la categoría */}
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                              <span className={iconColor}>
+                                {getCategoryIcon(expense.category)}
+                              </span>
+                            </div>
+                            
+                            {/* Nombre de la categoría */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-zinc-300 truncate">
+                                {getCategoryLabel(expense.category)}
+                              </p>
+                              {/* Barra de progreso horizontal */}
+                              <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Importe y porcentaje */}
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-sm font-bold text-white">
+                                {formatCurrency(expense.amount)}
+                              </p>
+                              <p className="text-[10px] text-zinc-500">
+                                {percentage}%
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                  
-                  {/* Categoría label */}
-                  <p className="text-xs text-zinc-400 truncate">
-                    {getCategoryLabel(expense.category)}
-                  </p>
-                  
-                  {/* Importe */}
-                  <p className="text-sm font-bold text-white">
-                    {formatCurrency(expense.amount)}
-                  </p>
-                  
-                  {/* Barra de progreso */}
-                  <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  
-                  {/* Porcentaje */}
-                  <p className="text-[10px] text-zinc-500">
-                    {percentage}% del total
-                  </p>
-                </div>
-              );
-            })}
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              
+              {/* Botones de navegación */}
+              <CarouselPrevious className="top-1/2 -translate-y-1/2 -left-12 h-8 w-8 bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white" />
+              <CarouselNext className="top-1/2 -translate-y-1/2 -right-12 h-8 w-8 bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white" />
+            </Carousel>
+            
+            {/* Indicadores de posición (puntos) */}
+            {expenseChunks.length > 1 && (
+              <div className="flex justify-center gap-1 mt-3">
+                {expenseChunks.map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-1.5 h-1.5 rounded-full bg-zinc-600"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
