@@ -354,18 +354,18 @@ const ExpensesPage = () => {
   const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
-    { value: "01", label: "Ene" },
-    { value: "02", label: "Feb" },
-    { value: "03", label: "Mar" },
-    { value: "04", label: "Abr" },
-    { value: "05", label: "May" },
-    { value: "06", label: "Jun" },
-    { value: "07", label: "Jul" },
-    { value: "08", label: "Ago" },
-    { value: "09", label: "Sep" },
-    { value: "10", label: "Oct" },
-    { value: "11", label: "Nov" },
-    { value: "12", label: "Dic" },
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
   ];
 
   const categoryColors = [
@@ -545,7 +545,6 @@ const ExpensesPage = () => {
     }
   };
 
-  // ✅ FIX: precargar correctamente recurrencia + inversión/patrimonio
   const openEditDialog = (expense: any) => {
     setSelectedExpense(expense);
     const expenseDate = safeDate(expense.date);
@@ -731,14 +730,16 @@ const ExpensesPage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        {/* Header with title, date selectors and button */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Gastos</h1>
-            <p className="text-red-400 text-sm">Controla tus gastos mensuales</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Date selectors in header */}
+        {/* Header - solo título y subtítulo */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Gastos</h1>
+          <p className="text-red-400 text-sm">Controla tus gastos mensuales</p>
+        </div>
+
+        {/* Segunda línea: selectores de fecha + botón Nuevo */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          {/* Selectores de fecha - juntos en móvil */}
+          <div className="flex gap-2 flex-1">
             <Select value={filterYear} onValueChange={setFilterYear}>
               <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
                 <SelectValue placeholder="Año" />
@@ -767,65 +768,66 @@ const ExpensesPage = () => {
                 ))}
               </SelectContent>
             </Select>
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-red-500 hover:bg-red-600 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
-                </DialogHeader>
-                <button
-                  onClick={() => setIsDialogOpen(false)}
-                  className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <ExpenseForm
-                  expense={newExpense}
-                  setExpense={setNewExpense}
-                  onSubmit={handleAddExpense}
-                  isSubmitting={isSubmitting}
-                  isNew={true}
-                  investments={investments}
-                  patrimony={patrimony}
-                  isNewInvestmentOpen={isNewInvestmentOpen}
-                  setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                  isNewPatrimonyOpen={isNewPatrimonyOpen}
-                  setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                  newInvestment={newInvestment}
-                  setNewInvestment={setNewInvestment}
-                  newPatrimonyAsset={newPatrimonyAsset}
-                  setNewPatrimonyAsset={setNewPatrimonyAsset}
-                  handleCreateInvestment={handleCreateInvestment}
-                  handleCreatePatrimony={handleCreatePatrimony}
-                  investmentTypes={investmentTypes}
-                  patrimonyCategories={patrimonyCategories}
-                  isCategoryDialogOpen={isCategoryDialogOpen}
-                  setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-                  isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-                  setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-                  isInvestmentDialogOpen={isInvestmentDialogOpen}
-                  setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-                  isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-                  setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-                  getSelectedCategoryInfo={getSelectedCategoryInfo}
-                  customCategories={customCategories}
-                  availableIcons={availableIcons}
-                  categoryColors={categoryColors}
-                  newCustomCategory={newCustomCategory}
-                  setNewCustomCategory={setNewCustomCategory}
-                  handleCreateCustomCategory={handleCreateCustomCategory}
-                  showScheduledChange={showScheduledChange}
-                  setShowScheduledChange={setShowScheduledChange}
-                />
-              </DialogContent>
-            </Dialog>
           </div>
+
+          {/* Botón Nuevo */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-red-500 hover:bg-red-600 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+              </DialogHeader>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <ExpenseForm
+                expense={newExpense}
+                setExpense={setNewExpense}
+                onSubmit={handleAddExpense}
+                isSubmitting={isSubmitting}
+                isNew={true}
+                investments={investments}
+                patrimony={patrimony}
+                isNewInvestmentOpen={isNewInvestmentOpen}
+                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                isNewPatrimonyOpen={isNewPatrimonyOpen}
+                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                newInvestment={newInvestment}
+                setNewInvestment={setNewInvestment}
+                newPatrimonyAsset={newPatrimonyAsset}
+                setNewPatrimonyAsset={setNewPatrimonyAsset}
+                handleCreateInvestment={handleCreateInvestment}
+                handleCreatePatrimony={handleCreatePatrimony}
+                investmentTypes={investmentTypes}
+                patrimonyCategories={patrimonyCategories}
+                isCategoryDialogOpen={isCategoryDialogOpen}
+                setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                isInvestmentDialogOpen={isInvestmentDialogOpen}
+                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                getSelectedCategoryInfo={getSelectedCategoryInfo}
+                customCategories={customCategories}
+                availableIcons={availableIcons}
+                categoryColors={categoryColors}
+                newCustomCategory={newCustomCategory}
+                setNewCustomCategory={setNewCustomCategory}
+                handleCreateCustomCategory={handleCreateCustomCategory}
+                showScheduledChange={showScheduledChange}
+                setShowScheduledChange={setShowScheduledChange}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800 mb-4">
@@ -1118,7 +1120,6 @@ const ExpensesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modales crear inversión/patrimonio/categoría quedan igual que en tu versión original (omitidos aquí) */}
       <BottomNav />
     </div>
   );
