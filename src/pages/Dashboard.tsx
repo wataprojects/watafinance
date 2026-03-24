@@ -136,7 +136,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <FinancialSummary 
+        <FinancialSummary
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
           setSelectedMonth={setSelectedMonth}
@@ -144,19 +144,20 @@ const Dashboard = () => {
           navigate={handleNavigate}
         />
         
+        {/* FinancialHealth debajo de los botones de acción */}
+        <FinancialHealth />
+        
         {/* Nueva grid: IncomeBalance + FinancialFreedom lado a lado */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <IncomeBalance selectedMonth={selectedMonth} selectedYear={selectedYear} />
           <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
         
-        {/* FinancialHealth movido debajo de TopExpenses + IncomeExpenseChart */}
+        {/* Gráficos de Gastos e Ingresos/Gastos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
         </div>
-        
-        <FinancialHealth />
       </main>
 
       <BottomNav />
