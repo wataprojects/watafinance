@@ -7,8 +7,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, Coffee, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase } from "lucide-react";
@@ -248,10 +246,6 @@ const TopExpenses = () => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              
-              {/* Botones de navegación */}
-              <CarouselPrevious className="top-1/2 -translate-y-1/2 -left-12 h-8 w-8 bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white" />
-              <CarouselNext className="top-1/2 -translate-y-1/2 -right-12 h-8 w-8 bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white" />
             </Carousel>
             
             {/* Indicadores de posición (puntos) */}
