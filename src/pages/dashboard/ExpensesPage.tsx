@@ -5,15 +5,58 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { 
-  Plus, TrendingDown, CreditCard, ShoppingCart, Car, Home, Zap, Film, TrendingUp, Building, TrendingDown as TrendingDownIcon, Wifi, Smartphone, Heart, Shield, Flame, Sparkles, DollarSign, Briefcase, Megaphone, Train, UtensilsCrossed, Shirt, MoreHorizontal, ChevronRight, X, Link2, ChevronDown, PieChart, Pencil, Trash2, RefreshCcw, Landmark, Filter
+import {
+  Plus,
+  TrendingDown,
+  CreditCard,
+  ShoppingCart,
+  Car,
+  Home,
+  Zap,
+  Film,
+  TrendingUp,
+  Building,
+  TrendingDown as TrendingDownIcon,
+  Wifi,
+  Smartphone,
+  Heart,
+  Shield,
+  Flame,
+  Sparkles,
+  DollarSign,
+  Briefcase,
+  Megaphone,
+  Train,
+  UtensilsCrossed,
+  Shirt,
+  MoreHorizontal,
+  X,
+  ChevronRight,
+  Link2,
+  ChevronDown,
+  PieChart,
+  Pencil,
+  Trash2,
+  RefreshCcw,
+  Landmark,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
-import MonthFilterPopover from "@/components/dashboard/MonthFilterPopover";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -77,29 +120,145 @@ const availableIcons = [
 ];
 
 const expenseCategories: CategoryOption[] = [
-  { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20", textColor: "text-blue-400" },
-  { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
-  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
-  { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20", textColor: "text-rose-400" },
-  { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20", textColor: "text-slate-400" },
-  { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20", textColor: "text-indigo-400" },
-  { value: "internet", label: "Internet", icon: Wifi, color: "bg-violet-500/20", textColor: "text-violet-400" },
-  { value: "subscriptions", label: "Suscripciones", icon: Smartphone, color: "bg-pink-500/20", textColor: "text-pink-400" },
-  { value: "gas", label: "Gas", icon: Flame, color: "bg-orange-500/20", textColor: "text-orange-400" },
-  { value: "cleaning", label: "Limpieza", icon: Sparkles, color: "bg-teal-500/20", textColor: "text-teal-400" },
-  { value: "fuel", label: "Gasolina", icon: Car, color: "bg-red-500/20", textColor: "text-red-400" },
-  { value: "groceries", label: "Supermercado", icon: ShoppingCart, color: "bg-green-500/20", textColor: "text-green-400" },
-  { value: "entertainment", label: "Ocio", icon: Film, color: "bg-purple-500/20", textColor: "text-purple-400" },
-  { value: "business_investment", label: "Inversión", icon: TrendingUp, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
-  { value: "advertising", label: "Publicidad", icon: Megaphone, color: "bg-rose-500/20", textColor: "text-rose-400" },
-  { value: "transport", label: "Transporte", icon: Train, color: "bg-sky-500/20", textColor: "text-sky-400" },
-  { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed, color: "bg-orange-500/20", textColor: "text-orange-400" },
-  { value: "shopping", label: "Compras", icon: Shirt, color: "bg-pink-500/20", textColor: "text-pink-400" },
+  {
+    value: "housing",
+    label: "Casa",
+    icon: Home,
+    color: "bg-blue-500/20",
+    textColor: "text-blue-400",
+  },
+  {
+    value: "electricity",
+    label: "Luz",
+    icon: Zap,
+    color: "bg-yellow-500/20",
+    textColor: "text-yellow-400",
+  },
+  {
+    value: "water",
+    label: "Agua",
+    icon: DropletsIcon,
+    color: "bg-cyan-500/20",
+    textColor: "text-cyan-400",
+  },
+  {
+    value: "health",
+    label: "Salud",
+    icon: Heart,
+    color: "bg-rose-500/20",
+    textColor: "text-rose-400",
+  },
+  {
+    value: "security",
+    label: "Alarmas",
+    icon: Shield,
+    color: "bg-slate-500/20",
+    textColor: "text-slate-400",
+  },
+  {
+    value: "insurance",
+    label: "Seguros",
+    icon: Shield,
+    color: "bg-indigo-500/20",
+    textColor: "text-indigo-400",
+  },
+  {
+    value: "internet",
+    label: "Internet",
+    icon: Wifi,
+    color: "bg-violet-500/20",
+    textColor: "text-violet-400",
+  },
+  {
+    value: "subscriptions",
+    label: "Suscripciones",
+    icon: Smartphone,
+    color: "bg-pink-500/20",
+    textColor: "text-pink-400",
+  },
+  {
+    value: "gas",
+    label: "Gas",
+    icon: Flame,
+    color: "bg-orange-500/20",
+    textColor: "text-orange-400",
+  },
+  {
+    value: "cleaning",
+    label: "Limpieza",
+    icon: Sparkles,
+    color: "bg-teal-500/20",
+    textColor: "text-teal-400",
+  },
+  {
+    value: "fuel",
+    label: "Gasolina",
+    icon: Car,
+    color: "bg-red-500/20",
+    textColor: "text-red-400",
+  },
+  {
+    value: "groceries",
+    label: "Supermercado",
+    icon: ShoppingCart,
+    color: "bg-green-500/20",
+    textColor: "text-green-400",
+  },
+  {
+    value: "entertainment",
+    label: "Ocio",
+    icon: Film,
+    color: "bg-purple-500/20",
+    textColor: "text-purple-400",
+  },
+  {
+    value: "business_investment",
+    label: "Inversión",
+    icon: TrendingUp,
+    color: "bg-emerald-500/20",
+    textColor: "text-emerald-400",
+  },
+  {
+    value: "advertising",
+    label: "Publicidad",
+    icon: Megaphone,
+    color: "bg-rose-500/20",
+    textColor: "text-rose-400",
+  },
+  {
+    value: "transport",
+    label: "Transporte",
+    icon: Train,
+    color: "bg-sky-500/20",
+    textColor: "text-sky-400",
+  },
+  {
+    value: "restaurants",
+    label: "Restaurantes",
+    icon: UtensilsCrossed,
+    color: "bg-orange-500/20",
+    textColor: "text-orange-400",
+  },
+  {
+    value: "shopping",
+    label: "Compras",
+    icon: Shirt,
+    color: "bg-pink-500/20",
+    textColor: "text-pink-400",
+  },
 ];
 
 function DropletsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
     </svg>
   );
@@ -123,13 +282,16 @@ const ExpensesPage = () => {
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
 
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] =
+    useState(false);
 
   const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const [customCategories, setCustomCategories] = useState<CategoryOption[]>(
+    [],
+  );
 
   const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [showCategories, setShowCategories] = useState(true);
@@ -137,7 +299,6 @@ const ExpensesPage = () => {
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYear = new Date().getFullYear().toString();
-  
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYear);
 
@@ -154,7 +315,7 @@ const ExpensesPage = () => {
     scheduled_new_amount: "",
     scheduled_change_type: "increase" as "increase" | "decrease",
   });
-  
+
   const [editExpense, setEditExpense] = useState({
     id: "",
     source: "",
@@ -176,7 +337,7 @@ const ExpensesPage = () => {
     initial_value: "",
     current_value: "",
   });
-  
+
   const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
     name: "",
     category: "real_estate",
@@ -190,16 +351,53 @@ const ExpensesPage = () => {
     textColor: "text-green-400",
   });
 
+  const years = [2024, 2025, 2026, 2027, 2028];
+  const months = [
+    { value: "all", label: "Todos" },
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
+
   const categoryColors = [
     { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
-    { value: "bg-emerald-500/20", textColor: "text-emerald-400", label: "Verde" },
-    { value: "bg-purple-500/20", textColor: "text-purple-400", label: "Morado" },
+    {
+      value: "bg-emerald-500/20",
+      textColor: "text-emerald-400",
+      label: "Verde",
+    },
+    {
+      value: "bg-purple-500/20",
+      textColor: "text-purple-400",
+      label: "Morado",
+    },
     { value: "bg-cyan-500/20", textColor: "text-cyan-400", label: "Cian" },
-    { value: "bg-amber-500/20", textColor: "text-amber-400", label: "Ámbar" },
-    { value: "bg-green-500/20", textColor: "text-green-400", label: "Verde claro" },
+    {
+      value: "bg-amber-500/20",
+      textColor: "text-amber-400",
+      label: "Ámbar",
+    },
+    {
+      value: "bg-green-500/20",
+      textColor: "text-green-400",
+      label: "Verde claro",
+    },
     { value: "bg-slate-500/20", textColor: "text-slate-400", label: "Gris" },
     { value: "bg-pink-500/20", textColor: "text-pink-400", label: "Rosa" },
-    { value: "bg-orange-500/20", textColor: "text-orange-400", label: "Naranja" },
+    {
+      value: "bg-orange-500/20",
+      textColor: "text-orange-400",
+      label: "Naranja",
+    },
     { value: "bg-red-500/20", textColor: "text-red-400", label: "Rojo" },
   ];
 
@@ -208,7 +406,9 @@ const ExpensesPage = () => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       navigate("/login");
     } else {
@@ -249,7 +449,9 @@ const ExpensesPage = () => {
     if (isSubmitting) return;
     if (!newExpense.amount || !newExpense.source) return;
     setIsSubmitting(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       setIsSubmitting(false);
       return;
@@ -264,8 +466,12 @@ const ExpensesPage = () => {
       investment_id: newExpense.investment_id === "none" ? null : newExpense.investment_id,
       patrimony_id: newExpense.patrimony_id === "none" ? null : newExpense.patrimony_id,
       has_scheduled_change: newExpense.has_scheduled_change,
-      scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
-      scheduled_new_amount: newExpense.scheduled_new_amount ? parseFloat(newExpense.scheduled_new_amount) : null,
+      scheduled_change_date: newExpense.scheduled_change_date
+        ? formatDateToISO(newExpense.scheduled_change_date)
+        : null,
+      scheduled_new_amount: newExpense.scheduled_new_amount
+        ? parseFloat(newExpense.scheduled_new_amount)
+        : null,
       scheduled_change_type: newExpense.scheduled_change_type,
     });
     if (!error) {
@@ -291,24 +497,33 @@ const ExpensesPage = () => {
   const handleEditExpense = async () => {
     if (isSubmitting || !selectedExpense) return;
     setIsSubmitting(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       setIsSubmitting(false);
       return;
     }
-    const { error } = await supabase.from("expenses").update({
-      amount: parseFloat(editExpense.amount),
-      description: editExpense.source,
-      category: editExpense.category,
-      date: formatDateToISO(editExpense.date),
-      is_recurring: editExpense.is_recurring,
-      investment_id: editExpense.investment_id === "none" ? null : editExpense.investment_id,
-      patrimony_id: editExpense.patrimony_id === "none" ? null : editExpense.patrimony_id,
-      has_scheduled_change: editExpense.has_scheduled_change,
-      scheduled_change_date: editExpense.scheduled_change_date ? formatDateToISO(editExpense.scheduled_change_date) : null,
-      scheduled_new_amount: editExpense.scheduled_new_amount ? parseFloat(editExpense.scheduled_new_amount) : null,
-      scheduled_change_type: editExpense.scheduled_change_type,
-    }).eq("id", selectedExpense.id);
+    const { error } = await supabase
+      .from("expenses")
+      .update({
+        amount: parseFloat(editExpense.amount),
+        description: editExpense.source,
+        category: editExpense.category,
+        date: formatDateToISO(editExpense.date),
+        is_recurring: editExpense.is_recurring,
+        investment_id: editExpense.investment_id === "none" ? null : editExpense.investment_id,
+        patrimony_id: editExpense.patrimony_id === "none" ? null : editExpense.patrimony_id,
+        has_scheduled_change: editExpense.has_scheduled_change,
+        scheduled_change_date: editExpense.scheduled_change_date
+          ? formatDateToISO(editExpense.scheduled_change_date)
+          : null,
+        scheduled_new_amount: editExpense.scheduled_new_amount
+          ? parseFloat(editExpense.scheduled_new_amount)
+          : null,
+        scheduled_change_type: editExpense.scheduled_change_type,
+      })
+      .eq("id", selectedExpense.id);
     if (!error) {
       setIsEditDialogOpen(false);
       setSelectedExpense(null);
@@ -323,7 +538,9 @@ const ExpensesPage = () => {
     if (!error) {
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) fetchExpenses(session.user.id);
     }
   };
@@ -335,13 +552,21 @@ const ExpensesPage = () => {
       id: expense.id,
       source: expense.description || "",
       amount: expense.amount.toString(),
-      is_recurring: expense.is_recurring === true || expense.is_recurring === 1 || expense.is_recurring === "true",
+      is_recurring:
+        expense.is_recurring === true ||
+        expense.is_recurring === 1 ||
+        expense.is_recurring === "true",
       category: expense.category,
       date: expenseDate,
       investment_id: expense.investment_id || "none",
       patrimony_id: expense.patrimony_id || "none",
-      has_scheduled_change: expense.has_scheduled_change === true || expense.has_scheduled_change === 1 || expense.has_scheduled_change === "true",
-      scheduled_change_date: expense.scheduled_change_date ? safeDate(expense.scheduled_change_date) : null,
+      has_scheduled_change:
+        expense.has_scheduled_change === true ||
+        expense.has_scheduled_change === 1 ||
+        expense.has_scheduled_change === "true",
+      scheduled_change_date: expense.scheduled_change_date
+        ? safeDate(expense.scheduled_change_date)
+        : null,
       scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
       scheduled_change_type: expense.scheduled_change_type || "increase",
     });
@@ -367,7 +592,12 @@ const ExpensesPage = () => {
     setCustomCategories([...customCategories, newCategory]);
     setNewExpense({ ...newExpense, category: categoryValue });
     setIsCreateCategoryDialogOpen(false);
-    setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20", textColor: "text-green-400" });
+    setNewCustomCategory({
+      name: "",
+      icon: "ShoppingCart",
+      color: "bg-green-500/20",
+      textColor: "text-green-400",
+    });
   };
 
   const filteredExpenses = expenses.filter((expense) => {
@@ -376,7 +606,6 @@ const ExpensesPage = () => {
     if (isNaN(expenseDate.getTime())) return false;
     const expenseYear = expenseDate.getFullYear().toString();
     const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
-    
     if (filterYear !== "all" && expenseYear !== filterYear) return false;
     if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
     return true;
@@ -407,6 +636,86 @@ const ExpensesPage = () => {
     expenseCategories.find((c) => c.value === categoryValue) ||
     expenseCategories[0];
 
+  const getInvestmentLabel = () =>
+    newExpense.investment_id === "none"
+      ? "Sin vincular"
+      : investments.find((i) => i.id === newExpense.investment_id)?.name || "Sin vincular";
+
+  const getPatrimonyLabel = () =>
+    newExpense.patrimony_id === "none"
+      ? "Sin vincular"
+      : patrimony.find((p) => p.id === newExpense.patrimony_id)?.name || "Sin vincular";
+
+  const handleCreateInvestment = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+
+    const { data, error } = await supabase
+      .from("investments")
+      .insert({
+        user_id: session.user.id,
+        name: newInvestment.name,
+        type: newInvestment.type,
+        initial_value: parseFloat(newInvestment.initial_value),
+        current_value:
+          parseFloat(newInvestment.current_value) || parseFloat(newInvestment.initial_value),
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setInvestments([...investments, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, investment_id: data.id });
+      setIsNewInvestmentOpen(false);
+      setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+    }
+  };
+
+  const handleCreatePatrimony = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session || !newPatrimonyAsset.name || !newPatrimonyAsset.value) return;
+
+    const { data, error } = await supabase
+      .from("patrimony")
+      .insert({
+        user_id: session.user.id,
+        name: newPatrimonyAsset.name,
+        category: newPatrimonyAsset.category,
+        value: parseFloat(newPatrimonyAsset.value),
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setPatrimony([...patrimony, { id: data.id, name: data.name }]);
+      setNewExpense({ ...newExpense, patrimony_id: data.id });
+      setIsNewPatrimonyOpen(false);
+      setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
+    }
+  };
+
+  const investmentTypes = [
+    { value: "stocks", label: "Acciones" },
+    { value: "etf", label: "ETF" },
+    { value: "crypto", label: "Criptomonedas" },
+    { value: "bonds", label: "Bonos" },
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "other", label: "Otros" },
+  ];
+
+  const patrimonyCategories = [
+    { value: "real_estate", label: "Bienes Raíces" },
+    { value: "vehicle", label: "Vehículos" },
+    { value: "investments", label: "Inversiones" },
+    { value: "savings", label: "Ahorros" },
+    { value: "business", label: "Negocios" },
+    { value: "other", label: "Otros" },
+  ];
+
   const getLoanTypeInfo = (type: string) => {
     const types: Record<string, { label: string; color: string; textColor: string }> = {
       mortgage: { label: "Hipoteca", color: "bg-blue-500/20", textColor: "text-blue-400" },
@@ -421,20 +730,47 @@ const ExpensesPage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
+        {/* Header - solo título y subtítulo */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Gastos</h1>
           <p className="text-red-400 text-sm">Controla tus gastos mensuales</p>
         </div>
 
+        {/* Segunda línea: selectores de fecha + botón Nuevo */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
-          <MonthFilterPopover
-            filterMonth={filterMonth}
-            filterYear={filterYear}
-            onMonthChange={setFilterMonth}
-            onYearChange={setFilterYear}
-            variant="expenses"
-          />
+          {/* Selectores de fecha - juntos en móvil */}
+          <div className="flex gap-2 flex-1">
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="all" className="text-white text-xs">
+                  Todos
+                </SelectItem>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Botón Nuevo */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-red-500 hover:bg-red-600 text-white">
@@ -468,10 +804,10 @@ const ExpensesPage = () => {
                 setNewInvestment={setNewInvestment}
                 newPatrimonyAsset={newPatrimonyAsset}
                 setNewPatrimonyAsset={setNewPatrimonyAsset}
-                handleCreateInvestment={() => {}}
-                handleCreatePatrimony={() => {}}
-                investmentTypes={[]}
-                patrimonyCategories={[]}
+                handleCreateInvestment={handleCreateInvestment}
+                handleCreatePatrimony={handleCreatePatrimony}
+                investmentTypes={investmentTypes}
+                patrimonyCategories={patrimonyCategories}
                 isCategoryDialogOpen={isCategoryDialogOpen}
                 setIsCategoryDialogOpen={setIsCategoryDialogOpen}
                 isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
@@ -695,6 +1031,7 @@ const ExpensesPage = () => {
         </Card>
       </div>
 
+      {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -722,10 +1059,10 @@ const ExpensesPage = () => {
             setNewInvestment={setNewInvestment}
             newPatrimonyAsset={newPatrimonyAsset}
             setNewPatrimonyAsset={setNewPatrimonyAsset}
-            handleCreateInvestment={() => {}}
-            handleCreatePatrimony={() => {}}
-            investmentTypes={[]}
-            patrimonyCategories={[]}
+            handleCreateInvestment={handleCreateInvestment}
+            handleCreatePatrimony={handleCreatePatrimony}
+            investmentTypes={investmentTypes}
+            patrimonyCategories={patrimonyCategories}
             isCategoryDialogOpen={isCategoryDialogOpen}
             setIsCategoryDialogOpen={setIsCategoryDialogOpen}
             isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
@@ -747,6 +1084,7 @@ const ExpensesPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -767,7 +1105,11 @@ const ExpensesPage = () => {
               </div>
             )}
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs"
+              >
                 Cancelar
               </Button>
               <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">
@@ -829,7 +1171,6 @@ const ExpenseForm = ({
     expense.patrimony_id === "none"
       ? "Sin vincular"
       : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
-
   const handleScheduledChangeDate = (date: Date | undefined) => {
     setExpense({ ...expense, scheduled_change_date: date || null });
   };
@@ -858,7 +1199,7 @@ const ExpenseForm = ({
       </div>
 
       <div>
-        <label className="text-xs text-zinc-400 mb-2 block">Categoría</label>
+        <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
           <DialogTrigger asChild>
             <button
@@ -1044,10 +1385,197 @@ const ExpenseForm = ({
 
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
-        <DatePicker
-          date={expense.date}
-          onDateChange={(date) => setExpense({ ...expense, date })}
-        />
+        <DatePicker date={expense.date} onDateChange={(date) => setExpense({ ...expense, date })} />
+      </div>
+
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Vincular a inversión</label>
+        <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.investment_id !== "none"
+                  ? "border-emerald-500/50 bg-emerald-500/10"
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  expense.investment_id !== "none" ? "bg-emerald-500/20" : "bg-zinc-700"
+                }`}
+              >
+                <TrendingUp
+                  className={`w-4 h-4 ${
+                    expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"
+                  }`}
+                />
+              </div>
+              <span className={`font-medium ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                {getInvestmentLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+            </DialogHeader>
+            <button
+              onClick={() => setIsInvestmentDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, investment_id: "none" });
+                  setIsInvestmentDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.investment_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {investments.map((inv: any) => (
+                <button
+                  key={inv.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, investment_id: inv.id });
+                    setIsInvestmentDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.investment_id === inv.id
+                      ? "border-emerald-500 bg-emerald-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-white font-medium">{inv.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInvestmentDialogOpen(false);
+                  setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Vincular a patrimonio</label>
+        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.patrimony_id !== "none"
+                  ? "border-sky-500/50 bg-sky-500/10"
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  expense.patrimony_id !== "none" ? "bg-sky-500/20" : "bg-zinc-700"
+                }`}
+              >
+                <Building
+                  className={`w-4 h-4 ${
+                    expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"
+                  }`}
+                />
+              </div>
+              <span className={`font-medium ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                {getPatrimonyLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+            </DialogHeader>
+            <button
+              onClick={() => setIsPatrimonyDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, patrimony_id: "none" });
+                  setIsPatrimonyDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.patrimony_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {patrimony.map((pat: any) => (
+                <button
+                  key={pat.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, patrimony_id: pat.id });
+                    setIsPatrimonyDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.patrimony_id === pat.id
+                      ? "border-sky-500 bg-sky-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <span className="text-white font-medium">{pat.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPatrimonyDialogOpen(false);
+                  setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-sky-400" />
+                <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Button
