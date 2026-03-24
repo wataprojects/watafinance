@@ -227,12 +227,21 @@ const FinancialHealth = () => {
       ? Math.max(0, Math.min(100, (savingsRate + 50))) // 0% savings = 50 score, 50%+ = 100
       : 50;
 
-    // 3. Cobertura de ingresos pasivos (20% weight)
-    // What % of expenses are covered by passive income
-    const passiveCoverage = totalExpensesWithLoans > 0 
-      ? Math.min(100, (passiveIncome / totalExpensesWithLoans) * 100)
+    // 3. Ingresos pasivos (10% weight) - Progreso hacia libertad financiera
+    // Nueva función de scoring: no es un factor de riesgo, sino un indicador de progreso
+    const getPassiveScore = (ratio: number): number => {
+      if (ratio <= 0) return 30; // Sin ingresos pasivos = score mínimo de 30
+      if (ratio <= 0.20) return 30 + (ratio / 0.20) * 20; // 30-50
+      if (ratio <= 0.40) return 50 + ((ratio - 0.20) / 0.20) * 15; // 50-65
+      if (ratio <= 0.70) return 65 + ((ratio - 0.40) / 0.30) * 20; // 65-85
+      return 85 + Math.min(15, (ratio - 0.70) * 50); // 85-100
+    };
+
+    const passiveRatio = totalExpensesWithLoans > 0
+      ? passiveIncome / totalExpensesWithLoans
       : 0;
-    const passiveScore = passiveCoverage;
+    const passiveScore = getPassiveScore(passiveRatio);
+    const passiveCoverage = Math.min(100, passiveRatio * 100);
 
     // 4. Carga de deuda (20% weight)
     // Lower debt payment relative to income is better
@@ -289,7 +298,8 @@ const FinancialHealth = () => {
   };
 
   const calculateScore = (metrics: Metric[]): number => {
-    const weights = [0.25, 0.20, 0.20, 0.20, 0.15];
+    // Nuevos pesos: Balance 30%, Ahorro 20%, Pasivos 10%, Deuda 25%, Estabilidad 15%
+    const weights = [0.30, 0.20, 0.10, 0.25, 0.15];
     const metricScores = metrics.map(m => m.score);
     
     return metricScores.reduce((sum, score, index) => {
@@ -313,25 +323,23 @@ const FinancialHealth = () => {
       fortalezas.push("Excelente capacidad de ahorro");
     }
     if (passive.score >= 70) {
-      fuertezas.push("Buena independencia financiera gracias a ingresos pasivos");
+      fortalezas.push("Buena independencia financiera gracias a ingresos pasivos");
     }
     if (debt.score >= 70) {
-      fuertezas.push("Baja presión de deudas en tus finanzas");
+      fortalezas.push("Baja presión de deudas en tus finanzas");
     }
     if (stability.score >= 70) {
       fortalezas.push("Tus ingresos son muy estables");
     }
 
-    // Riesgos (score < 40)
+    // Riesgos (score < 40) - Los ingresos pasivos ya NO generan riesgo
     if (balance.score < 40 && data.totalIncome > 0) {
       riesgos.push("Tu balance mensual es negativo");
     }
     if (savings.score < 40 && data.totalIncome > 0) {
       riesgos.push("Baja capacidad de ahorro");
     }
-    if (passive.score < 40 && data.totalIncome > 0) {
-      riesgos.push("Dependes demasiado de ingresos activos");
-    }
+    // Eliminado: riesgo por bajos ingresos pasivos - ahora es solo un indicador de progreso
     if (debt.score < 40 && data.totalIncome > 0) {
       riesgos.push("Alta presión de deudas en tus ingresos");
     }
@@ -348,8 +356,8 @@ const FinancialHealth = () => {
     if (lowestMetric.name === "Ratio de ahorro" && lowestMetric.score < 40) {
       recomendaciones.push("Intenta ahorrar al menos el 10% de tus ingresos");
     }
-    if (lowestMetric.name === "Ingresos pasivos" && lowestMetric.score < 30) {
-      recomendaciones.push("Considera crear fuentes de ingreso pasivo");
+    if (lowestMetric.name === "Ingresos pasivos" && lowestMetric.score < 50) {
+      recomendaciones.push("Los ingresos pasivos son un buen complemento para tu independencia financiera");
     }
     if (lowestMetric.name === "Carga de deuda" && lowestMetric.score < 40) {
       recomendaciones.push("Prioriza pagar deudas de alto interés");
@@ -358,13 +366,13 @@ const FinancialHealth = () => {
       recomendaciones.push("Busca fuentes de ingreso más estables");
     }
 
-    // Add general recommendations if none generated
+    // Add general recommendations if none generated - Enfoque positivo para ingresos pasivos
     if (recomendaciones.length === 0 && data.totalIncome > 0) {
       if (savings.score < 60) {
         recomendaciones.push("Continúa mejorando tu tasa de ahorro");
       }
-      if (passive.score < 50) {
-        recomendaciones.push("Considera diversificar hacia ingresos pasivos");
+      if (passive.score < 50 && passive.score >= 30) {
+        recomendaciones.push("Los ingresos pasivos pueden acelerar tu camino hacia la libertad financiera");
       }
     }
 
