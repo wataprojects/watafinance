@@ -42,6 +42,7 @@ interface Metric {
 
 interface Insights {
   fortalezas: string[];
+  aMejorar: string[];
   riesgos: string[];
   recomendaciones: string[];
 }
@@ -69,7 +70,7 @@ const FinancialHealth = () => {
   const [currentMonthData, setCurrentMonthData] = useState<any>(null);
   const [previousMonthData, setPreviousMonthData] = useState<any>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
-  const [insights, setInsights] = useState<Insights>({ fortalezas: [], riesgos: [], recomendaciones: [] });
+  const [insights, setInsights] = useState<Insights>({ fortalezas: [], aMejorar: [], riesgos: [], recomendaciones: [] });
   const [score, setScore] = useState(0);
   const [previousScore, setPreviousScore] = useState(0);
   const [trend, setTrend] = useState<number>(0);
@@ -310,6 +311,7 @@ const FinancialHealth = () => {
 
   const generateInsights = (metrics: Metric[], data: any): Insights => {
     const fortalezas: string[] = [];
+    const aMejorar: string[] = [];
     const riesgos: string[] = [];
     const recomendaciones: string[] = [];
 
@@ -331,6 +333,23 @@ const FinancialHealth = () => {
     }
     if (stability.score >= 70) {
       fortalezas.push("Tus ingresos son muy estables");
+    }
+
+    // A Mejorar (score < 60)
+    if (balance.score < 60 && data.totalIncome > 0) {
+      aMejorar.push("Gastas más de lo que ganas");
+    }
+    if (savings.score < 60 && data.totalIncome > 0) {
+      aMejorar.push("Tu ahorro es muy bajo");
+    }
+    if (passive.score < 60 && data.totalIncome > 0) {
+      aMejorar.push("Dependes demasiado de un solo ingreso");
+    }
+    if (debt.score < 60 && data.totalIncome > 0) {
+      aMejorar.push("Tienes demasiadas deudas");
+    }
+    if (stability.score < 60 && data.totalIncome > 0) {
+      aMejorar.push("Tus ingresos son inestables");
     }
 
     // Riesgos (score < 40) - Los ingresos pasivos ya NO generan riesgo
@@ -380,6 +399,7 @@ const FinancialHealth = () => {
     // Limit to 3 items per section
     return {
       fortalezas: fortalezas.slice(0, 3),
+      aMejorar: aMejorar.slice(0, 3),
       riesgos: riesgos.slice(0, 3),
       recomendaciones: recomendaciones.slice(0, 3),
     };
@@ -535,6 +555,24 @@ const FinancialHealth = () => {
                   <div key={index} className="flex items-start gap-2 text-sm text-zinc-300">
                     <span className="text-green-500 mt-0.5">•</span>
                     <span>{fortaleza}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* A Mejorar */}
+          {insights.aMejorar.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-orange-400" />
+                <span className="text-sm font-medium text-orange-400">A Mejorar</span>
+              </div>
+              <div className="space-y-1.5">
+                {insights.aMejorar.map((item, index) => (
+                  <div key={index} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <span className="text-orange-500 mt-0.5">•</span>
+                    <span>{item}</span>
                   </div>
                 ))}
               </div>
