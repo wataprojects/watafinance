@@ -14,15 +14,22 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const FinancialFreedom = () => {
+interface FinancialFreedomProps {
+  selectedMonth: string;
+  selectedYear: string;
+}
+
+const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, selectedYear }) => {
   const [loading, setLoading] = useState(true);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -33,27 +40,87 @@ const FinancialFreedom = () => {
       return;
     }
 
+    const year = selectedYear;
+    const startDate = `${year}-${selectedMonth}-01`;
+    const endDate = `${year}-${selectedMonth}-31`;
+
+    // Fetch incomes for selected month
+    const incomesResult = await supabase
+      .from("incomes")
+      .select("amount, is_passive")
+      .eq("user_id", session.user.id)
+      .gte("date", startDate)
+      .lte("date", endDate);
+
+    // Fetch expenses for selected month
+    const expensesResult = await supabase
+      .from("expenses")
+      .select("amount")
+      .eq("user_id", session.user.id)
+      .gte("date", startDate)
+      .lte("date", endDate);
+
+    // Fetch all-time data for net worth
     const [patrimonyResult, investmentsResult, debtsResult] = await Promise.all([
       supabase.from("patrimony").select("value").eq("user_id", session.user.id),
       supabase.from("investments").select("current_value").eq("user_id", session.user.id),
       supabase.from("debts").select("current_amount").eq("user_id", session.user.id)
     ]);
 
+    if (incomesResult.data) setIncomes(incomesResult.data);
+    if (expensesResult.data) setExpenses(expensesResult.data);
     if (patrimonyResult.data) setPatrimony(patrimonyResult.data);
     if (investmentsResult.data) setInvestments(investmentsResult.data);
     if (debtsResult.data) setDebts(debtsResult.data);
     setLoading(false);
   };
 
+  // Calculate monthly data
+  const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const monthlyExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  
+  // Calculate coverage percentage (what % of monthly expenses are covered by passive income)
+  const coveragePercentage = monthlyExpenses > 0 ? Math.min(100, Math.round((passiveIncome / monthlyExpenses) * 100)) : 0;
+  
+  // Calculate net worth (all-time)
   const totalPatrimony = patrimony.reduce((sum, p) => sum + parseFloat(p.value || 0), 0);
   const totalInvestments = investments.reduce((sum, i) => sum + parseFloat(i.current_value || 0), 0);
   const totalDebts = debts.reduce((sum, d) => sum + parseFloat(d.current_amount || 0), 0);
-  
   const currentNetWorth = totalPatrimony + totalInvestments - totalDebts;
+  
+  // FIRE number (25x annual expenses as rule of thumb, using 30k as base annual)
   const fireNumber = 500000;
-  const annualExpenses = 30000;
-  const progress = fireNumber > 0 ? (currentNetWorth / fireNumber) * 100 : 0;
-  const yearsToFire = Math.ceil((fireNumber - currentNetWorth) / 15000);
+  const annualExpenses = monthlyExpenses * 12;
+  const fireNumberDynamic = annualExpenses > 0 ? annualExpenses * 25 : 500000;
+  const progress = fireNumberDynamic > 0 ? (currentNetWorth / fireNumberDynamic) * 100 : 0;
+  const yearsToFire = Math.ceil((fireNumberDynamic - currentNetWorth) / 15000);
+
+  // Get month name
+  const months = [
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
+  const monthLabel = months.find(m => m.value === selectedMonth)?.label || "";
+
+  // Get motivational message based on coverage
+  const getCoverageMessage = () => {
+    if (coveragePercentage === 0) return "¡Añade tus primeros ingresos pasivos!";
+    if (coveragePercentage < 25) return "Cada paso cuenta, ¡sigue así!";
+    if (coveragePercentage < 50) return "¡Ya cubres una buena parte!";
+    if (coveragePercentage < 75) return "¡Estás muy cerca de la libertad!";
+    if (coveragePercentage < 100) return "¡Casi lo tienes, un poco más!";
+    return "🎉 ¡Felicidades! Cubres todos tus gastos";
+  };
 
   return (
     <Card className="bg-gradient-to-r from-green-900 to-zinc-900 border-green-800">
@@ -61,10 +128,10 @@ const FinancialFreedom = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
             <Target className="w-5 h-5 text-green-400" />
-            Progreso hacia Libertad Financiera
+            Progreso hacia Libertad
           </CardTitle>
-          <span className="text-2xl font-bold text-green-400">{progress.toFixed(1)}%</span>
         </div>
+        <p className="text-xs text-green-400/70 mt-1">{monthLabel}</p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -73,7 +140,8 @@ const FinancialFreedom = () => {
           </div>
         ) : (
           <>
-            <div className="flex justify-center my-6">
+            {/* Círculo principal - Percentage Coverage */}
+            <div className="flex justify-center my-4">
               <div className="relative w-40 h-40">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="12" />
@@ -83,7 +151,7 @@ const FinancialFreedom = () => {
                     stroke="url(#greenGradient)"
                     strokeWidth="12"
                     strokeLinecap="round"
-                    strokeDasharray={`${Math.min(progress, 100) * 4.4} 440`}
+                    strokeDasharray={`${Math.min(coveragePercentage, 100) * 4.4} 440`}
                     className="transition-all duration-1000"
                   />
                   <defs>
@@ -94,27 +162,43 @@ const FinancialFreedom = () => {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-green-400">{formatCurrency(currentNetWorth)}</span>
-                  <span className="text-xs text-white/50">Patrimonio actual</span>
+                  <span className="text-4xl font-bold text-green-400">{coveragePercentage}%</span>
+                  <span className="text-xs text-white/60">de gastos</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            {/* Mensaje motivador */}
+            <div className="text-center mb-4">
+              <p className="text-sm font-medium text-green-300">
+                {getCoverageMessage()}
+              </p>
+            </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
               <div className="text-center p-3 bg-white/5 rounded-xl">
                 <Zap className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
-                <p className="text-xs text-white/50">Objetivo FIRE</p>
-                <p className="font-bold text-white">{formatCurrency(fireNumber)}</p>
+                <p className="text-xs text-white/50">Pasivos</p>
+                <p className="font-bold text-white text-sm">{formatCurrency(passiveIncome)}</p>
               </div>
               <div className="text-center p-3 bg-white/5 rounded-xl">
-                <Flame className="w-5 h-5 mx-auto mb-1 text-orange-400" />
-                <p className="text-xs text-white/50">Gastos anuales</p>
-                <p className="font-bold text-white">{formatCurrency(annualExpenses)}</p>
+                <Flame className="w-5 h-5 mx-auto mb-1 text-red-400" />
+                <p className="text-xs text-white/50">Gastos</p>
+                <p className="font-bold text-white text-sm">{formatCurrency(monthlyExpenses)}</p>
               </div>
               <div className="text-center p-3 bg-white/5 rounded-xl">
                 <Target className="w-5 h-5 mx-auto mb-1 text-green-400" />
-                <p className="text-xs text-white/50">Años estimados</p>
-                <p className="font-bold text-green-400">~{yearsToFire > 0 ? yearsToFire : 0} años</p>
+                <p className="text-xs text-white/50">Patrimonio</p>
+                <p className="font-bold text-green-400 text-sm">{formatCurrency(currentNetWorth)}</p>
+              </div>
+            </div>
+
+            {/* Años estimados */}
+            <div className="mt-4 pt-4 border-t border-green-800">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-white/50">Años estimados para FIRE</span>
+                <span className="text-sm font-bold text-green-400">~{yearsToFire > 0 ? yearsToFire : 0} años</span>
               </div>
             </div>
           </>

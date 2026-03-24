@@ -62,11 +62,6 @@ const Dashboard = () => {
     navigate(path);
   };
 
-  const getSelectedMonthLabel = () => {
-    const month = months.find(m => m.value === selectedMonth);
-    return month ? month.label : "";
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -148,15 +143,20 @@ const Dashboard = () => {
           setSelectedYear={setSelectedYear}
           navigate={handleNavigate}
         />
+        
+        {/* Nueva grid: IncomeBalance + FinancialFreedom lado a lado */}
         <div className="grid md:grid-cols-2 gap-6">
-          <IncomeBalance />
-          <FinancialHealth />
+          <IncomeBalance selectedMonth={selectedMonth} selectedYear={selectedYear} />
+          <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
-        <FinancialFreedom />
+        
+        {/* FinancialHealth movido debajo de TopExpenses + IncomeExpenseChart */}
         <div className="grid md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
         </div>
+        
+        <FinancialHealth />
       </main>
 
       <BottomNav />

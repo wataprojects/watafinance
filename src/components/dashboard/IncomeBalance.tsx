@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Home, TrendingUp, PieChart } from "lucide-react";
+import { Briefcase, Home, TrendingUp, PieChart, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -14,13 +14,18 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const IncomeBalance = () => {
+interface IncomeBalanceProps {
+  selectedMonth: string;
+  selectedYear: string;
+}
+
+const IncomeBalance: React.FC<IncomeBalanceProps> = ({ selectedMonth, selectedYear }) => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchIncomes();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   const fetchIncomes = async () => {
     setLoading(true);
@@ -31,10 +36,16 @@ const IncomeBalance = () => {
       return;
     }
 
+    const year = selectedYear;
+    const startDate = `${year}-${selectedMonth}-01`;
+    const endDate = `${year}-${selectedMonth}-31`;
+
     const { data } = await supabase
       .from("incomes")
-      .select("amount, is_passive")
-      .eq("user_id", session.user.id);
+      .select("amount, is_passive, date")
+      .eq("user_id", session.user.id)
+      .gte("date", startDate)
+      .lte("date", endDate);
 
     if (data) setIncomes(data);
     setLoading(false);
@@ -46,6 +57,23 @@ const IncomeBalance = () => {
   const passivePercentage = totalIncome > 0 ? Math.round((passiveIncome / totalIncome) * 100) : 0;
   const activePercentage = totalIncome > 0 ? Math.round((activeIncome / totalIncome) * 100) : 0;
 
+  // Get month name
+  const months = [
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
+  const monthLabel = months.find(m => m.value === selectedMonth)?.label || "";
+
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-4 pt-6">
@@ -56,7 +84,7 @@ const IncomeBalance = () => {
           </CardTitle>
         </div>
         <p className="text-xs md:text-sm text-green-400 font-medium mt-1">
-          Pasivos vs Activos
+          Pasivos vs Activos - {monthLabel}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -66,6 +94,17 @@ const IncomeBalance = () => {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Total de ingresos del mes */}
+            <div className="p-4 bg-green-900/20 rounded-xl border border-green-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-400" />
+                  <span className="text-sm text-green-400">Ingresos totales {monthLabel.toLowerCase()}</span>
+                </div>
+                <span className="text-2xl font-bold text-green-400">{formatCurrency(totalIncome)}</span>
+              </div>
+            </div>
+
             {/* Ingresos Activos con barra de progreso integrada */}
             <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 space-y-3">
               <div className="flex items-center justify-between">
