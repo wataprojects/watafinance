@@ -264,6 +264,9 @@ function DropletsIcon({ className }: { className?: string }) {
   );
 }
 
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -298,9 +301,9 @@ const ExpensesPage = () => {
   const [showScheduledChange, setShowScheduledChange] = useState(false);
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
-  const currentYear = new Date().getFullYear().toString();
+  const currentYearStr = new Date().getFullYear().toString();
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
-  const [filterYear, setFilterYear] = useState<string>(currentYear);
+  const [filterYear, setFilterYear] = useState<string>(currentYearStr);
 
   const [newExpense, setNewExpense] = useState({
     source: "",
@@ -351,7 +354,6 @@ const ExpensesPage = () => {
     textColor: "text-green-400",
   });
 
-  const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
     { value: "01", label: "Enero" },

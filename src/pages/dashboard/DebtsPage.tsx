@@ -38,6 +38,9 @@ const safeDate = (dateStr: string | null | undefined): Date => {
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe" | "settled";
 
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+
 const DebtsPage = () => {
   const navigate = useNavigate();
   const [debts, setDebts] = useState<any[]>([]);
@@ -54,9 +57,9 @@ const DebtsPage = () => {
   const [filterType, setFilterType] = useState<FilterType>("all");
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  const currentYear = new Date().getFullYear().toString();
+  const currentYearStr = new Date().getFullYear().toString();
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
-  const [filterYear, setFilterYear] = useState<string>(currentYear);
+  const [filterYear, setFilterYear] = useState<string>(currentYearStr);
   
   const [saving, setSaving] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<any>(null);
@@ -100,7 +103,6 @@ const DebtsPage = () => {
     value: "",
   });
 
-  const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
     { value: "01", label: "Enero" },

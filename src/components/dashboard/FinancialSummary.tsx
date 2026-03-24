@@ -25,7 +25,8 @@ interface FinancialSummaryProps {
   navigate?: (path: string) => void;
 }
 
-const years = [2024, 2025, 2026, 2027, 2028];
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
 
 const months = [
   { value: "01", label: "Enero" },
