@@ -65,7 +65,7 @@ const IncomeExpenseChart = () => {
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 pt-6">
         <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
           <BarChart3 className="w-5 h-5 text-green-500" />
           Ingresos vs Gastos
