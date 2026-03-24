@@ -230,11 +230,12 @@ const FinancialHealth = () => {
     // 3. Ingresos pasivos (10% weight) - Progreso hacia libertad financiera
     // Nueva función de scoring: no es un factor de riesgo, sino un indicador de progreso
     const getPassiveScore = (ratio: number): number => {
-      if (ratio <= 0) return 30; // Sin ingresos pasivos = score mínimo de 30
-      if (ratio <= 0.20) return 30 + (ratio / 0.20) * 20; // 30-50
-      if (ratio <= 0.40) return 50 + ((ratio - 0.20) / 0.20) * 15; // 50-65
-      if (ratio <= 0.70) return 65 + ((ratio - 0.40) / 0.30) * 20; // 65-85
-      return 85 + Math.min(15, (ratio - 0.70) * 50); // 85-100
+      if (ratio <= 0) return 30;
+      if (ratio <= 0.15) return 30 + (ratio / 0.15) * 15; // 30-45 (0-15%)
+      if (ratio <= 0.33) return 45 + ((ratio - 0.15) / 0.18) * 10; // 45-55 (15-33%)
+      if (ratio <= 0.50) return 55 + ((ratio - 0.33) / 0.17) * 15; // 55-70 (33-50%)
+      if (ratio <= 0.75) return 70 + ((ratio - 0.50) / 0.25) * 15; // 70-85 (50-75%)
+      return 85 + Math.min(15, (ratio - 0.75) * 60); // 85-100 (75%+)
     };
 
     const passiveRatio = totalExpensesWithLoans > 0
@@ -247,8 +248,8 @@ const FinancialHealth = () => {
     // Lower debt payment relative to income is better
     const debtLoadPercentage = totalIncome > 0 ? (loansMonthly / totalIncome) * 100 : 0;
     // Invert: 0% debt = 100 score, 50%+ debt = 0 score
-    const debtScore = totalIncome > 0 
-      ? Math.max(0, 100 - (debtLoadPercentage * 2))
+    const debtScore = totalIncome > 0
+      ? Math.max(0, 100 - (debtLoadPercentage * 1.25))
       : 100;
 
     // 5. Estabilidad (15% weight)
