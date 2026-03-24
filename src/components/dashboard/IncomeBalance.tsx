@@ -48,13 +48,18 @@ const IncomeBalance = () => {
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm md:text-lg font-semibold text-white flex items-center gap-2 whitespace-nowrap">
-          <PieChart className="w-5 h-5" />
-          Balance Ingresos Pasivos/Activos
-        </CardTitle>
+      <CardHeader className="pb-4 pt-6">
+        <div className="flex items-center gap-2">
+          <PieChart className="w-5 h-5 text-green-500" />
+          <CardTitle className="text-lg md:text-xl font-bold text-white">
+            Balance Ingresos
+          </CardTitle>
+        </div>
+        <p className="text-xs md:text-sm text-green-400 font-medium mt-1">
+          Pasivos vs Activos
+        </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
