@@ -49,7 +49,7 @@ const IncomeBalance = () => {
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+        <CardTitle className="text-sm md:text-lg font-semibold text-white flex items-center gap-2 whitespace-nowrap">
           <PieChart className="w-5 h-5" />
           Balance Ingresos Pasivos/Activos
         </CardTitle>
