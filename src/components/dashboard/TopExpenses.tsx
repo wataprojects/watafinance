@@ -197,7 +197,7 @@ const TopExpenses = () => {
               <CarouselContent className="-ml-2">
                 {expenseChunks.map((chunk, chunkIndex) => (
                   <CarouselItem key={chunkIndex} className="pl-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
                       {chunk.map((expense, index) => {
                         const percentage = total > 0 ? Math.round((expense.amount / total) * 100) : 0;
                         const iconColor = getCategoryIconColor(expense.category);
