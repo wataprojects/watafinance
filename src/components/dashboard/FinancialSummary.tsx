@@ -112,13 +112,11 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   // Total loans monthly payments
   const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
   
-  // Balance = Ingresos - (Gastos + Deudas + Préstamos)
-  const totalGastos = totalExpenses + totalDebts + totalLoans;
+  // Balance = Ingresos - (Gastos + Préstamos) - Deudas NO incluidas en el cálculo mensual
+  const totalGastos = totalExpenses + totalLoans;
   const balance = totalIncome - totalGastos;
   
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
-
-  const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
 
   // Helper to get month label
   const getMonthLabel = (monthValue: string) => {
@@ -139,7 +137,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Ingresos Total row - 4 blocks with larger padding */}
+            {/* Bloque 1: Primera fila - 4 columnas: Ingresos, Gastos, Cuotas, Balance */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
@@ -163,16 +161,6 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalDebts)}
-                </p>
-              </div>
-
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-5 h-5 text-cyan-500" />
                   <span className="text-sm text-cyan-400 font-medium">Cuotas de préstamos</span>
                 </div>
@@ -180,10 +168,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                   {formatCurrency(totalLoans)}
                 </p>
               </div>
-            </div>
 
-            {/* Balance and Savings row */}
-            <div className="grid grid-cols-2 gap-6">
               <div className={`${balance >= 0 ? "bg-zinc-800/50" : "bg-red-900/20"} rounded-xl p-6 border ${balance >= 0 ? "border-zinc-700" : "border-red-800"}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className={`w-5 h-5 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
@@ -193,7 +178,10 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                   {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
                 </p>
               </div>
+            </div>
 
+            {/* Bloque 2: Segunda fila - Ahorro (1 columna) */}
+            <div className="grid grid-cols-1 gap-6">
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
                   <PiggyBank className="w-5 h-5 text-green-500" />
@@ -201,6 +189,19 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                 </div>
                 <p className="text-2xl font-bold text-white">
                   {savingsRate.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+
+            {/* Bloque 3: Tercera fila - Deudas Pendientes (bloque separado) */}
+            <div className="grid grid-cols-1 gap-6">
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  {formatCurrency(totalDebts)}
                 </p>
               </div>
             </div>
