@@ -152,12 +152,9 @@ const IncomeBalance: React.FC<IncomeBalanceProps> = ({ selectedMonth, selectedYe
 
             {/* FIRE indicator */}
             <div className="pt-4 border-t border-zinc-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                  <span className="text-sm font-medium text-zinc-300">Objetivo: 70% de Ingresos Pasivos</span>
-                </div>
-                <span className="text-sm font-bold text-green-500">{passivePercentage}%</span>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                <span className="text-sm font-medium text-zinc-300">Objetivo: 70% de Ingresos Pasivos</span>
               </div>
             </div>
           </div>
