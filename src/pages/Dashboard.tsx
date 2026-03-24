@@ -105,28 +105,28 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Month/Year Selector - Debajo del header */}
-      <div className="bg-zinc-900/80 border-b border-zinc-800 py-3">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-2">
+      {/* Month/Year Selector - Full width */}
+      <div className="bg-zinc-900/80 border-b border-zinc-800 py-4">
+        <div className="w-full flex items-center gap-4 px-4">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+            <SelectTrigger className="w-full max-w-[180px] bg-zinc-800 border-zinc-700 text-white">
               <SelectValue placeholder="Año" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
               {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                <SelectItem key={year} value={year.toString()} className="text-white">
                   {year}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-xs">
+            <SelectTrigger className="w-full max-w-[180px] bg-zinc-800 border-zinc-700 text-white">
               <SelectValue placeholder="Mes" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
               {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                <SelectItem key={month.value} value={month.value} className="text-white">
                   {month.label}
                 </SelectItem>
               ))}

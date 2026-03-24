@@ -138,68 +138,68 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Ingresos Total row - 4 blocks */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-400 font-medium">Ingresos Total</span>
+          <div className="space-y-6">
+            {/* Ingresos Total row - 4 blocks with larger padding */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  <span className="text-sm text-green-400 font-medium">Ingresos Total</span>
                 </div>
-                <p className="text-xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {formatCurrency(totalIncome)}
                 </p>
               </div>
 
-              <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                  <span className="text-xs text-red-400 font-medium">Gastos Generales</span>
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingDown className="w-5 h-5 text-red-500" />
+                  <span className="text-sm text-red-400 font-medium">Gastos Generales</span>
                 </div>
-                <p className="text-xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {formatCurrency(totalExpenses)}
                 </p>
               </div>
 
-              <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs text-amber-400 font-medium">Deudas Pendientes</span>
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="w-5 h-5 text-amber-500" />
+                  <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
                 </div>
-                <p className="text-xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {formatCurrency(totalDebts)}
                 </p>
               </div>
 
-              <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-cyan-500" />
-                  <span className="text-xs text-cyan-400 font-medium">Cuotas de préstamos</span>
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="w-5 h-5 text-cyan-500" />
+                  <span className="text-sm text-cyan-400 font-medium">Cuotas de préstamos</span>
                 </div>
-                <p className="text-xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {formatCurrency(totalLoans)}
                 </p>
               </div>
             </div>
 
             {/* Balance and Savings row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className={`${balance >= 0 ? "bg-zinc-800/50" : "bg-red-900/20"} rounded-xl p-4 border ${balance >= 0 ? "border-zinc-700" : "border-red-800"}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className={`w-4 h-4 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
-                  <span className={`text-xs font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
+            <div className="grid grid-cols-2 gap-6">
+              <div className={`${balance >= 0 ? "bg-zinc-800/50" : "bg-red-900/20"} rounded-xl p-6 border ${balance >= 0 ? "border-zinc-700" : "border-red-800"}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className={`w-5 h-5 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
+                  <span className={`text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
                 </div>
-                <p className={`text-xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                <p className={`text-2xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
                   {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
                 </p>
               </div>
 
-              <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <PiggyBank className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-400 font-medium">Ahorro</span>
+              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <PiggyBank className="w-5 h-5 text-green-500" />
+                  <span className="text-sm text-green-400 font-medium">Ahorro</span>
                 </div>
-                <p className="text-xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {savingsRate.toFixed(1)}%
                 </p>
               </div>
