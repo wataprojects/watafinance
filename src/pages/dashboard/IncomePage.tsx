@@ -556,6 +556,37 @@ const IncomePage = () => {
           </button>
         </div>
 
+        <div className="flex gap-2 mb-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="all" className="text-white text-xs">
+                Todos
+              </SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Card className="bg-zinc-900 border-zinc-800 mb-6">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>

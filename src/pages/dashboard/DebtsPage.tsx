@@ -52,6 +52,12 @@ const DebtsPage = () => {
   const [isInvestmentDialogOpen, setIsInvestmentDialogOpen] = useState(false);
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("all");
+  
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear().toString();
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
+  
   const [saving, setSaving] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<any>(null);
   
@@ -93,6 +99,23 @@ const DebtsPage = () => {
     category: "real_estate",
     value: "",
   });
+
+  const years = [2024, 2025, 2026, 2027, 2028];
+  const months = [
+    { value: "all", label: "Todos" },
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" },
+  ];
 
   useEffect(() => {
     checkAuth();
@@ -284,6 +307,18 @@ const DebtsPage = () => {
   };
 
   const filteredDebts = debts.filter((debt) => {
+    // Filtrar por fecha
+    if (debt.created_at) {
+      const debtDate = new Date(debt.created_at + 'T00:00:00');
+      if (!isNaN(debtDate.getTime())) {
+        const debtYear = debtDate.getFullYear().toString();
+        const debtMonth = (debtDate.getMonth() + 1).toString().padStart(2, '0');
+        
+        if (filterYear !== "all" && debtYear !== filterYear) return false;
+        if (filterMonth !== "all" && debtMonth !== filterMonth) return false;
+      }
+    }
+    
     const isTheyOwe = debt.category === "they_owe";
     const isIOwe = debt.category === "i_owe";
     const isSettled = debt.status === "settled";
@@ -439,6 +474,37 @@ const DebtsPage = () => {
           >
             Debo yo
           </button>
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="all" className="text-white text-xs">
+                Todos
+              </SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800">
