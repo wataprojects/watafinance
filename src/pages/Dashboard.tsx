@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
-import IncomeBalance from "@/components/dashboard/IncomeBalance";
 import FinancialFreedom from "@/components/dashboard/FinancialFreedom";
 import FinancialHealth from "@/components/dashboard/FinancialHealth";
 import TopExpenses from "@/components/dashboard/TopExpenses";
@@ -149,11 +148,6 @@ const Dashboard = () => {
         
         {/* FinancialHealth después de FinancialFreedom */}
         <FinancialHealth />
-        
-        {/* Grid: IncomeBalance */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <IncomeBalance selectedMonth={selectedMonth} selectedYear={selectedYear} />
-        </div>
         
         {/* Gráficos de Gastos e Ingresos/Gastos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
