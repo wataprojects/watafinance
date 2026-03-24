@@ -23,6 +23,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
   const [loading, setLoading] = useState(true);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
@@ -40,9 +41,13 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
       return;
     }
 
-    const year = selectedYear;
+    // Calcular correctamente el último día del mes
+    const year = parseInt(selectedYear);
+    const month = parseInt(selectedMonth);
+    const lastDayOfMonth = new Date(year, month, 0).getDate();
+    
     const startDate = `${year}-${selectedMonth}-01`;
-    const endDate = `${year}-${selectedMonth}-31`;
+    const endDate = `${year}-${selectedMonth}-${lastDayOfMonth.toString().padStart(2, '0')}`;
 
     // Fetch incomes for selected month
     const incomesResult = await supabase
@@ -60,6 +65,13 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
       .gte("date", startDate)
       .lte("date", endDate);
 
+    // Fetch active loans for monthly payments
+    const loansResult = await supabase
+      .from("loans")
+      .select("monthly_payment")
+      .eq("user_id", session.user.id)
+      .eq("status", "active");
+
     // Fetch all-time data for net worth
     const [patrimonyResult, investmentsResult, debtsResult] = await Promise.all([
       supabase.from("patrimony").select("value").eq("user_id", session.user.id),
@@ -69,6 +81,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
 
     if (incomesResult.data) setIncomes(incomesResult.data);
     if (expensesResult.data) setExpenses(expensesResult.data);
+    if (loansResult.data) setLoans(loansResult.data);
     if (patrimonyResult.data) setPatrimony(patrimonyResult.data);
     if (investmentsResult.data) setInvestments(investmentsResult.data);
     if (debtsResult.data) setDebts(debtsResult.data);
@@ -78,10 +91,14 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
   // Calculate monthly data
   const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activeIncome = incomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  
+  // Calcular gastos mensuales incluyendo préstamos
   const monthlyExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  const loansMonthlyPayment = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
+  const totalMonthlyExpenses = monthlyExpenses + loansMonthlyPayment;
   
   // Calculate coverage percentage (what % of monthly expenses are covered by passive income)
-  const coveragePercentage = monthlyExpenses > 0 ? Math.min(100, Math.round((passiveIncome / monthlyExpenses) * 100)) : 0;
+  const coveragePercentage = totalMonthlyExpenses > 0 ? Math.min(100, Math.round((passiveIncome / totalMonthlyExpenses) * 100)) : 0;
   
   // Calculate net worth (all-time)
   const totalPatrimony = patrimony.reduce((sum, p) => sum + parseFloat(p.value || 0), 0);
@@ -90,7 +107,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
   const currentNetWorth = totalPatrimony + totalInvestments - totalDebts;
   
   // Calculate needed passive income to cover all expenses
-  const neededPassiveIncome = Math.max(0, monthlyExpenses - passiveIncome);
+  const neededPassiveIncome = Math.max(0, totalMonthlyExpenses - passiveIncome);
 
   // Get month name
   const months = [
@@ -185,6 +202,24 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
                 <p className="font-bold text-white text-sm">{formatCurrency(activeIncome)}</p>
               </div>
             </div>
+
+            {/* Información de préstamos */}
+            {loansMonthlyPayment > 0 && (
+              <div className="mt-3 pt-3 border-t border-green-800">
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/50">Gastos: </span>
+                  <span className="text-white">{formatCurrency(monthlyExpenses)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/50">Préstamos: </span>
+                  <span className="text-cyan-400">{formatCurrency(loansMonthlyPayment)}/mes</span>
+                </div>
+                <div className="flex justify-between text-xs font-medium mt-1 pt-1 border-t border-green-800/50">
+                  <span className="text-white">Total: </span>
+                  <span className="text-white">{formatCurrency(totalMonthlyExpenses)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Necesitas X€/mes pasivos para cubrir todos tus gastos */}
             <div className="mt-4 pt-4 border-t border-green-800">
