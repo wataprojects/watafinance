@@ -137,8 +137,9 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Bloque 1: Primera fila - 4 columnas: Ingresos, Gastos, Cuotas, Balance */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {/* Bloque principal - Grid de 2 columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Fila 1: Ingresos | Gastos generales */}
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-5 h-5 text-green-500" />
@@ -159,6 +160,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                 </p>
               </div>
 
+              {/* Fila 2: Cuotas de préstamos | Balance */}
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-5 h-5 text-cyan-500" />
@@ -178,10 +180,8 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                   {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
                 </p>
               </div>
-            </div>
 
-            {/* Bloque 2: Segunda fila - Ahorro (1 columna) */}
-            <div className="grid grid-cols-1 gap-6">
+              {/* Fila 3: Ahorro (solo celda izquierda) */}
               <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
                 <div className="flex items-center gap-2 mb-3">
                   <PiggyBank className="w-5 h-5 text-green-500" />
@@ -191,19 +191,19 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
                   {savingsRate.toFixed(1)}%
                 </p>
               </div>
+              {/* Celda derecha vacía para mantener proporción visual */}
+              <div className="hidden md:block"></div>
             </div>
 
-            {/* Bloque 3: Tercera fila - Deudas Pendientes (bloque separado) */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalDebts)}
-                </p>
+            {/* Bloque de Deudas - Separado con estilo warning */}
+            <div className="bg-amber-900/20 rounded-xl p-6 border border-amber-500/50">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
               </div>
+              <p className="text-2xl font-bold text-white">
+                {formatCurrency(totalDebts)}
+              </p>
             </div>
           </div>
         )}
