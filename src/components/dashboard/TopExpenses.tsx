@@ -9,7 +9,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
-import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, Coffee, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase, Landmark } from "lucide-react";
+import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase, Landmark } from "lucide-react";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -224,7 +224,7 @@ const TopExpenses = () => {
         ) : expenses.length === 0 ? (
           <p className="text-zinc-400 text-center py-4 text-sm">No hay gastos registrados</p>
         ) : (
-          <div className="relative">
+          <div className="relative px-1">
             <Carousel
               className="w-full"
               opts={{
@@ -232,10 +232,10 @@ const TopExpenses = () => {
                 loop: false,
               }}
             >
-              <CarouselContent className="-ml-2">
+              <CarouselContent className="ml-0">
                 {expenseChunks.map((chunk, chunkIndex) => (
-                  <CarouselItem key={chunkIndex} className="pl-2">
-                    <div className="space-y-2">
+                  <CarouselItem key={chunkIndex} className="p-0">
+                    <div className="space-y-2 px-1">
                       {chunk.map((expense, index) => {
                         const percentage = total > 0 ? Math.round((expense.amount / total) * 100) : 0;
                         const iconColor = getCategoryIconColor(expense.category);
