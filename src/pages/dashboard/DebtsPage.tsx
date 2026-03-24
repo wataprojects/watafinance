@@ -374,56 +374,89 @@ const DebtsPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">Deudas</h1>
-            <p className="text-amber-400 text-sm">Gestiona préstamos y cobros</p>
+            <p className="text-amber-400 text-sm">Gestiona tus deudas y cobros</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-white">Nueva deuda</DialogTitle>
-                <p className="text-zinc-400 text-sm">Registra quién debe a quién</p>
-              </DialogHeader>
-              <button 
-                onClick={() => setIsDialogOpen(false)}
-                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <DebtForm 
-                debt={newDebt} 
-                setDebt={setNewDebt} 
-                onSubmit={handleAddDebt}
-                isSubmitting={saving}
-                isNew={true}
-                investments={investments}
-                patrimony={patrimony}
-                isNewInvestmentOpen={isNewInvestmentOpen}
-                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                isNewPatrimonyOpen={isNewPatrimonyOpen}
-                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                newInvestment={newInvestment}
-                setNewInvestment={setNewInvestment}
-                newPatrimonyAsset={newPatrimonyAsset}
-                setNewPatrimonyAsset={setNewPatrimonyAsset}
-                handleCreateInvestment={handleCreateInvestment}
-                handleCreatePatrimony={handleCreatePatrimony}
-                investmentTypes={investmentTypes}
-                patrimonyCategories={patrimonyCategories}
-                isInvestmentDialogOpen={isInvestmentDialogOpen}
-                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-                getInvestmentLabel={getInvestmentLabel}
-                getPatrimonyLabel={getPatrimonyLabel}
-              />
-            </DialogContent>
-          </Dialog>
+          
+          {/* Selectores de fecha - movidos aquí después del subtítulo */}
+          <div className="flex gap-2">
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="all" className="text-white text-xs">
+                  Todos
+                </SelectItem>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-black mb-6">
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nueva deuda</DialogTitle>
+              <p className="text-zinc-400 text-sm">Registra quién debe a quién</p>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <DebtForm 
+              debt={newDebt} 
+              setDebt={setNewDebt} 
+              onSubmit={handleAddDebt}
+              isSubmitting={saving}
+              isNew={true}
+              investments={investments}
+              patrimony={patrimony}
+              isNewInvestmentOpen={isNewInvestmentOpen}
+              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+              isNewPatrimonyOpen={isNewPatrimonyOpen}
+              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+              newInvestment={newInvestment}
+              setNewInvestment={setNewInvestment}
+              newPatrimonyAsset={newPatrimonyAsset}
+              setNewPatrimonyAsset={setNewPatrimonyAsset}
+              handleCreateInvestment={handleCreateInvestment}
+              handleCreatePatrimony={handleCreatePatrimony}
+              investmentTypes={investmentTypes}
+              patrimonyCategories={patrimonyCategories}
+              isInvestmentDialogOpen={isInvestmentDialogOpen}
+              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+              getInvestmentLabel={getInvestmentLabel}
+              getPatrimonyLabel={getPatrimonyLabel}
+            />
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="bg-green-900/30 border-green-800">
@@ -474,37 +507,6 @@ const DebtsPage = () => {
           >
             Debo yo
           </button>
-        </div>
-
-        <div className="flex gap-2 mb-4">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-              <SelectValue placeholder="Año" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="all" className="text-white text-xs">
-                Todos
-              </SelectItem>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800">
