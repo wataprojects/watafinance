@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Landmark, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,35 +14,22 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const FinancialSummary = () => {
-  const currentMonth = new Date().getMonth() + 1;
-  const currentMonthStr = currentMonth.toString().padStart(2, '0');
-  const currentYear = new Date().getFullYear();
-  
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
-  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
+interface FinancialSummaryProps {
+  selectedMonth: string;
+  selectedYear: string;
+  setSelectedMonth: (month: string) => void;
+  setSelectedYear: (year: string) => void;
+}
+
+const FinancialSummary: React.FC<FinancialSummaryProps> = ({
+  selectedMonth,
+  selectedYear,
+}) => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const years = [2024, 2025, 2026, 2027, 2028];
-  
-  const months = [
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
 
   useEffect(() => {
     fetchData();
@@ -119,40 +105,31 @@ const FinancialSummary = () => {
 
   const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
 
+  // Helper to get month label (need to redefine here since we don't have access to the constant)
+  const getMonthLabel = (monthValue: string) => {
+    const allMonths = [
+      { value: "01", label: "Enero" },
+      { value: "02", label: "Febrero" },
+      { value: "03", label: "Marzo" },
+      { value: "04", label: "Abril" },
+      { value: "05", label: "Mayo" },
+      { value: "06", label: "Junio" },
+      { value: "07", label: "Julio" },
+      { value: "08", label: "Agosto" },
+      { value: "09", label: "Septiembre" },
+      { value: "10", label: "Octubre" },
+      { value: "11", label: "Noviembre" },
+      { value: "12", label: "Diciembre" },
+    ];
+    return allMonths.find(m => m.value === monthValue)?.label || "";
+  };
+
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-white">
-            Resumen {selectedMonthLabel} {selectedYear}
-          </CardTitle>
-          <div className="flex gap-2">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-sm">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[120px] bg-zinc-800 border-zinc-700 text-white text-sm">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white">
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <CardTitle className="text-lg font-semibold text-white">
+          Resumen {getMonthLabel(selectedMonth)} {selectedYear}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

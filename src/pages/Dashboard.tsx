@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
 import IncomeBalance from "@/components/dashboard/IncomeBalance";
 import FinancialFreedom from "@/components/dashboard/FinancialFreedom";
@@ -13,9 +14,32 @@ import BottomNav from "@/components/dashboard/BottomNav";
 import { LogOut, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const years = [2024, 2025, 2026, 2027, 2028];
+
+const months = [
+  { value: "01", label: "Enero" },
+  { value: "02", label: "Febrero" },
+  { value: "03", label: "Marzo" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Mayo" },
+  { value: "06", label: "Junio" },
+  { value: "07", label: "Julio" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Septiembre" },
+  { value: "10", label: "Octubre" },
+  { value: "11", label: "Noviembre" },
+  { value: "12", label: "Diciembre" },
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  
+  // Month/year selector state - moved from FinancialSummary
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentYear = new Date().getFullYear().toString();
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   useEffect(() => {
     checkAuth();
@@ -32,6 +56,11 @@ const Dashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const getSelectedMonthLabel = () => {
+    const month = months.find(m => m.value === selectedMonth);
+    return month ? month.label : "";
   };
 
   if (loading) {
@@ -57,6 +86,35 @@ const Dashboard = () => {
                 <p className="text-xs text-green-400">Tu gestión financiera</p>
               </div>
             </div>
+            
+            {/* Month/Year Selector in Header */}
+            <div className="flex items-center gap-2">
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Año" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Mes" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="relative text-zinc-400">
                 <Bell className="w-5 h-5" />
@@ -77,7 +135,12 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <FinancialSummary />
+        <FinancialSummary 
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          setSelectedMonth={setSelectedMonth}
+          setSelectedYear={setSelectedYear}
+        />
         <div className="grid md:grid-cols-2 gap-6">
           <IncomeBalance />
           <FinancialHealth />
