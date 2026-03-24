@@ -9,7 +9,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
-import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, Coffee, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase } from "lucide-react";
+import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, Coffee, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase, Landmark } from "lucide-react";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -42,6 +42,7 @@ const getCategoryIcon = (category: string) => {
     restaurants: <UtensilsCrossed className="w-4 h-4" />,
     shopping: <Shirt className="w-4 h-4" />,
     health: <Shield className="w-4 h-4" />,
+    loans: <Landmark className="w-4 h-4" />,
     other: <MoreHorizontal className="w-4 h-4" />,
   };
   return icons[category] || <MoreHorizontal className="w-4 h-4" />;
@@ -69,6 +70,7 @@ const getCategoryIconColor = (category: string) => {
     restaurants: "text-orange-400",
     shopping: "text-pink-400",
     health: "text-red-400",
+    loans: "text-cyan-400",
     other: "text-zinc-500",
   };
   return colors[category] || "text-zinc-500";
@@ -96,6 +98,7 @@ const getCategoryBgColor = (category: string) => {
     restaurants: "bg-orange-500/20",
     shopping: "bg-pink-500/20",
     health: "bg-red-500/20",
+    loans: "bg-cyan-500/20",
     other: "bg-zinc-500/20",
   };
   return colors[category] || "bg-zinc-500/20";
@@ -123,6 +126,7 @@ const getCategoryLabel = (category: string) => {
     restaurants: "Restaurantes",
     shopping: "Compras",
     health: "Salud",
+    loans: "Préstamos",
     other: "Otros",
   };
   return labels[category] || category;
@@ -154,14 +158,48 @@ const TopExpenses = () => {
       return;
     }
 
-    const { data } = await supabase
+    // Fetch regular expenses
+    const expensesResult = await supabase
       .from("expenses")
       .select("amount, category")
       .eq("user_id", session.user.id)
       .order("amount", { ascending: false })
       .limit(10);
 
-    if (data) setExpenses(data);
+    // Fetch active loans with monthly payment
+    const loansResult = await supabase
+      .from("loans")
+      .select("monthly_payment, borrower_name, bank")
+      .eq("user_id", session.user.id)
+      .eq("status", "active");
+
+    // Process expenses data
+    let allExpenses: any[] = [];
+    
+    if (expensesResult.data) {
+      const expenseData = expensesResult.data.map((e: any) => ({
+        amount: parseFloat(e.amount || 0),
+        category: e.category,
+        description: null
+      }));
+      allExpenses = [...allExpenses, ...expenseData];
+    }
+
+    // Process loans data - treat each loan as a category
+    if (loansResult.data) {
+      const loansData = loansResult.data
+        .filter((loan: any) => loan.monthly_payment && parseFloat(loan.monthly_payment) > 0)
+        .map((loan: any) => ({
+          amount: parseFloat(loan.monthly_payment || 0),
+          category: "loans",
+          description: loan.borrower_name || loan.bank || "Préstamo"
+        }));
+      allExpenses = [...allExpenses, ...loansData];
+    }
+
+    // Sort by amount descending and take top 10
+    allExpenses.sort((a, b) => b.amount - a.amount);
+    setExpenses(allExpenses.slice(0, 10));
     setLoading(false);
   };
 
@@ -202,6 +240,9 @@ const TopExpenses = () => {
                         const percentage = total > 0 ? Math.round((expense.amount / total) * 100) : 0;
                         const iconColor = getCategoryIconColor(expense.category);
                         const iconBg = getCategoryBgColor(expense.category);
+                        const categoryLabel = expense.description 
+                          ? `${getCategoryLabel(expense.category)} - ${expense.description}`
+                          : getCategoryLabel(expense.category);
                         
                         return (
                           <div 
@@ -218,7 +259,7 @@ const TopExpenses = () => {
                             {/* Nombre de la categoría */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-zinc-300 truncate">
-                                {getCategoryLabel(expense.category)}
+                                {categoryLabel}
                               </p>
                               {/* Barra de progreso horizontal */}
                               <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
