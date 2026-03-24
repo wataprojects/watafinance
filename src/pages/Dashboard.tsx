@@ -148,15 +148,27 @@ const Dashboard = () => {
           setSelectedYear={setSelectedYear}
           navigate={handleNavigate}
         />
+        
+        {/* Nueva grid: IncomeBalance + FinancialFreedom */}
         <div className="grid md:grid-cols-2 gap-6">
-          <IncomeBalance />
-          <FinancialHealth />
+          <IncomeBalance 
+            selectedMonth={selectedMonth} 
+            selectedYear={selectedYear} 
+          />
+          <FinancialFreedom 
+            selectedMonth={selectedMonth} 
+            selectedYear={selectedYear} 
+          />
         </div>
-        <FinancialFreedom />
+
+        {/* TopExpenses + IncomeExpenseChart */}
         <div className="grid md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
         </div>
+
+        {/* FinancialHealth movido debajo */}
+        <FinancialHealth />
       </main>
 
       <BottomNav />
