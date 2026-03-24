@@ -14,7 +14,7 @@ import {
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
   ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown,
   Pencil, Trash2, TrendingDown as TrendingDownIcon, Link2,
-  Lightbulb, Sparkles, AlertCircle
+  Lightbulb, Sparkles, AlertCircle, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -69,6 +69,12 @@ interface Insight {
   type: InsightType;
 }
 
+interface TopCategory {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
 // Iconos disponibles para categorías personalizadas
 const availableIcons = [
   { value: "Briefcase", icon: Briefcase },
@@ -91,6 +97,7 @@ const availableIcons = [
   { value: "Heart", icon: Heart },
   { value: "UtensilsCrossed", icon: UtensilsCrossed },
   { value: "Shirt", icon: Shirt },
+  { value: "MoreHorizontal", icon: MoreHorizontal },
 ];
 
 function UtensilsCrossed({ className }: { className?: string }) {
@@ -589,6 +596,35 @@ const IncomePage = () => {
   // Agrupar ingresos por fecha
   const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
+  // Agrupar ingresos por categoría para el TOP
+  const incomeByCategory: Record<string, number> = {};
+  filteredIncomes.forEach(income => {
+    const cat = income.category || 'other';
+    incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount);
+  });
+
+  // Ordenar por importe y tomar top 3 + otros
+  const sortedCategories = Object.entries(incomeByCategory)
+    .sort(([, a], [, b]) => b - a)
+    .map(([category, amount]) => ({ category, amount }));
+
+  const top3 = sortedCategories.slice(0, 3);
+  const others = sortedCategories.slice(3);
+  const othersTotal = others.reduce((sum, cat) => sum + cat.amount, 0);
+
+  const topCategories: TopCategory[] = [
+    ...top3.map(cat => ({
+      category: cat.category,
+      amount: cat.amount,
+      percentage: totalIncome > 0 ? (cat.amount / totalIncome) * 100 : 0
+    })),
+    ...(othersTotal > 0 ? [{
+      category: 'others',
+      amount: othersTotal,
+      percentage: totalIncome > 0 ? (othersTotal / totalIncome) * 100 : 0
+    }] : [])
+  ];
+
   const allCategories = [...incomeCategories, ...customCategories];
 
   const getCategoryInfo = (categoryValue: string) => {
@@ -851,6 +887,40 @@ const IncomePage = () => {
                     {passivePercentage.toFixed(0)}% pasivos
                   </span>
                 </div>
+              </div>
+            )}
+            
+            {/* Mini distribución por categorías TOP */}
+            {totalIncome > 0 ? (
+              <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
+                <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
+                {topCategories.map((cat, index) => {
+                  const catInfo = getCategoryInfo(cat.category);
+                  const Icon = catInfo.icon;
+                  return (
+                    <div key={cat.category} className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
+                        <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                        <span className="text-xs text-zinc-500">({cat.percentage.toFixed(0)}%)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-zinc-700 text-center">
+                <p className="text-zinc-400 text-sm mb-3">Aún no has registrado ingresos este mes</p>
+                <Button 
+                  onClick={() => setIsDialogOpen(true)}
+                  className="bg-green-500 hover:bg-green-600 text-black text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir ingreso
+                </Button>
               </div>
             )}
           </CardContent>
