@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Landmark, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Landmark, AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -32,13 +34,15 @@ const months = [
 interface FinancialSummaryProps {
   selectedMonth: string;
   selectedYear: string;
-  setSelectedMonth: (month: string) => void;
-  setSelectedYear: (year: string) => void;
+  setSelectedMonth?: (month: string) => void;
+  setSelectedYear?: (year: string) => void;
+  navigate?: (path: string) => void;
 }
 
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   selectedMonth,
   selectedYear,
+  navigate,
 }) => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -112,7 +116,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   // Total loans monthly payments
   const totalLoans = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
   
-  // Balance = Ingresos - (Gastos + Préstamos) - Deudas NO incluidas en el cálculo mensual
+  // Balance = Ingresos - (Gastos + Préstamos)
   const totalGastos = totalExpenses + totalLoans;
   const balance = totalIncome - totalGastos;
   
@@ -123,92 +127,143 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     return months.find(m => m.value === monthValue)?.label || "";
   };
 
+  const handleNewIncome = () => {
+    if (navigate) {
+      navigate("/dashboard/income");
+    }
+  };
+
+  const handleNewExpense = () => {
+    if (navigate) {
+      navigate("/dashboard/expenses");
+    }
+  };
+
   return (
-    <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-white">
-          Resumen {getMonthLabel(selectedMonth)} {selectedYear}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Bloque 1: Primera fila - 4 columnas: Ingresos, Gastos, Cuotas, Balance */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-green-400 font-medium">Ingresos Total</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalIncome)}
-                </p>
-              </div>
+    <div className="space-y-6">
+      {/* Fila 1: Botones de Acción */}
+      <div className="grid grid-cols-2 gap-6">
+        <Button 
+          onClick={handleNewIncome}
+          className="bg-green-500 hover:bg-green-600 text-black py-6 text-lg font-semibold"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Nuevo Ingreso
+        </Button>
+        <Button 
+          onClick={handleNewExpense}
+          className="bg-red-500 hover:bg-red-600 text-white py-6 text-lg font-semibold"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Nuevo Gasto
+        </Button>
+      </div>
 
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingDown className="w-5 h-5 text-red-500" />
-                  <span className="text-sm text-red-400 font-medium">Gastos Generales</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalExpenses)}
-                </p>
-              </div>
-
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-cyan-500" />
-                  <span className="text-sm text-cyan-400 font-medium">Cuotas de préstamos</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalLoans)}
-                </p>
-              </div>
-
-              <div className={`${balance >= 0 ? "bg-zinc-800/50" : "bg-red-900/20"} rounded-xl p-6 border ${balance >= 0 ? "border-zinc-700" : "border-red-800"}`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className={`w-5 h-5 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
-                  <span className={`text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
-                </div>
-                <p className={`text-2xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
-                </p>
-              </div>
+      {/* Fila 2: Ingresos / Gastos */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingUp className="w-6 h-6 text-green-500" />
+              <span className="text-sm text-green-400 font-medium">Ingresos</span>
             </div>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {formatCurrency(totalIncome)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Bloque 2: Segunda fila - Ahorro (1 columna) */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <PiggyBank className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-green-400 font-medium">Ahorro</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {savingsRate.toFixed(1)}%
-                </p>
-              </div>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingDown className="w-6 h-6 text-red-500" />
+              <span className="text-sm text-red-400 font-medium">Gastos</span>
             </div>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {formatCurrency(totalExpenses)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-            {/* Bloque 3: Tercera fila - Deudas Pendientes (bloque separado) */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalDebts)}
-                </p>
-              </div>
+      {/* Fila 3: Balance / Tasa de Ahorro */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card className={`${balance >= 0 ? "bg-zinc-900" : "bg-red-900/20"} border ${balance >= 0 ? "border-zinc-800" : "border-red-800"}`}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <DollarSign className={`w-6 h-6 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
+              <span className={`text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+            ) : (
+              <p className={`text-3xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <PiggyBank className="w-6 h-6 text-green-500" />
+              <span className="text-sm text-green-400 font-medium">Tasa de Ahorro</span>
+            </div>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {savingsRate.toFixed(1)}%
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sección Separada: Fila 4 - Deudas / Préstamos */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <span className="text-sm text-amber-400 font-medium">Deudas Pendientes</span>
+            </div>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {formatCurrency(totalDebts)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Landmark className="w-6 h-6 text-cyan-500" />
+              <span className="text-sm text-cyan-400 font-medium">Cuotas de Préstamos</span>
+            </div>
+            {loading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-500"></div>
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                {formatCurrency(totalLoans)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

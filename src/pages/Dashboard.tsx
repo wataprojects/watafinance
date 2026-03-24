@@ -58,6 +58,10 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   const getSelectedMonthLabel = () => {
     const month = months.find(m => m.value === selectedMonth);
     return month ? month.label : "";
@@ -142,6 +146,7 @@ const Dashboard = () => {
           selectedYear={selectedYear}
           setSelectedMonth={setSelectedMonth}
           setSelectedYear={setSelectedYear}
+          navigate={handleNavigate}
         />
         <div className="grid md:grid-cols-2 gap-6">
           <IncomeBalance />
