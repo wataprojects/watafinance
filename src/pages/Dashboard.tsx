@@ -144,13 +144,15 @@ const Dashboard = () => {
           navigate={handleNavigate}
         />
         
-        {/* FinancialHealth debajo de los botones de acción */}
+        {/* FinancialFreedom antes de FinancialHealth */}
+        <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
+        
+        {/* FinancialHealth después de FinancialFreedom */}
         <FinancialHealth />
         
-        {/* Nueva grid: IncomeBalance + FinancialFreedom lado a lado */}
+        {/* Grid: IncomeBalance */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <IncomeBalance selectedMonth={selectedMonth} selectedYear={selectedYear} />
-          <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
         
         {/* Gráficos de Gastos e Ingresos/Gastos */}
