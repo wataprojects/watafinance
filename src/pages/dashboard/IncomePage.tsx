@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
-import SwipeItem from "@/components/dashboard/SwipeItem";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -149,6 +148,7 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
   const currentPassive = currentIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const previousPassive = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
+  const activeTotal = currentTotal - currentPassive;
   const passivePercentage = currentTotal > 0 ? (currentPassive / currentTotal) * 100 : 0;
   
   // Contar fuentes únicas de ingreso
@@ -384,6 +384,8 @@ const IncomePage = () => {
 
     if (data) {
       setIncomes(data);
+      
+      // Generate insight with current data
       setInsight(generateInsight(data, []));
     }
     
@@ -409,6 +411,7 @@ const IncomePage = () => {
     
     if (prevData) {
       setPreviousMonthIncomes(prevData);
+      // Update insight with previous month comparison
       if (data) {
         setInsight(generateInsight(data, prevData));
       }
@@ -662,59 +665,61 @@ const IncomePage = () => {
     { value: "other", label: "Otros" },
   ];
 
-  // Obtener nombre del mes para mostrar en el subtítulo
-  const getMonthLabel = (monthValue: string) => {
-    const month = months.find(m => m.value === monthValue);
-    return month ? month.label : "";
-  };
-
-  // Función para renderizar un item de ingreso con SwipeItem
+  // Función para renderizar un item de ingreso
   const renderIncomeItem = (income: any) => {
     const cat = getCategoryInfo(income.category);
     const Icon = cat.icon;
     const isPassive = income.is_passive;
     
     return (
-      <SwipeItem key={income.id} onDelete={() => openDeleteDialog(income)}>
-        <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
-              <Icon className={`w-5 h-5 ${cat.textColor}`} />
-            </div>
-            <div>
-              <p className="font-medium text-white">{income.description || cat.label}</p>
-              <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
-            </div>
+      <div 
+        key={income.id} 
+        className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+            <Icon className={`w-5 h-5 ${cat.textColor}`} />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="font-bold text-green-500">+{formatCurrency(income.amount)}</p>
-              <p className={`text-xs ${isPassive ? 'text-green-400' : 'text-blue-400'}`}>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? 'bg-green-500/10' : 'bg-blue-500/10'}`}>
-                  {isPassive ? (
-                    <>
-                      <PiggyBank className="w-3 h-3 mr-1" />
-                      Pasivo
-                    </>
-                  ) : (
-                    <>
-                      <Briefcase className="w-3 h-3 mr-1" />
-                      Activo
-                    </>
-                  )}
-                </span>
-              </p>
-            </div>
-            {/* Solo mostrar botón de editar - eliminar se hace con swipe */}
+          <div>
+            <p className="font-medium text-white">{income.description || cat.label}</p>
+            <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="font-bold text-green-500">+{formatCurrency(income.amount)}</p>
+            <p className={`text-xs ${isPassive ? 'text-green-400' : 'text-blue-400'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? 'bg-green-500/10' : 'bg-blue-500/10'}`}>
+                {isPassive ? (
+                  <>
+                    <PiggyBank className="w-3 h-3 mr-1" />
+                    Pasivo
+                  </>
+                ) : (
+                  <>
+                    <Briefcase className="w-3 h-3 mr-1" />
+                    Activo
+                  </>
+                )}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-col gap-1">
             <button
               onClick={() => openEditDialog(income)}
               className="p-2 rounded-lg hover:bg-zinc-700 transition-colors"
             >
               <Pencil className="w-4 h-4 text-zinc-400" />
             </button>
+            <button
+              onClick={() => openDeleteDialog(income)}
+              className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-400" />
+            </button>
           </div>
         </div>
-      </SwipeItem>
+      </div>
     );
   };
 
@@ -727,108 +732,44 @@ const IncomePage = () => {
           <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
         </div>
 
-        {/* Card de totales con filtros integrados */}
-        <Card className="bg-zinc-900 border-zinc-800 mb-4">
-          <CardContent className="p-6">
-            {/* Período seleccionado - subtítulo con filtros integrados */}
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-zinc-400 text-sm">
-                Total Ingresos - <span className="text-white font-medium">{getMonthLabel(filterMonth)} {filterYear}</span>
-              </p>
-              
-              {/* Filtros de fecha integrados */}
-              <div className="flex gap-2">
-                <Select value={filterYear} onValueChange={setFilterYear}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs h-8">
-                    <SelectValue placeholder="Año" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Segunda línea: selectores de fecha + botón Nuevo */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          {/* Selectores de fecha - juntos en móvil */}
+          <div className="flex gap-2 flex-1">
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="all" className="text-white text-xs">
+                  Todos
+                </SelectItem>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                <Select value={filterMonth} onValueChange={setFilterMonth}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs h-8">
-                    <SelectValue placeholder="Mes" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {/* Total ingresos */}
-            <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
-            
-            {/* Barra visual de activos vs pasivos */}
-            {totalIncome > 0 && (
-              <div className="space-y-2">
-                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden flex">
-                  <div 
-                    className="h-full bg-blue-500 transition-all"
-                    style={{ width: `${activePercentage}%` }}
-                  />
-                  <div 
-                    className="h-full bg-green-500 transition-all"
-                    style={{ width: `${passivePercentage}%` }}
-                  />
-                </div>
-                <div className="flex justify-center gap-4 text-xs">
-                  <span className="flex items-center gap-1 text-blue-400">
-                    <Briefcase className="w-3 h-3" />
-                    {activePercentage.toFixed(0)}% activos
-                  </span>
-                  <span className="flex items-center gap-1 text-green-400">
-                    <PiggyBank className="w-3 h-3" />
-                    {passivePercentage.toFixed(0)}% pasivos
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            {/* Mini distribución por categorías TOP */}
-            {totalIncome > 0 ? (
-              <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
-                <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
-                {topCategories.map((cat) => {
-                  const catInfo = getCategoryInfo(cat.category);
-                  const Icon = catInfo.icon;
-                  return (
-                    <div key={cat.category} className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
-                        <span className="text-sm text-zinc-300">{catInfo.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
-                        <span className="text-xs text-zinc-500">({cat.percentage.toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mt-4 pt-4 border-t border-zinc-700 text-center">
-                <p className="text-zinc-400 text-sm mb-3">Aún no has registrado ingresos este mes</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Botón Nuevo ingreso - ahora en su propia fila */}
-        <div className="mb-6">
+          {/* Botón Nuevo ingreso */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full bg-green-500 hover:bg-green-600 text-black">
+              <Button className="bg-green-500 hover:bg-green-600 text-black">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo ingreso
               </Button>
@@ -882,6 +823,74 @@ const IncomePage = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Card de totales con barra visual */}
+        <Card className="bg-zinc-900 border-zinc-800 mb-4">
+          <CardContent className="p-6 text-center">
+            <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
+            <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
+            
+            {/* Barra visual de activos vs pasivos */}
+            {totalIncome > 0 && (
+              <div className="space-y-2">
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-blue-500 transition-all"
+                    style={{ width: `${activePercentage}%` }}
+                  />
+                  <div 
+                    className="h-full bg-green-500 transition-all"
+                    style={{ width: `${passivePercentage}%` }}
+                  />
+                </div>
+                <div className="flex justify-center gap-4 text-xs">
+                  <span className="flex items-center gap-1 text-blue-400">
+                    <Briefcase className="w-3 h-3" />
+                    {activePercentage.toFixed(0)}% activos
+                  </span>
+                  <span className="flex items-center gap-1 text-green-400">
+                    <PiggyBank className="w-3 h-3" />
+                    {passivePercentage.toFixed(0)}% pasivos
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Mini distribución por categorías TOP */}
+            {totalIncome > 0 ? (
+              <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
+                <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
+                {topCategories.map((cat) => {
+                  const catInfo = getCategoryInfo(cat.category);
+                  const Icon = catInfo.icon;
+                  return (
+                    <div key={cat.category} className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
+                        <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                        <span className="text-xs text-zinc-500">({cat.percentage.toFixed(0)}%)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-zinc-700 text-center">
+                <p className="text-zinc-400 text-sm mb-3">Aún no has registrado ingresos este mes</p>
+                <Button 
+                  onClick={() => setIsDialogOpen(true)}
+                  className="bg-green-500 hover:bg-green-600 text-black text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir ingreso
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Insight automático */}
         {insight && (
