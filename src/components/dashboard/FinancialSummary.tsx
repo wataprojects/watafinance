@@ -14,6 +14,21 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const months = [
+  { value: "01", label: "Enero" },
+  { value: "02", label: "Febrero" },
+  { value: "03", label: "Marzo" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Mayo" },
+  { value: "06", label: "Junio" },
+  { value: "07", label: "Julio" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Septiembre" },
+  { value: "10", label: "Octubre" },
+  { value: "11", label: "Noviembre" },
+  { value: "12", label: "Diciembre" },
+];
+
 interface FinancialSummaryProps {
   selectedMonth: string;
   selectedYear: string;
@@ -105,23 +120,9 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
   const selectedMonthLabel = months.find(m => m.value === selectedMonth)?.label || "";
 
-  // Helper to get month label (need to redefine here since we don't have access to the constant)
+  // Helper to get month label
   const getMonthLabel = (monthValue: string) => {
-    const allMonths = [
-      { value: "01", label: "Enero" },
-      { value: "02", label: "Febrero" },
-      { value: "03", label: "Marzo" },
-      { value: "04", label: "Abril" },
-      { value: "05", label: "Mayo" },
-      { value: "06", label: "Junio" },
-      { value: "07", label: "Julio" },
-      { value: "08", label: "Agosto" },
-      { value: "09", label: "Septiembre" },
-      { value: "10", label: "Octubre" },
-      { value: "11", label: "Noviembre" },
-      { value: "12", label: "Diciembre" },
-    ];
-    return allMonths.find(m => m.value === monthValue)?.label || "";
+    return months.find(m => m.value === monthValue)?.label || "";
   };
 
   return (
