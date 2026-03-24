@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import MonthFilterPopover from "@/components/dashboard/MonthFilterPopover";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -75,7 +76,6 @@ interface TopCategory {
   percentage: number;
 }
 
-// Iconos disponibles para categorías personalizadas
 const availableIcons = [
   { value: "Briefcase", icon: Briefcase },
   { value: "Home", icon: Home },
@@ -126,7 +126,6 @@ function Heart({ className }: { className?: string }) {
   );
 }
 
-// Categorías para ingresos
 const incomeCategories: CategoryOption[] = [
   { value: "salary", label: "Sueldo", icon: Briefcase, color: "bg-blue-500/20", textColor: "text-blue-400" },
   { value: "rental", label: "Alquiler", icon: Home, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
@@ -138,7 +137,6 @@ const incomeCategories: CategoryOption[] = [
   { value: "business", label: "Negocio", icon: Building, color: "bg-rose-500/20", textColor: "text-rose-400" },
 ];
 
-// Función para generar insights
 const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight | null => {
   if (currentIncomes.length === 0) return null;
 
@@ -146,15 +144,10 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
   const previousTotal = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
   const currentPassive = currentIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  const previousPassive = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  
-  const activeTotal = currentTotal - currentPassive;
   const passivePercentage = currentTotal > 0 ? (currentPassive / currentTotal) * 100 : 0;
   
-  // Contar fuentes únicas de ingreso
   const uniqueCategories = new Set(currentIncomes.map(i => i.category));
   
-  // 1. Comparación con mes anterior
   if (previousTotal > 0 && currentTotal > 0) {
     const changePercent = ((currentTotal - previousTotal) / previousTotal) * 100;
     
@@ -172,7 +165,6 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
     }
   }
   
-  // 2. Dependencia de activos
   if (passivePercentage < 30 && currentTotal > 0) {
     return {
       text: `Dependes principalmente de ingresos activos (${(100 - passivePercentage).toFixed(0)}%)`,
@@ -180,7 +172,6 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
     };
   }
   
-  // 3. Buen progreso en pasivos
   if (passivePercentage >= 50) {
     return {
       text: `¡Buen camino! Tus ingresos pasivos superan el ${passivePercentage.toFixed(0)}%`,
@@ -188,7 +179,6 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
     };
   }
   
-  // 4. Diversificación
   if (uniqueCategories.size >= 3) {
     return {
       text: `Tienes ingresos bien diversificados (${uniqueCategories.size} fuentes)`,
@@ -196,17 +186,15 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
     };
   }
   
-  // 5. Crecimiento de pasivos
-  if (previousPassive > 0 && currentPassive > previousPassive) {
-    const passiveGrowth = ((currentPassive - previousPassive) / previousPassive) * 100;
+  if (previousTotal > 0 && currentPassive > previousTotal) {
+    const passiveGrowth = ((currentPassive - previousTotal) / previousTotal) * 100;
     return {
       text: `Tus ingresos pasivos están aumentando (+${passiveGrowth.toFixed(0)}%)`,
       type: 'positive'
     };
   }
   
-  // 6. Si hay pasivos pero no hubo crecimiento significativo
-  if (currentPassive > 0 && previousPassive === 0) {
+  if (currentPassive > 0 && previousTotal === 0) {
     return {
       text: `Has generado nuevos ingresos pasivos este mes`,
       type: 'positive'
@@ -216,7 +204,6 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
   return null;
 };
 
-// Función para agrupar ingresos por fecha
 const groupIncomesByDate = (incomes: any[]): GroupedIncomes => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -319,23 +306,6 @@ const IncomePage = () => {
     textColor: "text-blue-400",
   });
 
-  const years = [2024, 2025, 2026, 2027, 2028];
-  const months = [
-    { value: "all", label: "Todos" },
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
-
   const categoryColors = [
     { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
     { value: "bg-emerald-500/20", textColor: "text-emerald-400", label: "Verde" },
@@ -375,7 +345,6 @@ const IncomePage = () => {
   const fetchIncomes = async (userId: string) => {
     setLoading(true);
     
-    // Fetch current month
     const { data, error } = await supabase
       .from("incomes")
       .select("*")
@@ -384,12 +353,9 @@ const IncomePage = () => {
 
     if (data) {
       setIncomes(data);
-      
-      // Generate insight with current data
       setInsight(generateInsight(data, []));
     }
     
-    // Fetch previous month for comparison
     const year = parseInt(filterYear);
     const month = parseInt(filterMonth);
     let prevMonth = month - 1;
@@ -411,7 +377,6 @@ const IncomePage = () => {
     
     if (prevData) {
       setPreviousMonthIncomes(prevData);
-      // Update insight with previous month comparison
       if (data) {
         setInsight(generateInsight(data, prevData));
       }
@@ -587,23 +552,19 @@ const IncomePage = () => {
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
   
-  // Calcular activos vs pasivos
   const activeIncome = filteredIncomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
   const passiveIncome = filteredIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
-  // Agrupar ingresos por fecha
   const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
-  // Agrupar ingresos por categoría para el TOP
   const incomeByCategory: Record<string, number> = {};
   filteredIncomes.forEach(income => {
     const cat = income.category || 'other';
     incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount);
   });
 
-  // Ordenar por importe y tomar top 3 + otros
   const sortedCategories = Object.entries(incomeByCategory)
     .sort(([, a], [, b]) => b - a)
     .map(([category, amount]) => ({ category, amount }));
@@ -665,7 +626,6 @@ const IncomePage = () => {
     { value: "other", label: "Otros" },
   ];
 
-  // Función para renderizar un item de ingreso
   const renderIncomeItem = (income: any) => {
     const cat = getCategoryInfo(income.category);
     const Icon = cat.icon;
@@ -726,47 +686,21 @@ const IncomePage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6">
-        {/* Header - solo título y subtítulo */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Ingresos</h1>
           <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
         </div>
 
-        {/* Segunda línea: selectores de fecha + botón Nuevo */}
+        {/* Segunda línea: MonthFilterPopover + botón Nuevo */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
-          {/* Selectores de fecha - juntos en móvil */}
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">
-                  Todos
-                </SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <MonthFilterPopover
+            filterMonth={filterMonth}
+            filterYear={filterYear}
+            onMonthChange={setFilterMonth}
+            onYearChange={setFilterYear}
+            variant="default"
+          />
 
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botón Nuevo ingreso */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-green-500 hover:bg-green-600 text-black">
@@ -824,13 +758,11 @@ const IncomePage = () => {
           </Dialog>
         </div>
 
-        {/* Card de totales con barra visual */}
         <Card className="bg-zinc-900 border-zinc-800 mb-4">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
             <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
             
-            {/* Barra visual de activos vs pasivos */}
             {totalIncome > 0 && (
               <div className="space-y-2">
                 <div className="h-3 bg-zinc-800 rounded-full overflow-hidden flex">
@@ -856,7 +788,6 @@ const IncomePage = () => {
               </div>
             )}
             
-            {/* Mini distribución por categorías TOP */}
             {totalIncome > 0 ? (
               <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                 <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
@@ -892,7 +823,6 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
-        {/* Insight automático */}
         {insight && (
           <Card className={`mb-4 ${
             insight.type === 'positive' ? 'bg-green-900/20 border-green-800' :
@@ -918,7 +848,6 @@ const IncomePage = () => {
           </Card>
         )}
 
-        {/* Historial con filtros dentro del card */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -927,7 +856,6 @@ const IncomePage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Filtros tipo de ingreso dentro del historial */}
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setFilterType("all")}
@@ -967,7 +895,6 @@ const IncomePage = () => {
               <p className="text-zinc-500 text-center">No hay ingresos registrados</p>
             ) : (
               <div className="space-y-4">
-                {/* Hoy */}
                 {groupedIncomes.today.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-zinc-500 mb-2">HOY</p>
@@ -977,7 +904,6 @@ const IncomePage = () => {
                   </div>
                 )}
 
-                {/* Esta semana */}
                 {groupedIncomes.thisWeek.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-zinc-500 mb-2">ESTA SEMANA</p>
@@ -987,7 +913,6 @@ const IncomePage = () => {
                   </div>
                 )}
 
-                {/* Este mes */}
                 {groupedIncomes.thisMonth.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-zinc-500 mb-2">ESTE MES</p>
@@ -1002,7 +927,6 @@ const IncomePage = () => {
         </Card>
       </div>
 
-      {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1053,7 +977,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -1087,7 +1010,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nueva inversión */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
@@ -1114,7 +1036,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nuevo patrimonio */}
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
@@ -1138,7 +1059,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal crear categoría personalizada */}
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -1213,7 +1133,6 @@ const IncomePage = () => {
   );
 };
 
-// Componente reutilizable para el formulario de ingresos
 const IncomeForm = ({ 
   income, 
   setIncome, 
@@ -1279,7 +1198,6 @@ const IncomeForm = ({
         />
       </div>
       
-      {/* Selector de Categoría con botón */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
@@ -1342,7 +1260,6 @@ const IncomeForm = ({
                 })}
               </div>
               
-              {/* Botón para crear categoría personalizada */}
               <button
                 type="button"
                 onClick={() => {
@@ -1429,7 +1346,6 @@ const IncomeForm = ({
         />
       </div>
 
-      {/* Vinculación a Inversión - Botón estilo selector */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
         <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
@@ -1521,7 +1437,6 @@ const IncomeForm = ({
         </Dialog>
       </div>
 
-      {/* Vinculación a Patrimonio - Botón estilo selector */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
         <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
