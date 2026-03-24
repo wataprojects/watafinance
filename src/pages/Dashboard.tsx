@@ -35,7 +35,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
-  // Month/year selector state - moved from FinancialSummary
+  // Month/year selector state
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -87,34 +87,6 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Month/Year Selector in Header */}
-            <div className="flex items-center gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                  <SelectValue placeholder="Año" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                  <SelectValue placeholder="Mes" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {months.map((month) => (
-                    <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="relative text-zinc-400">
                 <Bell className="w-5 h-5" />
@@ -132,6 +104,36 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Month/Year Selector - Debajo del header */}
+      <div className="bg-zinc-900/80 border-b border-zinc-800 py-3">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-2">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[100px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
