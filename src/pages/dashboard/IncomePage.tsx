@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import YearMonthPicker from "@/components/dashboard/YearMonthPicker";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -276,9 +277,6 @@ const IncomePage = () => {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYear);
   
-  // Generar años dinámicamente
-  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
-  
   const [newIncome, setNewIncome] = useState({
     source: "",
     amount: "",
@@ -321,22 +319,6 @@ const IncomePage = () => {
     color: "bg-blue-500/20",
     textColor: "text-blue-400",
   });
-
-  const months = [
-    { value: "all", label: "Todos" },
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
 
   const categoryColors = [
     { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
@@ -386,8 +368,6 @@ const IncomePage = () => {
 
     if (data) {
       setIncomes(data);
-      
-      // Generate insight with current data
       setInsight(generateInsight(data, []));
     }
     
@@ -413,7 +393,6 @@ const IncomePage = () => {
     
     if (prevData) {
       setPreviousMonthIncomes(prevData);
-      // Update insight with previous month comparison
       if (data) {
         setInsight(generateInsight(data, prevData));
       }
@@ -879,40 +858,18 @@ const IncomePage = () => {
           </Card>
         )}
 
-        {/* Card Historial con filtros de fecha integrados */}
+        {/* Card Historial con YearMonthPicker integrado */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <div className="flex items-center justify-between w-full flex-wrap gap-2">
-              {/* Filtros de fecha a la izquierda */}
-              <div className="flex gap-2">
-                <Select value={filterYear} onValueChange={setFilterYear}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                    <SelectValue placeholder="Año" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    <SelectItem value="all" className="text-white text-xs">
-                      Todos
-                    </SelectItem>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filterMonth} onValueChange={setFilterMonth}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                    <SelectValue placeholder="Mes" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex items-center justify-between w-full flex-wrap gap-4">
+              {/* YearMonthPicker integrado */}
+              <div className="flex-1 max-w-md">
+                <YearMonthPicker
+                  selectedMonth={filterMonth}
+                  selectedYear={filterYear}
+                  setSelectedMonth={setFilterMonth}
+                  setSelectedYear={setFilterYear}
+                />
               </div>
               {/* Título a la derecha */}
               <CardTitle className="text-white flex items-center gap-2">

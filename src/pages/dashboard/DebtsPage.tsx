@@ -12,6 +12,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Banknote, User, ChevronRight, TrendingUp, Building, TrendingDown as TrendingDownIcon, X, Link2, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import YearMonthPicker from "@/components/dashboard/YearMonthPicker";
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatDateTo<dyad-write path="src/pages/dashboard/DebtsPage.tsx">
+"use client";
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Banknote, User, ChevronRight, TrendingUp, Building, TrendingDown as TrendingDownIcon, X, Link2, Pencil, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import BottomNav from "@/components/dashboard/BottomNav";
+import YearMonthPicker from "@/components/dashboard/YearMonthPicker";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -379,40 +406,18 @@ const DebtsPage = () => {
           <p className="text-amber-400 text-sm">Gestiona tus deudas y cobros</p>
         </div>
 
-        {/* Segunda línea: selectores de fecha + botón Nueva */}
+        {/* YearMonthPicker integrado */}
+        <div className="mb-6">
+          <YearMonthPicker
+            selectedMonth={filterMonth}
+            selectedYear={filterYear}
+            setSelectedMonth={setFilterMonth}
+            setSelectedYear={setFilterYear}
+          />
+        </div>
+
+        {/* Segunda línea: botón Nueva */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
-          {/* Selectores de fecha */}
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">
-                  Todos
-                </SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Botón Nueva */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

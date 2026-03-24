@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import YearMonthPicker from "@/components/dashboard/YearMonthPicker";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -264,9 +265,6 @@ function DropletsIcon({ className }: { className?: string }) {
   );
 }
 
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
-
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -353,22 +351,6 @@ const ExpensesPage = () => {
     color: "bg-green-500/20",
     textColor: "text-green-400",
   });
-
-  const months = [
-    { value: "all", label: "Todos" },
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
 
   const categoryColors = [
     { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
@@ -738,40 +720,18 @@ const ExpensesPage = () => {
           <p className="text-red-400 text-sm">Controla tus gastos mensuales</p>
         </div>
 
-        {/* Segunda línea: selectores de fecha + botón Nuevo */}
+        {/* YearMonthPicker integrado */}
+        <div className="mb-6">
+          <YearMonthPicker
+            selectedMonth={filterMonth}
+            selectedYear={filterYear}
+            setSelectedMonth={setFilterMonth}
+            setSelectedYear={setFilterYear}
+          />
+        </div>
+
+        {/* Segunda línea: botón Nuevo */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
-          {/* Selectores de fecha - juntos en móvil */}
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">
-                  Todos
-                </SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Botón Nuevo */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
