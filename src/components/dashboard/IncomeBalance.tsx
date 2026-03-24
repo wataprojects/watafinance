@@ -49,7 +49,7 @@ const IncomeBalance = () => {
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-white">Balance de Ingresos</CardTitle>
+        <CardTitle className="text-lg font-semibold text-white">Balance Ingresos Pasivos/Activos</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
