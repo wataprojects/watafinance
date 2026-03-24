@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Flame, Zap, Briefcase } from "lucide-react";
+import { Target, Zap, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -89,12 +89,8 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
   const totalDebts = debts.reduce((sum, d) => sum + parseFloat(d.current_amount || 0), 0);
   const currentNetWorth = totalPatrimony + totalInvestments - totalDebts;
   
-  // FIRE number (25x annual expenses as rule of thumb, using 30k as base annual)
-  const fireNumber = 500000;
-  const annualExpenses = monthlyExpenses * 12;
-  const fireNumberDynamic = annualExpenses > 0 ? annualExpenses * 25 : 500000;
-  const progress = fireNumberDynamic > 0 ? (currentNetWorth / fireNumberDynamic) * 100 : 0;
-  const yearsToFire = Math.ceil((fireNumberDynamic - currentNetWorth) / 15000);
+  // Calculate needed passive income to cover all expenses
+  const neededPassiveIncome = Math.max(0, monthlyExpenses - passiveIncome);
 
   // Get month name
   const months = [
@@ -190,12 +186,11 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
               </div>
             </div>
 
-            {/* Años estimados */}
+            {/* Necesitas X€/mes pasivos para cubrir todos tus gastos */}
             <div className="mt-4 pt-4 border-t border-green-800">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-white/50">Años estimados para FIRE</span>
-                <span className="text-sm font-bold text-green-400">~{yearsToFire > 0 ? yearsToFire : 0} años</span>
-              </div>
+              <p className="text-xs text-white/50 text-center">
+                Necesitas <span className="text-green-400 font-bold">{formatCurrency(neededPassiveIncome)}/mes</span> pasivos para cubrir todos tus gastos
+              </p>
             </div>
           </>
         )}
