@@ -594,6 +594,38 @@ const IncomePage = () => {
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
   // Agrupar ingresos por fecha
+  const groupIncomesByDate = (incomes: any[]): GroupedIncomes => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const grouped: GroupedIncomes = {
+      today: [],
+      thisWeek: [],
+      thisMonth: []
+    };
+    
+    incomes.forEach(income => {
+      if (!income.date) return;
+      
+      const incomeDate = new Date(income.date + 'T00:00:00');
+      incomeDate.setHours(0, 0, 0, 0);
+      
+      if (incomeDate.getTime() === today.getTime()) {
+        grouped.today.push(income);
+      } else if (incomeDate >= startOfWeek && incomeDate < today) {
+        grouped.thisWeek.push(income);
+      } else {
+        grouped.thisMonth.push(income);
+      }
+    });
+    
+    return grouped;
+  };
+
   const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
   // Agrupar ingresos por categoría para el TOP
@@ -725,107 +757,41 @@ const IncomePage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header - solo título y subtítulo */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Ingresos</h1>
-          <p className="text-green-400 text-sm">Gestiona tus fuentes de dinero</p>
-        </div>
-
-        {/* Segunda línea: selectores de fecha + botón Nuevo */}
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
-          {/* Selectores de fecha - juntos en móvil */}
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">
-                  Todos
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Primera línea: Selectores de fecha */}
+        <div className="flex gap-2">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Año" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="all" className="text-white text-xs">
+                Todos
+              </SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                  {year}
                 </SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botón Nuevo ingreso */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-green-500 hover:bg-green-600 text-black">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo ingreso
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
-              </DialogHeader>
-              <button 
-                onClick={() => setIsDialogOpen(false)}
-                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <IncomeForm 
-                income={newIncome} 
-                setIncome={setNewIncome} 
-                onSubmit={handleAddIncome}
-                isSubmitting={false}
-                isNew={true}
-                investments={investments}
-                patrimony={patrimony}
-                isNewInvestmentOpen={isNewInvestmentOpen}
-                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                isNewPatrimonyOpen={isNewPatrimonyOpen}
-                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                newInvestment={newInvestment}
-                setNewInvestment={setNewInvestment}
-                newPatrimonyAsset={newPatrimonyAsset}
-                setNewPatrimonyAsset={setNewPatrimonyAsset}
-                handleCreateInvestment={handleCreateInvestment}
-                handleCreatePatrimony={handleCreatePatrimony}
-                investmentTypes={investmentTypes}
-                patrimonyCategories={patrimonyCategories}
-                isCategoryDialogOpen={isCategoryDialogOpen}
-                setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-                isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-                setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-                isInvestmentDialogOpen={isInvestmentDialogOpen}
-                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-                getSelectedCategoryInfo={getSelectedCategoryInfo}
-                customCategories={customCategories}
-                availableIcons={availableIcons}
-                categoryColors={categoryColors}
-                newCustomCategory={newCustomCategory}
-                setNewCustomCategory={setNewCustomCategory}
-                handleCreateCustomCategory={handleCreateCustomCategory}
-              />
-            </DialogContent>
-          </Dialog>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Card de totales con barra visual */}
-        <Card className="bg-zinc-900 border-zinc-800 mb-4">
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
             <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
@@ -892,9 +858,66 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
+        {/* Botón Nuevo Ingreso - ancho completo */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full bg-green-500 hover:bg-green-600 text-black">
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo ingreso
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsDialogOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <IncomeForm 
+              income={newIncome} 
+              setIncome={setNewIncome} 
+              onSubmit={handleAddIncome}
+              isSubmitting={false}
+              isNew={true}
+              investments={investments}
+              patrimony={patrimony}
+              isNewInvestmentOpen={isNewInvestmentOpen}
+              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+              isNewPatrimonyOpen={isNewPatrimonyOpen}
+              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+              newInvestment={newInvestment}
+              setNewInvestment={setNewInvestment}
+              newPatrimonyAsset={newPatrimonyAsset}
+              setNewPatrimonyAsset={setNewPatrimonyAsset}
+              handleCreateInvestment={handleCreateInvestment}
+              handleCreatePatrimony={handleCreatePatrimony}
+              investmentTypes={investmentTypes}
+              patrimonyCategories={patrimonyCategories}
+              isCategoryDialogOpen={isCategoryDialogOpen}
+              setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+              isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+              setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+              isInvestmentDialogOpen={isInvestmentDialogOpen}
+              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+              getSelectedCategoryInfo={getSelectedCategoryInfo}
+              customCategories={customCategories}
+              availableIcons={availableIcons}
+              categoryColors={categoryColors}
+              newCustomCategory={newCustomCategory}
+              setNewCustomCategory={setNewCustomCategory}
+              handleCreateCustomCategory={handleCreateCustomCategory}
+            />
+          </DialogContent>
+        </Dialog>
+
         {/* Insight automático */}
         {insight && (
-          <Card className={`mb-4 ${
+          <Card className={`${
             insight.type === 'positive' ? 'bg-green-900/20 border-green-800' :
             insight.type === 'warning' ? 'bg-red-900/20 border-red-800' :
             'bg-zinc-800/50 border-zinc-700'
@@ -918,13 +941,47 @@ const IncomePage = () => {
           </Card>
         )}
 
-        {/* Historial con filtros dentro del card */}
+        {/* Card Historial con filtros de fecha integrados */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              Historial
-            </CardTitle>
+            <div className="flex items-center justify-between w-full flex-wrap gap-2">
+              {/* Filtros de fecha a la izquierda */}
+              <div className="flex gap-2">
+                <Select value={filterYear} onValueChange={setFilterYear}>
+                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                    <SelectValue placeholder="Año" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectItem value="all" className="text-white text-xs">
+                      Todos
+                    </SelectItem>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()} className="text-white text-xs">
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
+                    <SelectValue placeholder="Mes" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value} className="text-white text-xs">
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Título a la derecha */}
+              <CardTitle className="text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                Historial
+              </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             {/* Filtros tipo de ingreso dentro del historial */}
