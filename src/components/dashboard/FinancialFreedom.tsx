@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Flame, Zap } from "lucide-react";
+import { Target, Flame, Zap, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatCurrency = (amount: number) => {
@@ -77,6 +77,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
 
   // Calculate monthly data
   const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const activeIncome = incomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const monthlyExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   
   // Calculate coverage percentage (what % of monthly expenses are covered by passive income)
@@ -175,7 +176,7 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
               </p>
             </div>
 
-            {/* Stats grid - 2 columnas sin patrimonio */}
+            {/* Stats grid - 2 columnas: Pasivos y Activos */}
             <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="text-center p-3 bg-white/5 rounded-xl">
                 <Zap className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
@@ -183,9 +184,9 @@ const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, sele
                 <p className="font-bold text-white text-sm">{formatCurrency(passiveIncome)}</p>
               </div>
               <div className="text-center p-3 bg-white/5 rounded-xl">
-                <Flame className="w-5 h-5 mx-auto mb-1 text-red-400" />
-                <p className="text-xs text-white/50">Gastos</p>
-                <p className="font-bold text-white text-sm">{formatCurrency(monthlyExpenses)}</p>
+                <Briefcase className="w-5 h-5 mx-auto mb-1 text-blue-400" />
+                <p className="text-xs text-white/50">Activos</p>
+                <p className="font-bold text-white text-sm">{formatCurrency(activeIncome)}</p>
               </div>
             </div>
 
