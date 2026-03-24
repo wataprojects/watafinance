@@ -13,7 +13,8 @@ import {
   Filter, Wallet, CreditCard, PiggyBank, Building, ShoppingCart, 
   Globe, Zap, Music, BookOpen, Car, Plane, Laptop, Smartphone,
   ChevronRight, X, Check, Calendar as CalendarIcon, TrendingDown,
-  Pencil, Trash2, TrendingDown as TrendingDownIcon, Link2
+  Pencil, Trash2, TrendingDown as TrendingDownIcon, Link2,
+  Lightbulb, Sparkles, AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -47,6 +48,7 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
 };
 
 type FilterType = "all" | "active" | "passive";
+type InsightType = 'positive' | 'neutral' | 'warning';
 
 interface CategoryOption {
   value: string;
@@ -54,6 +56,17 @@ interface CategoryOption {
   icon: any;
   color: string;
   textColor: string;
+}
+
+interface GroupedIncomes {
+  today: any[];
+  thisWeek: any[];
+  thisMonth: any[];
+}
+
+interface Insight {
+  text: string;
+  type: InsightType;
 }
 
 // Iconos disponibles para categorías personalizadas
@@ -106,7 +119,7 @@ function Heart({ className }: { className?: string }) {
   );
 }
 
-// Categorías para ingresos - usando los mismos iconos que en el historial
+// Categorías para ingresos
 const incomeCategories: CategoryOption[] = [
   { value: "salary", label: "Sueldo", icon: Briefcase, color: "bg-blue-500/20", textColor: "text-blue-400" },
   { value: "rental", label: "Alquiler", icon: Home, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
@@ -118,9 +131,121 @@ const incomeCategories: CategoryOption[] = [
   { value: "business", label: "Negocio", icon: Building, color: "bg-rose-500/20", textColor: "text-rose-400" },
 ];
 
+// Función para generar insights
+const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight | null => {
+  if (currentIncomes.length === 0) return null;
+
+  const currentTotal = currentIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const previousTotal = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  
+  const currentPassive = currentIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const previousPassive = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  
+  const activeTotal = currentTotal - currentPassive;
+  const passivePercentage = currentTotal > 0 ? (currentPassive / currentTotal) * 100 : 0;
+  
+  // Contar fuentes únicas de ingreso
+  const uniqueCategories = new Set(currentIncomes.map(i => i.category));
+  
+  // 1. Comparación con mes anterior
+  if (previousTotal > 0 && currentTotal > 0) {
+    const changePercent = ((currentTotal - previousTotal) / previousTotal) * 100;
+    
+    if (changePercent >= 10) {
+      return {
+        text: `Tus ingresos han aumentado un ${changePercent.toFixed(0)}% respecto al mes anterior`,
+        type: 'positive'
+      };
+    }
+    if (changePercent <= -10) {
+      return {
+        text: `Tus ingresos han disminuido un ${Math.abs(changePercent).toFixed(0)}% respecto al mes anterior`,
+        type: 'warning'
+      };
+    }
+  }
+  
+  // 2. Dependencia de activos
+  if (passivePercentage < 30 && currentTotal > 0) {
+    return {
+      text: `Dependes principalmente de ingresos activos (${(100 - passivePercentage).toFixed(0)}%)`,
+      type: 'neutral'
+    };
+  }
+  
+  // 3. Buen progreso en pasivos
+  if (passivePercentage >= 50) {
+    return {
+      text: `¡Buen camino! Tus ingresos pasivos superan el ${passivePercentage.toFixed(0)}%`,
+      type: 'positive'
+    };
+  }
+  
+  // 4. Diversificación
+  if (uniqueCategories.size >= 3) {
+    return {
+      text: `Tienes ingresos bien diversificados (${uniqueCategories.size} fuentes)`,
+      type: 'positive'
+    };
+  }
+  
+  // 5. Crecimiento de pasivos
+  if (previousPassive > 0 && currentPassive > previousPassive) {
+    const passiveGrowth = ((currentPassive - previousPassive) / previousPassive) * 100;
+    return {
+      text: `Tus ingresos pasivos están aumentando (+${passiveGrowth.toFixed(0)}%)`,
+      type: 'positive'
+    };
+  }
+  
+  // 6. Si hay pasivos pero no hubo crecimiento significativo
+  if (currentPassive > 0 && previousPassive === 0) {
+    return {
+      text: `Has generado nuevos ingresos pasivos este mes`,
+      type: 'positive'
+    };
+  }
+  
+  return null;
+};
+
+// Función para agrupar ingresos por fecha
+const groupIncomesByDate = (incomes: any[]): GroupedIncomes => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const grouped: GroupedIncomes = {
+    today: [],
+    thisWeek: [],
+    thisMonth: []
+  };
+  
+  incomes.forEach(income => {
+    if (!income.date) return;
+    
+    const incomeDate = new Date(income.date + 'T00:00:00');
+    incomeDate.setHours(0, 0, 0, 0);
+    
+    if (incomeDate.getTime() === today.getTime()) {
+      grouped.today.push(income);
+    } else if (incomeDate >= startOfWeek && incomeDate < today) {
+      grouped.thisWeek.push(income);
+    } else {
+      grouped.thisMonth.push(income);
+    }
+  });
+  
+  return grouped;
+};
+
 const IncomePage = () => {
   const navigate = useNavigate();
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [previousMonthIncomes, setPreviousMonthIncomes] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +260,7 @@ const IncomePage = () => {
   const [isPatrimonyDialogOpen, setIsPatrimonyDialogOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
+  const [insight, setInsight] = useState<Insight | null>(null);
   
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
@@ -241,13 +367,49 @@ const IncomePage = () => {
 
   const fetchIncomes = async (userId: string) => {
     setLoading(true);
+    
+    // Fetch current month
     const { data, error } = await supabase
       .from("incomes")
       .select("*")
       .eq("user_id", userId)
       .order("date", { ascending: false });
 
-    if (data) setIncomes(data);
+    if (data) {
+      setIncomes(data);
+      
+      // Generate insight with current data
+      setInsight(generateInsight(data, []));
+    }
+    
+    // Fetch previous month for comparison
+    const year = parseInt(filterYear);
+    const month = parseInt(filterMonth);
+    let prevMonth = month - 1;
+    let prevYear = year;
+    if (prevMonth < 1) {
+      prevMonth = 12;
+      prevYear = year - 1;
+    }
+    
+    const prevStartDate = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-01`;
+    const prevEndDate = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-31`;
+    
+    const { data: prevData } = await supabase
+      .from("incomes")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("date", prevStartDate)
+      .lte("date", prevEndDate);
+    
+    if (prevData) {
+      setPreviousMonthIncomes(prevData);
+      // Update insight with previous month comparison
+      if (data) {
+        setInsight(generateInsight(data, prevData));
+      }
+    }
+    
     setLoading(false);
   };
 
@@ -417,6 +579,15 @@ const IncomePage = () => {
   });
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
+  
+  // Calcular activos vs pasivos
+  const activeIncome = filteredIncomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
+  const passiveIncome = filteredIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
+  const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
+  const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
+
+  // Agrupar ingresos por fecha
+  const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
   const allCategories = [...incomeCategories, ...customCategories];
 
@@ -457,6 +628,64 @@ const IncomePage = () => {
     { value: "business", label: "Negocios" },
     { value: "other", label: "Otros" },
   ];
+
+  // Función para renderizar un item de ingreso
+  const renderIncomeItem = (income: any) => {
+    const cat = getCategoryInfo(income.category);
+    const Icon = cat.icon;
+    const isPassive = income.is_passive;
+    
+    return (
+      <div 
+        key={income.id} 
+        className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+            <Icon className={`w-5 h-5 ${cat.textColor}`} />
+          </div>
+          <div>
+            <p className="font-medium text-white">{income.description || cat.label}</p>
+            <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="font-bold text-green-500">+{formatCurrency(income.amount)}</p>
+            <p className={`text-xs ${isPassive ? 'text-green-400' : 'text-blue-400'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? 'bg-green-500/10' : 'bg-blue-500/10'}`}>
+                {isPassive ? (
+                  <>
+                    <PiggyBank className="w-3 h-3 mr-1" />
+                    Pasivo
+                  </>
+                ) : (
+                  <>
+                    <Briefcase className="w-3 h-3 mr-1" />
+                    Activo
+                  </>
+                )}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => openEditDialog(income)}
+              className="p-2 rounded-lg hover:bg-zinc-700 transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-zinc-400" />
+            </button>
+            <button
+              onClick={() => openDeleteDialog(income)}
+              className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-black pb-28">
@@ -501,12 +730,12 @@ const IncomePage = () => {
             </Select>
           </div>
 
-          {/* Botón Nuevo */}
+          {/* Botón Nuevo ingreso */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-green-500 hover:bg-green-600 text-black">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo
+                Nuevo ingreso
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
@@ -593,15 +822,67 @@ const IncomePage = () => {
           </button>
         </div>
 
-        {/* Card de totales */}
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+        {/* Card de totales con barra visual */}
+        <Card className="bg-zinc-900 border-zinc-800 mb-4">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
-            <p className="text-4xl font-bold text-green-500">{formatCurrency(totalIncome)}</p>
+            <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
+            
+            {/* Barra visual de activos vs pasivos */}
+            {totalIncome > 0 && (
+              <div className="space-y-2">
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-blue-500 transition-all"
+                    style={{ width: `${activePercentage}%` }}
+                  />
+                  <div 
+                    className="h-full bg-green-500 transition-all"
+                    style={{ width: `${passivePercentage}%` }}
+                  />
+                </div>
+                <div className="flex justify-center gap-4 text-xs">
+                  <span className="flex items-center gap-1 text-blue-400">
+                    <Briefcase className="w-3 h-3" />
+                    {activePercentage.toFixed(0)}% activos
+                  </span>
+                  <span className="flex items-center gap-1 text-green-400">
+                    <PiggyBank className="w-3 h-3" />
+                    {passivePercentage.toFixed(0)}% pasivos
+                  </span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Historial */}
+        {/* Insight automático */}
+        {insight && (
+          <Card className={`mb-4 ${
+            insight.type === 'positive' ? 'bg-green-900/20 border-green-800' :
+            insight.type === 'warning' ? 'bg-red-900/20 border-red-800' :
+            'bg-zinc-800/50 border-zinc-700'
+          } border`}>
+            <CardContent className="p-4 flex items-center gap-3">
+              {insight.type === 'positive' ? (
+                <Sparkles className="w-5 h-5 text-green-400 flex-shrink-0" />
+              ) : insight.type === 'warning' ? (
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              ) : (
+                <Lightbulb className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+              )}
+              <p className={`text-sm ${
+                insight.type === 'positive' ? 'text-green-300' :
+                insight.type === 'warning' ? 'text-red-300' :
+                'text-yellow-300'
+              }`}>
+                {insight.text}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Historial con agrupación por fecha */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -615,47 +896,36 @@ const IncomePage = () => {
             ) : filteredIncomes.length === 0 ? (
               <p className="text-zinc-500 text-center">No hay ingresos registrados</p>
             ) : (
-              <div className="space-y-3">
-                {filteredIncomes.map((income) => {
-                  const cat = getCategoryInfo(income.category);
-                  const Icon = cat.icon;
-                  return (
-                    <div 
-                      key={income.id} 
-                      className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
-                          <Icon className={`w-5 h-5 ${cat.textColor}`} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-white">{income.description || cat.label}</p>
-                          <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-bold text-green-500">+{formatCurrency(income.amount)}</p>
-                          <p className="text-xs text-zinc-500">{income.is_passive ? "Pasivo" : "Activo"}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => openEditDialog(income)}
-                            className="p-2 rounded-lg hover:bg-zinc-700 transition-colors"
-                          >
-                            <Pencil className="w-4 h-4 text-zinc-400" />
-                          </button>
-                          <button
-                            onClick={() => openDeleteDialog(income)}
-                            className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-400" />
-                          </button>
-                        </div>
-                      </div>
+              <div className="space-y-4">
+                {/* Hoy */}
+                {groupedIncomes.today.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-zinc-500 mb-2">HOY</p>
+                    <div className="space-y-2">
+                      {groupedIncomes.today.map(income => renderIncomeItem(income))}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* Esta semana */}
+                {groupedIncomes.thisWeek.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-zinc-500 mb-2">ESTA SEMANA</p>
+                    <div className="space-y-2">
+                      {groupedIncomes.thisWeek.map(income => renderIncomeItem(income))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Este mes */}
+                {groupedIncomes.thisMonth.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-zinc-500 mb-2">ESTE MES</p>
+                    <div className="space-y-2">
+                      {groupedIncomes.thisMonth.map(income => renderIncomeItem(income))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
