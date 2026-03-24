@@ -276,6 +276,9 @@ const IncomePage = () => {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYear);
   
+  // Generar años dinámicamente
+  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+  
   const [newIncome, setNewIncome] = useState({
     source: "",
     amount: "",
@@ -319,7 +322,6 @@ const IncomePage = () => {
     textColor: "text-blue-400",
   });
 
-  const years = [2024, 2025, 2026, 2027, 2028];
   const months = [
     { value: "all", label: "Todos" },
     { value: "01", label: "Enero" },
@@ -594,38 +596,6 @@ const IncomePage = () => {
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
   // Agrupar ingresos por fecha
-  const groupIncomesByDate = (incomes: any[]): GroupedIncomes => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const grouped: GroupedIncomes = {
-      today: [],
-      thisWeek: [],
-      thisMonth: []
-    };
-    
-    incomes.forEach(income => {
-      if (!income.date) return;
-      
-      const incomeDate = new Date(income.date + 'T00:00:00');
-      incomeDate.setHours(0, 0, 0, 0);
-      
-      if (incomeDate.getTime() === today.getTime()) {
-        grouped.today.push(income);
-      } else if (incomeDate >= startOfWeek && incomeDate < today) {
-        grouped.thisWeek.push(income);
-      } else {
-        grouped.thisMonth.push(income);
-      }
-    });
-    
-    return grouped;
-  };
-
   const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
   // Agrupar ingresos por categoría para el TOP
