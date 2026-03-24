@@ -131,12 +131,18 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
       {/* Fila 2: Ingresos / Gastos */}
       <div className="grid grid-cols-2 gap-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <TrendingUp className="w-6 h-6 text-green-500" />
-              <span className="text-sm text-green-400 font-medium">Ingresos</span>
+        {/* Card de Ingresos - Fondo con gradiente, contenedor de icono mejorado */}
+        <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 border-zinc-700/50 overflow-hidden relative">
+          {/* Shine effect */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              {/* Contenedor de icono con círculo */}
+              <div className="w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-400" />
+              </div>
             </div>
+            <p className="text-green-400/80 text-xs uppercase tracking-wide font-medium mb-1">Ingresos</p>
             {loading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
@@ -147,12 +153,18 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <TrendingDown className="w-6 h-6 text-red-500" />
-              <span className="text-sm text-red-400 font-medium">Gastos</span>
+        {/* Card de Gastos - Fondo con gradiente rojo */}
+        <Card className="bg-gradient-to-br from-zinc-900 to-red-950/30 border-red-500/20 overflow-hidden relative">
+          {/* Shine effect */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              {/* Contenedor de icono con círculo */}
+              <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-red-400" />
+              </div>
             </div>
+            <p className="text-red-400/80 text-xs uppercase tracking-wide font-medium mb-1">Gastos</p>
             {loading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
             ) : (
@@ -166,28 +178,54 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
       {/* Fila 3: Balance / Tasa de Ahorro */}
       <div className="grid grid-cols-2 gap-6">
-        <Card className={`${balance >= 0 ? "bg-zinc-900" : "bg-red-900/20"} border ${balance >= 0 ? "border-zinc-800" : "border-red-800"}`}>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <DollarSign className={`w-6 h-6 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
-              <span className={`text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
+        {/* Card de Balance - Gradiente condicional según signo */}
+        <Card className={`overflow-hidden relative ${
+          balance >= 0 
+            ? "bg-gradient-to-br from-zinc-900 to-green-950/30 border-green-500/20" 
+            : "bg-gradient-to-br from-zinc-900 to-red-950/30 border-red-500/20"
+        }`}>
+          {/* Shine effect condicional */}
+          <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 ${
+            balance >= 0 ? "bg-green-500/5" : "bg-red-500/5"
+          }`}></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              {/* Contenedor de icono con círculo - color condicional */}
+              <div className={`w-12 h-12 rounded-full border flex items-center justify-center ${
+                balance >= 0 
+                  ? "bg-green-500/20 border-green-500/30" 
+                  : "bg-red-500/20 border-red-500/30"
+              }`}>
+                <DollarSign className={`w-6 h-6 ${balance >= 0 ? "text-green-400" : "text-red-400"}`} />
+              </div>
             </div>
+            <p className={`text-xs uppercase tracking-wide font-medium mb-1 ${
+              balance >= 0 ? "text-green-400/80" : "text-red-400/80"
+            }`}>Balance</p>
             {loading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
-              <p className={`text-3xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
+              <p className={`text-3xl font-bold ${
+                balance >= 0 ? "text-green-500" : "text-red-500"
+              }`}>
                 {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <PiggyBank className="w-6 h-6 text-green-500" />
-              <span className="text-sm text-green-400 font-medium">Tasa de Ahorro</span>
+        {/* Card de Tasa de Ahorro - Fondo con gradiente verde */}
+        <Card className="bg-gradient-to-br from-zinc-900 to-green-950/30 border-green-500/20 overflow-hidden relative">
+          {/* Shine effect */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              {/* Contenedor de icono con círculo */}
+              <div className="w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                <PiggyBank className="w-6 h-6 text-green-400" />
+              </div>
             </div>
+            <p className="text-green-400/80 text-xs uppercase tracking-wide font-medium mb-1">Tasa de Ahorro</p>
             {loading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
