@@ -758,38 +758,6 @@ const IncomePage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Primera línea: Selectores de fecha */}
-        <div className="flex gap-2">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-              <SelectValue placeholder="Año" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="all" className="text-white text-xs">
-                Todos
-              </SelectItem>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Card de totales con barra visual */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
