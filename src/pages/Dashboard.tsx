@@ -145,13 +145,13 @@ const Dashboard = () => {
         />
         
         {/* Nueva grid: IncomeBalance + FinancialFreedom lado a lado */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <IncomeBalance selectedMonth={selectedMonth} selectedYear={selectedYear} />
           <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
         
         {/* FinancialHealth movido debajo de TopExpenses + IncomeExpenseChart */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
         </div>
