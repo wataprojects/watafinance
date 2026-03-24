@@ -94,17 +94,6 @@ const IncomeBalance: React.FC<IncomeBalanceProps> = ({ selectedMonth, selectedYe
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Total de ingresos del mes */}
-            <div className="p-4 bg-green-900/20 rounded-xl border border-green-800">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-400" />
-                  <span className="text-sm text-green-400">Ingresos totales {monthLabel.toLowerCase()}</span>
-                </div>
-                <span className="text-2xl font-bold text-green-400">{formatCurrency(totalIncome)}</span>
-              </div>
-            </div>
-
             {/* Ingresos Activos con barra de progreso integrada */}
             <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 space-y-3">
               <div className="flex items-center justify-between">
