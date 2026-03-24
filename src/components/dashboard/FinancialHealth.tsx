@@ -412,7 +412,7 @@ const FinancialHealth = () => {
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
             <Heart className="w-5 h-5 text-green-500" />
-            Salud Financiera
+            Estado Salud Financiera Mensual
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
@@ -436,7 +436,7 @@ const FinancialHealth = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
             <Target className="w-5 h-5 text-green-500" />
-            Salud Financiera
+            Estado Salud Financiera Mensual
           </CardTitle>
           <div className="text-xs text-zinc-400">
             {formatMonthYear(currentYear, currentMonth)}
