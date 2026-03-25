@@ -1,46 +1,32 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Download, Smartphone } from 'lucide-react';
-import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { X, Smartphone } from 'lucide-react';
+import InstallAppButton from './InstallAppButton';
 
 const InstallPromptBanner: React.FC = () => {
-  const { isInstallable, showPrompt, dismiss, isInstalled } = useInstallPrompt();
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    if (isInstallable && !isInstalled) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        setIsAnimating(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isInstallable, isInstalled]);
+    // Show banner after a short delay if the app is not installed
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+      setIsAnimating(true);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleDismiss = () => {
     setIsAnimating(false);
-    setTimeout(() => {
-      setIsVisible(false);
-      dismiss();
-    }, 300);
+    setTimeout(() => setIsVisible(false), 300);
   };
 
-  const handleInstall = async () => {
-    const success = await showPrompt();
-    if (success) {
-      handleDismiss();
-    }
-  };
-
-  if (!isInstallable && !isVisible) {
-    return null;
-  }
+  if (!isVisible) return null;
 
   return (
     <>
-      {isVisible && <div className="fixed inset-0 z-40 pointer-events-none" aria-hidden="true" />}
+      <div className="fixed inset-0 z-40 pointer-events-none" aria-hidden="true" />
       
       <div
         className={`
@@ -61,7 +47,7 @@ const InstallPromptBanner: React.FC = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-white font-semibold text-sm sm:text-base truncate">
-                    ¿Quieres instalar FinPro en tu móvil?
+                    Instala FinPro en tu móvil
                   </p>
                   <p className="text-green-100 text-xs hidden sm:block">
                     Accede más rápido desde tu pantalla de inicio
@@ -70,14 +56,7 @@ const InstallPromptBanner: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={handleInstall}
-                  className="flex items-center gap-1.5 bg-black hover:bg-zinc-900 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Descargar</span>
-                  <span className="sm:hidden">Instalar</span>
-                </button>
+                <InstallAppButton variant="banner" />
                 
                 <button
                   onClick={handleDismiss}
@@ -93,7 +72,7 @@ const InstallPromptBanner: React.FC = () => {
         </div>
       </div>
 
-      {isVisible && <div className="h-[60px] sm:h-[60px]" aria-hidden="true" />}
+      <div className="h-[60px]" aria-hidden="true" />
     </>
   );
 };
