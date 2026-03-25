@@ -604,7 +604,7 @@ const ExpensesPage = () => {
         {/* Total Gastos - CON BARRA DE PROGRESO */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
-            <p className="text-zinc-400 text-sm mb-1">Total de Gastos</p>
+            <p className="text-zinc-400 text-sm mb-1">Total de Gastos: Fijos Y Variables</p>
             <p className="text-4xl font-bold text-white mb-4">{formatCurrency(totalWithLoans)}</p>
             
             {/* Barra de progreso visual */}
@@ -627,7 +627,7 @@ const ExpensesPage = () => {
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-zinc-400">Gastos: <span className="text-white font-medium">{formatCurrency(totalExpenses)}</span></span>
+                    <span className="text-zinc-400">Total Gastos <span className="text-white font-medium">{formatCurrency(totalExpenses)}</span></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-zinc-400">Préstamos: <span className="text-blue-400 font-medium">{formatCurrency(totalLoans)}</span></span>
