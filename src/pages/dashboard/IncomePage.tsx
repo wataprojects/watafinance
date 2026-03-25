@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -500,7 +501,7 @@ const IncomePage = () => {
     const { data, error } = await supabase.from("patrimony").insert({
       user_id: session.user.id,
       name: newPatrimonyAsset.name,
-      category: newPatrimonyAsset.category,
+      category: newPatrimonyAsset.asset,
       value: parseFloat(newPatrimonyAsset.value),
     }).select().single();
 
@@ -673,6 +674,11 @@ const IncomePage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
+      <DashboardHeader 
+        title="FinPro" 
+        subtitle="Gestión de Ingresos"
+      />
+      
       <div className="container mx-auto px-4 py-6 space-y-6">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
