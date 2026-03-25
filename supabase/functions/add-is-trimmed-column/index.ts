@@ -11,11 +11,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  console.log('[add-is-trimmed-column] Starting...')
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -23,28 +24,57 @@ serve(async (req) => {
       }
     })
 
-    // Execute raw SQL to add the column
-    const { data, error } = await supabaseAdmin.rpc('exec', {
-      sql_query: 'ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_trimmed BOOLEAN DEFAULT false;'
-    })
+    // Check if column exists by trying to select it
+    const { error: selectError } = await supabaseAdmin
+      .from('expenses')
+      .select('is_trimmed')
+      .limit(1)
+      .maybeSingle()
 
-    if (error) {
-      console.log('[add-is-trimmed-column] RPC error, trying alternative approach:', error.message)
+    if (!selectError) {
+      console.log('[add-is-trimmed-column] Column already exists')
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Column is_trimmed already exists in expenses table',
+        alreadyExists: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
+    // Column doesn't exist - we need to add it
+    // Unfortunately, Supabase edge functions with service role key
+    // cannot execute DDL statements directly through the JS client
+    // The user must run this SQL manually in Supabase SQL Editor:
+    const requiredSQL = 'ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_trimmed BOOLEAN DEFAULT false;'
+
+    console.log('[add-is-trimmed-column] Column does not exist. Manual migration required.')
+
     return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'is_trimmed column ready',
-      data: data,
-      error: error?.message || null
+      success: false,
+      alreadyExists: false,
+      message: 'The is_trimmed column does not exist. Please run this SQL in your Supabase SQL Editor:',
+      sql: requiredSQL,
+      instructions: [
+        '1. Go to your Supabase project dashboard',
+        '2. Navigate to SQL Editor',
+        '3. Copy and paste the SQL command above',
+        '4. Click Run',
+        '5. Refresh your application'
+      ]
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     })
+
   } catch (error) {
     console.error('[add-is-trimmed-column] Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500
     })
   }
 })

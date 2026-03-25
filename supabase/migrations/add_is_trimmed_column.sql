@@ -1,11 +1,15 @@
--- Add is_trimmed column to expenses table for subscription trimming feature
--- This column tracks whether a subscription has been "trimmed" (marked as cancelled but not deleted)
+-- Migration: Add is_trimmed column to expenses table
+-- 
+-- Purpose: This column tracks which subscription expenses have been "trimmed" 
+-- (cancelled by the user to save money). When is_trimmed = true, the expense
+-- is excluded from the total expenses calculation.
+--
+-- Run this in: Supabase Dashboard > SQL Editor
 
-ALTER TABLE expenses 
-ADD COLUMN IF NOT EXISTS is_trimmed BOOLEAN DEFAULT false;
+-- Add the is_trimmed column if it doesn't exist
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_trimmed BOOLEAN DEFAULT false;
 
--- Create index for better query performance on trimmed subscriptions
-CREATE INDEX IF NOT EXISTS idx_expenses_is_trimmed ON expenses(is_trimmed) WHERE is_trimmed = true;
-
--- Add comment for documentation
-COMMENT ON COLUMN expenses.is_trimmed IS 'Tracks if a subscription expense has been trimmed (cancelled to save money)';
+-- Verify the column was added
+SELECT column_name, data_type, column_default 
+FROM information_schema.columns 
+WHERE table_name = 'expenses' AND column_name = 'is_trimmed';
