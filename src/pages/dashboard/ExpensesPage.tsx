@@ -792,11 +792,12 @@ const ExpensesPage = () => {
         </div>
 
         {/* ========================================== */}
-        {/* Total Gastos - NUEVO DISEÑO CON 3 SEGMENTOS */}
+        {/* Total Gastos - CON 3 SEGMENTOS Y DISTRIBUCIÓN */}
         {/* ========================================== */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
-            <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos: Fijos Y Variables</p>
+            {/* Título simplificado */}
+            <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos</p>
             <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalWithLoans)}</p>
             
             {/* Barra de 3 segmentos */}
@@ -861,6 +862,37 @@ const ExpensesPage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Distribución por categoría */}
+                {sortedCategories.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
+                    <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
+                    {sortedCategories.slice(0, 5).map((cat) => {
+                      const catInfo = getCategoryInfo(cat.category);
+                      const Icon = catInfo.icon;
+                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                      return (
+                        <div key={cat.category} className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
+                              <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
+                            </div>
+                            <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                            <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {sortedCategories.length > 5 && (
+                      <p className="text-xs text-zinc-500 text-center pt-2">
+                        +{sortedCategories.length - 5} categorías más
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Gastos recortados */}
                 {totalTrimmedSavings > 0 && (
