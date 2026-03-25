@@ -32,6 +32,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
 } from "@/components/ui/carousel";
 import {
   Plus,
@@ -60,6 +62,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
   PieChart,
   Pencil,
   Trash2,
@@ -256,6 +259,9 @@ const ExpensesPage = () => {
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
   const [savedAmount, setSavedAmount] = useState(0);
   const [trimLoading, setTrimLoading] = useState(false);
+
+  // Carousel state for active dot indicator
+  const [activeCategoryDot, setActiveCategoryDot] = useState(0);
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYearStr = new Date().getFullYear().toString();
@@ -670,8 +676,8 @@ const ExpensesPage = () => {
     .sort(([, a], [, b]) => b - a)
     .map(([category, amount]) => ({ category, amount }));
 
-  // Split categories into chunks of 4 for carousel
-  const categoryChunks = chunkArray(sortedCategories, 4);
+  // Split categories into chunks of 3 for carousel (improved from 4)
+  const categoryChunks = chunkArray(sortedCategories, 3);
 
   const allCategories = [...expenseCategories, ...customCategories];
 
@@ -1107,7 +1113,9 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        {/* Por Categoría - CON CARRUSEL */}
+        {/* =============================================== */}
+        {/* Por Categoría - CARRUSEL MEJORADO CON BARRAS DE PROGRESO */}
+        {/* =============================================== */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowCategories(!showCategories)} className="w-full flex items-center justify-between">
@@ -1118,23 +1126,32 @@ const ExpensesPage = () => {
               {showCategories ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
             </button>
           </CardHeader>
+          
           {showCategories && (
             <CardContent>
               {Object.keys(expensesByCategory).length === 0 ? (
                 <p className="text-zinc-500 text-center py-4 text-sm">No hay gastos</p>
               ) : (
-                <div className="relative px-1">
+                <div className="relative">
+                  {/* Carrusel con flechas de navegación */}
                   <Carousel
                     className="w-full"
                     opts={{
                       align: "start",
                       loop: false,
                     }}
+                    setApi={(api) => {
+                      if (api) {
+                        api.on("select", () => {
+                          setActiveCategoryDot(api.selectedScrollSnap());
+                        });
+                      }
+                    }}
                   >
                     <CarouselContent className="ml-0">
                       {categoryChunks.map((chunk, chunkIndex) => (
                         <CarouselItem key={chunkIndex} className="p-0">
-                          <div className="space-y-2 px-1">
+                          <div className="space-y-3 px-1">
                             {chunk.map(({ category, amount }) => {
                               const cat = getCategoryInfo(category);
                               const Icon = cat.icon;
@@ -1144,36 +1161,41 @@ const ExpensesPage = () => {
                               return (
                                 <div 
                                   key={category} 
-                                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+                                  className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl hover:bg-zinc-800/70 transition-all border border-zinc-700/50 hover:border-orange-500/30"
                                 >
                                   {/* Icono de la categoría */}
-                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${cat.color}`}>
+                                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${cat.color}`}>
                                     <Icon className={`w-5 h-5 ${cat.textColor}`} />
                                   </div>
                                   
-                                  {/* Nombre de la categoría */}
-                                  <div className="flex-1 min-w-0 mx-3">
-                                    <p className="text-sm text-zinc-300 truncate">
-                                      {cat.label}
-                                    </p>
-                                    <p className="text-[10px] text-orange-400">
-                                      {incomePercentage.toFixed(1)}% de ingresos
-                                    </p>
-                                    {/* Barra de progreso horizontal */}
-                                    <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
+                                  {/* Nombre de la categoría y barra de progreso */}
+                                  <div className="flex-1 min-w-0 mx-2">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <p className="text-sm font-medium text-zinc-200 truncate">
+                                        {cat.label}
+                                      </p>
+                                      <p className="text-[10px] text-orange-400/80 font-medium ml-2 flex-shrink-0">
+                                        {incomePercentage.toFixed(1)}% de ingresos
+                                      </p>
+                                    </div>
+                                    {/* Barra de progreso horizontal con gradiente */}
+                                    <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                                       <div 
-                                        className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
+                                        className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-700 relative"
                                         style={{ width: `${Math.min(percentage, 100)}%` }}
-                                      />
+                                      >
+                                        {/* Efecto de brillo en la barra */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                                      </div>
                                     </div>
                                   </div>
                                   
                                   {/* Importe y porcentaje */}
-                                  <div className="text-right flex-shrink-0">
+                                  <div className="text-right flex-shrink-0 min-w-[70px]">
                                     <p className="text-sm font-bold text-white">
                                       {formatCurrency(amount)}
                                     </p>
-                                    <p className="text-[10px] text-zinc-500">
+                                    <p className="text-[10px] text-zinc-500 font-medium">
                                       {percentage.toFixed(1)}%
                                     </p>
                                   </div>
@@ -1184,15 +1206,23 @@ const ExpensesPage = () => {
                         </CarouselItem>
                       ))}
                     </CarouselContent>
+                    
+                    {/* Flechas de navegación */}
+                    <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 bg-zinc-800 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600 text-white h-8 w-8 z-10" />
+                    <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 bg-zinc-800 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600 text-white h-8 w-8 z-10" />
                   </Carousel>
                   
-                  {/* Indicadores de posición (dots) */}
+                  {/* Indicadores de posición (dots) - Mejorados */}
                   {categoryChunks.length > 1 && (
-                    <div className="flex justify-center gap-1 mt-3">
+                    <div className="flex justify-center gap-2 mt-4">
                       {categoryChunks.map((_, index) => (
                         <div
                           key={index}
-                          className="w-1.5 h-1.5 rounded-full bg-zinc-600"
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            index === activeCategoryDot 
+                              ? "w-6 bg-gradient-to-r from-orange-500 to-red-500" 
+                              : "w-1.5 bg-zinc-600"
+                          }`}
                         />
                       ))}
                     </div>
@@ -1682,7 +1712,7 @@ const ExpenseForm = ({
               }`}>
                 <Building className={`w-4 h-4 ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
               </div>
-              <span className={`font-medium ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+              <span className={`font-medium ${expense.patrimonyFalse ? "text-sky-400" : "text-zinc-400"}`}>
                 {getPatrimonyLabel()}
               </span>
               <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
@@ -1723,7 +1753,7 @@ const ExpenseForm = ({
                   type="button"
                   onClick={() => {
                     setExpense({ ...expense, patrimony_id: pat.id });
-                    setIsPatrimonyDialogOpen(false);
+                    setIsPatrimonyDialogNo(pat.id);
                   }}
                   className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
                     expense.patrimony_id === pat.id
