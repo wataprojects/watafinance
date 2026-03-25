@@ -75,7 +75,6 @@ interface TopCategory {
   percentage: number;
 }
 
-// Iconos disponibles para categorías personalizadas
 const availableIcons = [
   { value: "Briefcase", icon: Briefcase },
   { value: "Home", icon: Home },
@@ -126,7 +125,6 @@ function Heart({ className }: { className?: string }) {
   );
 }
 
-// Categorías para ingresos
 const incomeCategories: CategoryOption[] = [
   { value: "salary", label: "Sueldo", icon: Briefcase, color: "bg-blue-500/20", textColor: "text-blue-400" },
   { value: "rental", label: "Alquiler", icon: Home, color: "bg-emerald-500/20", textColor: "text-emerald-400" },
@@ -138,7 +136,6 @@ const incomeCategories: CategoryOption[] = [
   { value: "business", label: "Negocio", icon: Building, color: "bg-rose-500/20", textColor: "text-rose-400" },
 ];
 
-// Función para generar insights
 const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight | null => {
   if (currentIncomes.length === 0) return null;
 
@@ -148,75 +145,43 @@ const generateInsight = (currentIncomes: any[], previousIncomes: any[]): Insight
   const currentPassive = currentIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const previousPassive = previousIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   
-  const activeTotal = currentTotal - currentPassive;
   const passivePercentage = currentTotal > 0 ? (currentPassive / currentTotal) * 100 : 0;
-  
-  // Contar fuentes únicas de ingreso
   const uniqueCategories = new Set(currentIncomes.map(i => i.category));
   
-  // 1. Comparación con mes anterior
   if (previousTotal > 0 && currentTotal > 0) {
     const changePercent = ((currentTotal - previousTotal) / previousTotal) * 100;
-    
     if (changePercent >= 10) {
-      return {
-        text: `Tus ingresos han aumentado un ${changePercent.toFixed(0)}% respecto al mes anterior`,
-        type: 'positive'
-      };
+      return { text: `Tus ingresos han aumentado un ${changePercent.toFixed(0)}% respecto al mes anterior`, type: 'positive' };
     }
     if (changePercent <= -10) {
-      return {
-        text: `Tus ingresos han disminuido un ${Math.abs(changePercent).toFixed(0)}% respecto al mes anterior`,
-        type: 'warning'
-      };
+      return { text: `Tus ingresos han disminuido un ${Math.abs(changePercent).toFixed(0)}% respecto al mes anterior`, type: 'warning' };
     }
   }
   
-  // 2. Dependencia de activos
   if (passivePercentage < 30 && currentTotal > 0) {
-    return {
-      text: `Dependes principalmente de ingresos activos (${(100 - passivePercentage).toFixed(0)}%)`,
-      type: 'neutral'
-    };
+    return { text: `Dependes principalmente de ingresos activos (${(100 - passivePercentage).toFixed(0)}%)`, type: 'neutral' };
   }
   
-  // 3. Buen progreso en pasivos
   if (passivePercentage >= 50) {
-    return {
-      text: `¡Buen camino! Tus ingresos pasivos superan el ${passivePercentage.toFixed(0)}%`,
-      type: 'positive'
-    };
+    return { text: `¡Buen camino! Tus ingresos pasivos superan el ${passivePercentage.toFixed(0)}%`, type: 'positive' };
   }
   
-  // 4. Diversificación
   if (uniqueCategories.size >= 3) {
-    return {
-      text: `Tienes ingresos bien diversificados (${uniqueCategories.size} fuentes)`,
-      type: 'positive'
-    };
+    return { text: `Tienes ingresos bien diversificados (${uniqueCategories.size} fuentes)`, type: 'positive' };
   }
   
-  // 5. Crecimiento de pasivos
   if (previousPassive > 0 && currentPassive > previousPassive) {
     const passiveGrowth = ((currentPassive - previousPassive) / previousPassive) * 100;
-    return {
-      text: `Tus ingresos pasivos están aumentando (+${passiveGrowth.toFixed(0)}%)`,
-      type: 'positive'
-    };
+    return { text: `Tus ingresos pasivos están aumentando (+${passiveGrowth.toFixed(0)}%)`, type: 'positive' };
   }
   
-  // 6. Si hay pasivos pero no hubo crecimiento significativo
   if (currentPassive > 0 && previousPassive === 0) {
-    return {
-      text: `Has generado nuevos ingresos pasivos este mes`,
-      type: 'positive'
-    };
+    return { text: `Has generado nuevos ingresos pasivos este mes`, type: 'positive' };
   }
   
   return null;
 };
 
-// Función para agrupar ingresos por fecha
 const groupIncomesByDate = (incomes: any[]): GroupedIncomes => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -276,8 +241,7 @@ const IncomePage = () => {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYear);
   
-  // Generar años dinámicamente
-  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => new Date().getFullYear() - i);
   
   const [newIncome, setNewIncome] = useState({
     source: "",
@@ -376,9 +340,7 @@ const IncomePage = () => {
 
   const fetchIncomes = async (userId: string) => {
     setLoading(true);
-    
-    // Fetch current month
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("incomes")
       .select("*")
       .eq("user_id", userId)
@@ -386,12 +348,9 @@ const IncomePage = () => {
 
     if (data) {
       setIncomes(data);
-      
-      // Generate insight with current data
       setInsight(generateInsight(data, []));
     }
     
-    // Fetch previous month for comparison
     const year = parseInt(filterYear);
     const month = parseInt(filterMonth);
     let prevMonth = month - 1;
@@ -413,7 +372,6 @@ const IncomePage = () => {
     
     if (prevData) {
       setPreviousMonthIncomes(prevData);
-      // Update insight with previous month comparison
       if (data) {
         setInsight(generateInsight(data, prevData));
       }
@@ -588,24 +546,19 @@ const IncomePage = () => {
   });
 
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
-  
-  // Calcular activos vs pasivos
   const activeIncome = filteredIncomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
   const passiveIncome = filteredIncomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
-  // Agrupar ingresos por fecha
   const groupedIncomes = groupIncomesByDate(filteredIncomes);
 
-  // Agrupar ingresos por categoría para el TOP
   const incomeByCategory: Record<string, number> = {};
   filteredIncomes.forEach(income => {
     const cat = income.category || 'other';
     incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount);
   });
 
-  // Ordenar por importe y tomar top 3 + otros
   const sortedCategories = Object.entries(incomeByCategory)
     .sort(([, a], [, b]) => b - a)
     .map(([category, amount]) => ({ category, amount }));
@@ -667,7 +620,6 @@ const IncomePage = () => {
     { value: "other", label: "Otros" },
   ];
 
-  // Función para renderizar un item de ingreso
   const renderIncomeItem = (income: any) => {
     const cat = getCategoryInfo(income.category);
     const Icon = cat.icon;
@@ -707,16 +659,10 @@ const IncomePage = () => {
             </p>
           </div>
           <div className="flex flex-col gap-1">
-            <button
-              onClick={() => openEditDialog(income)}
-              className="p-2 rounded-lg hover:bg-zinc-700 transition-colors"
-            >
+            <button onClick={() => openEditDialog(income)} className="p-2 rounded-lg hover:bg-zinc-700 transition-colors">
               <Pencil className="w-4 h-4 text-zinc-400" />
             </button>
-            <button
-              onClick={() => openDeleteDialog(income)}
-              className="p-2 rounded-lg hover:bg-red-500/20 transition-colors"
-            >
+            <button onClick={() => openDeleteDialog(income)} className="p-2 rounded-lg hover:bg-red-500/20 transition-colors">
               <Trash2 className="w-4 h-4 text-red-400" />
             </button>
           </div>
@@ -728,13 +674,10 @@ const IncomePage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Card de totales con barra visual */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
             <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
-            
-            {/* Barra visual de activos vs pasivos */}
             {totalIncome > 0 && (
               <div className="space-y-2">
                 <div className="h-3 bg-zinc-800 rounded-full overflow-hidden flex">
@@ -759,8 +702,6 @@ const IncomePage = () => {
                 </div>
               </div>
             )}
-            
-            {/* Mini distribución por categorías TOP */}
             {totalIncome > 0 ? (
               <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                 <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
@@ -796,7 +737,43 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
-        {/* Botón Nuevo Ingreso - ancho completo */}
+        <div className="grid grid-cols-2 gap-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">{filterYear}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">
+                  {months.find(m => m.value === filterMonth)?.label}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full bg-green-500 hover:bg-green-600 text-black">
@@ -853,7 +830,6 @@ const IncomePage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Insight automático */}
         {insight && (
           <Card className={`${
             insight.type === 'positive' ? 'bg-green-900/20 border-green-800' :
@@ -879,125 +855,89 @@ const IncomePage = () => {
           </Card>
         )}
 
-        {/* Card Historial con filtros de fecha integrados */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full flex-wrap gap-2">
-              {/* Filtros de fecha a la izquierda */}
-              <div className="flex gap-2">
-                <Select value={filterYear} onValueChange={setFilterYear}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                    <SelectValue placeholder="Año" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    <SelectItem value="all" className="text-white text-xs">
-                      Todos
-                    </SelectItem>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()} className="text-white text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filterMonth} onValueChange={setFilterMonth}>
-                  <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                    <SelectValue placeholder="Mes" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value} className="text-white text-xs">
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between w-full flex-wrap gap-2">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  Historial
+                </CardTitle>
               </div>
-              {/* Título a la derecha */}
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                Historial
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Filtros tipo de ingreso dentro del historial */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setFilterType("all")}
-                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "all"
-                    ? "bg-green-500 text-black"
-                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                onClick={() => setFilterType("passive")}
-                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "passive"
-                    ? "bg-purple-500 text-white"
-                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                }`}
-              >
-                Pasivos
-              </button>
-              <button
-                onClick={() => setFilterType("active")}
-                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "active"
-                    ? "bg-blue-500 text-white"
-                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                }`}
-              >
-                Activos
-              </button>
-            </div>
-
-            {loading ? (
-              <p className="text-zinc-500 text-center">Cargando...</p>
-            ) : filteredIncomes.length === 0 ? (
-              <p className="text-zinc-500 text-center">No hay ingresos registrados</p>
-            ) : (
-              <div className="space-y-4">
-                {/* Hoy */}
-                {groupedIncomes.today.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-2">HOY</p>
-                    <div className="space-y-2">
-                      {groupedIncomes.today.map(income => renderIncomeItem(income))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Esta semana */}
-                {groupedIncomes.thisWeek.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-2">ESTA SEMANA</p>
-                    <div className="space-y-2">
-                      {groupedIncomes.thisWeek.map(income => renderIncomeItem(income))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Este mes */}
-                {groupedIncomes.thisMonth.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-2">ESTE MES</p>
-                    <div className="space-y-2">
-                      {groupedIncomes.thisMonth.map(income => renderIncomeItem(income))}
-                    </div>
-                  </div>
-                )}
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setFilterType("all")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterType === "all"
+                      ? "bg-green-500 text-black"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setFilterType("passive")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterType === "passive"
+                      ? "bg-purple-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Pasivos
+                </button>
+                <button
+                  onClick={() => setFilterType("active")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterType === "active"
+                      ? "bg-blue-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Activos
+                </button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {loading ? (
+                <p className="text-zinc-500 text-center">Cargando...</p>
+              ) : filteredIncomes.length === 0 ? (
+                <p className="text-zinc-500 text-center">No hay ingresos registrados</p>
+              ) : (
+                <div className="space-y-4">
+                  {groupedIncomes.today.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-zinc-500 mb-2">HOY</p>
+                      <div className="space-y-2">
+                        {groupedIncomes.today.map(income => renderIncomeItem(income))}
+                      </div>
+                    </div>
+                  )}
+
+                  {groupedIncomes.thisWeek.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-zinc-500 mb-2">ESTA SEMANA</p>
+                      <div className="space-y-2">
+                        {groupedIncomes.thisWeek.map(income => renderIncomeItem(income))}
+                      </div>
+                    </div>
+                  )}
+
+                  {groupedIncomes.thisMonth.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-zinc-500 mb-2">ESTE MES</p>
+                      <div className="space-y-2">
+                        {groupedIncomes.thisMonth.map(income => renderIncomeItem(income))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1048,7 +988,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -1082,7 +1021,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nueva inversión */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
@@ -1109,7 +1047,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal nuevo patrimonio */}
       <Dialog open={isNewPatrimonyOpen} onOpenChange={setIsNewPatrimonyOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nuevo Patrimonio</DialogTitle></DialogHeader>
@@ -1133,7 +1070,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal crear categoría personalizada */}
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -1208,7 +1144,6 @@ const IncomePage = () => {
   );
 };
 
-// Componente reutilizable para el formulario de ingresos
 const IncomeForm = ({ 
   income, 
   setIncome, 
@@ -1274,7 +1209,6 @@ const IncomeForm = ({
         />
       </div>
       
-      {/* Selector de Categoría con botón */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
@@ -1337,7 +1271,6 @@ const IncomeForm = ({
                 })}
               </div>
               
-              {/* Botón para crear categoría personalizada */}
               <button
                 type="button"
                 onClick={() => {
@@ -1399,7 +1332,7 @@ const IncomeForm = ({
             }`}
           >
             <TrendingDownIcon className={`w-5 h-5 ${income.is_recurring ? "text-green-400" : "text-zinc-400"}`} />
-            <span className={`font-medium ${income.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
+            <span className={`font-medium text-xs ${income.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
           </button>
           <button
             type="button"
@@ -1411,11 +1344,11 @@ const IncomeForm = ({
             }`}
           >
             <DollarSign className={`w-5 h-5 ${!income.is_recurring ? "text-white" : "text-zinc-400"}`} />
-            <span className={`font-medium ${!income.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
+            <span className={`font-medium text-xs ${!income.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
           </button>
         </div>
       </div>
-
+      
       <div>
         <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
         <DatePicker
@@ -1424,7 +1357,6 @@ const IncomeForm = ({
         />
       </div>
 
-      {/* Vinculación a Inversión - Botón estilo selector */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a inversión</label>
         <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
@@ -1516,7 +1448,6 @@ const IncomeForm = ({
         </Dialog>
       </div>
 
-      {/* Vinculación a Patrimonio - Botón estilo selector */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Vincular a patrimonio</label>
         <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
