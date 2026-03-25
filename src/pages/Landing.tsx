@@ -11,14 +11,24 @@ import {
   CreditCard,
   Target,
   BarChart3,
-  Zap,
+  Download,
   Smartphone,
+  Zap,
+  Monitor,
+  SmartphoneIcon,
 } from "lucide-react";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
-import InstallAppButton from "@/components/InstallAppButton";
+import { useDeviceDetection, getDownloadConfig } from "@/hooks/useDeviceDetection";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const deviceType = useDeviceDetection();
+  const downloadConfig = getDownloadConfig(deviceType);
+
+  const handleDownloadApp = () => {
+    const link = document.querySelector('[data-install-app-button="true"]') as HTMLButtonElement | null;
+    link?.click();
+  };
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
@@ -67,7 +77,14 @@ const Landing = () => {
                 Iniciar Sesión
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
-              <InstallAppButton variant="hero" />
+              <button
+                type="button"
+                onClick={handleDownloadApp}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-400 hover:bg-green-500/20 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Descargar app
+              </button>
             </div>
           </div>
         </section>
@@ -178,7 +195,29 @@ const Landing = () => {
             </div>
 
             {/* Botón de descarga adaptado al dispositivo */}
-            <InstallAppButton variant="footer" />
+            <button
+              type="button"
+              onClick={handleDownloadApp}
+              className="
+                inline-flex items-center justify-center gap-3 
+                bg-gradient-to-r from-green-500 to-green-600 
+                hover:from-green-600 hover:to-green-700
+                text-black font-bold text-base
+                px-8 py-4 rounded-2xl
+                transition-all duration-200
+                hover:scale-105 active:scale-95
+                shadow-lg shadow-green-500/30
+              "
+              data-install-app-button="true"
+            >
+              {deviceType === 'android' && <SmartphoneIcon className="w-6 h-6" />}
+              {deviceType === 'ios' && <SmartphoneIcon className="w-6 h-6" />}
+              {deviceType === 'desktop' && <Monitor className="w-6 h-6" />}
+              <div className="text-left">
+                <div className="text-xs opacity-80">{downloadConfig.sublabel}</div>
+                <div>{downloadConfig.label}</div>
+              </div>
+            </button>
           </div>
 
           {/* Línea separadora */}
