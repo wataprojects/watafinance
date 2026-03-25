@@ -1099,83 +1099,87 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        {/* Historial */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2 text-sm">
-              <TrendingDown className="w-4 h-4 text-red-500" />
-              Historial
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-zinc-500 text-center text-xs">Cargando...</p>
-            ) : filteredExpenses.length === 0 ? (
-              <p className="text-zinc-500 text-center text-xs">Sin gastos</p>
-            ) : (
-              <div className="space-y-2">
-                {filteredExpenses.map((expense) => {
-                  const cat = getCategoryInfo(expense.category);
-                  const Icon = cat.icon;
-                  const isTrimmed = expense.is_trimmed === true;
-                  
-                  return (
-                    <div 
-                      key={expense.id} 
-                      className={`flex items-center justify-between p-2 rounded-lg transition-all ${
-                        isTrimmed 
-                          ? "bg-green-500/5 opacity-50" 
-                          : "bg-zinc-800/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
-                          <Icon className={`w-4 h-4 ${cat.textColor}`} />
-                        </div>
-                        <div>
-                          <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
-                            {expense.description || cat.label}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <p className="text-[10px] text-zinc-500">{formatDateSafe(expense.date)}</p>
-                            {isTrimmed && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
-                                <BadgeCheck className="w-2.5 h-2.5" />
-                                Recortada
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
-                          <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
-                            {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
-                          </p>
-                        </div>
-                        {!isTrimmed && (
-                          <div className="flex flex-col gap-1">
-                            <button onClick={() => openEditDialog(expense)} className="p-1 rounded hover:bg-zinc-700 transition-colors">
-                              <Pencil className="w-3 h-3 text-zinc-400" />
-                            </button>
-                            <button onClick={() => openDeleteDialog(expense)} className="p-1 rounded hover:bg-red-500/20 transition-colors">
-                              <Trash2 className="w-3 h-3 text-red-400" />
-                            </button>
-                          </div>
-                        )}
-                        {isTrimmed && (
-                          <button onClick={() => handleRestoreSubscription(expense)} className="p-1 rounded hover:bg-green-500/20 transition-colors">
-                            <RotateCcw className="w-3 h-3 text-green-400" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* Historial - UNIFICADO CON INCOMEPAGE */}
+        <div className="space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between w-full flex-wrap gap-2">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <TrendingDown className="w-5 h-5 text-red-500" />
+                  Historial
+                </CardTitle>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <p className="text-zinc-500 text-center text-xs">Cargando...</p>
+              ) : filteredExpenses.length === 0 ? (
+                <p className="text-zinc-500 text-center text-xs">Sin gastos</p>
+              ) : (
+                <div className="space-y-4">
+                  {filteredExpenses.map((expense) => {
+                    const cat = getCategoryInfo(expense.category);
+                    const Icon = cat.icon;
+                    const isTrimmed = expense.is_trimmed === true;
+                    
+                    return (
+                      <div 
+                        key={expense.id} 
+                        className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                          isTrimmed 
+                            ? "bg-green-500/5 opacity-50" 
+                            : "bg-zinc-800/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                            <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                          </div>
+                          <div>
+                            <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
+                              {expense.description || cat.label}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-zinc-500">{formatDateSafe(expense.date)}</p>
+                              {isTrimmed && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
+                                  <BadgeCheck className="w-3 h-3" />
+                                  Recortada
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
+                              {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
+                            </p>
+                          </div>
+                          {!isTrimmed && (
+                            <div className="flex flex-col gap-1">
+                              <button onClick={() => openEditDialog(expense)} className="p-1.5 rounded-lg hover:bg-zinc-700 transition-colors">
+                                <Pencil className="w-4 h-4 text-zinc-400" />
+                              </button>
+                              <button onClick={() => openDeleteDialog(expense)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                              </button>
+                            </div>
+                          )}
+                          {isTrimmed && (
+                            <button onClick={() => handleRestoreSubscription(expense)} className="p-1.5 rounded-lg hover:bg-green-500/20 transition-colors">
+                              <RotateCcw className="w-4 h-4 text-green-400" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Modal de confirmación de recorte */}
