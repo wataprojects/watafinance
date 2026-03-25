@@ -693,45 +693,6 @@ const ExpensesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Préstamos - Solo mostrar si hay préstamos */}
-        {loans.length > 0 && (
-          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <Landmark className="w-4 h-4 text-cyan-400" />
-                Préstamos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {loans.map((loan) => {
-                  const typeInfo = getLoanTypeInfo(loan.loan_type);
-                  return (
-                    <div key={loan.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeInfo.color}`}>
-                          <Landmark className={`w-4 h-4 ${typeInfo.textColor}`} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-white text-sm">{loan.borrower_name}</p>
-                          <p className="text-[10px] text-zinc-400">{loan.bank}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-cyan-400 text-sm">{formatCurrency(loan.monthly_payment)}/mes</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-2 pt-2 border-t border-zinc-700 flex justify-between">
-                <span className="text-zinc-400 text-xs">Total</span>
-                <span className="text-sm font-bold text-cyan-400">{formatCurrency(totalLoans)}/mes</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Suscripciones */}
         <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
           <CardHeader className="pb-2">
