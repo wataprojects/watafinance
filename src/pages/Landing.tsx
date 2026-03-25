@@ -14,12 +14,16 @@ import {
   Download,
   Smartphone,
   Zap,
-  Star,
+  Monitor,
+  SmartphoneIcon,
 } from "lucide-react";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
+import { useDeviceDetection, getDownloadConfig } from "@/hooks/useDeviceDetection";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const deviceType = useDeviceDetection();
+  const downloadConfig = getDownloadConfig(deviceType);
 
   const handleDownloadApp = () => {
     const link = document.querySelector('[data-install-app-button="true"]') as HTMLButtonElement | null;
@@ -161,10 +165,6 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Sección de descarga de la app */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full mb-4">
-              <Star className="w-4 h-4 text-green-400" fill="currentColor" />
-              <span className="text-green-400 text-xs font-medium">Gratis para siempre</span>
-            </div>
             <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
               Descarga FinPro en tu móvil
             </h3>
@@ -194,7 +194,7 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Botón de descarga grande */}
+            {/* Botón de descarga adaptado al dispositivo */}
             <button
               type="button"
               onClick={handleDownloadApp}
@@ -210,10 +210,12 @@ const Landing = () => {
               "
               data-install-app-button="true"
             >
-              <Download className="w-6 h-6" />
+              {deviceType === 'android' && <SmartphoneIcon className="w-6 h-6" />}
+              {deviceType === 'ios' && <SmartphoneIcon className="w-6 h-6" />}
+              {deviceType === 'desktop' && <Monitor className="w-6 h-6" />}
               <div className="text-left">
-                <div className="text-xs opacity-80">Instalar app</div>
-                <div>FinPro</div>
+                <div className="text-xs opacity-80">{downloadConfig.sublabel}</div>
+                <div>{downloadConfig.label}</div>
               </div>
             </button>
           </div>
