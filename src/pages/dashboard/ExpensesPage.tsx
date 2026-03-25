@@ -21,6 +21,11 @@ import {
 } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import {
   Plus,
   TrendingDown,
   ShoppingCart,
@@ -84,6 +89,15 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "-";
   const date = new Date(dateStr + "T00:00:00");
   return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
+};
+
+// Helper function to chunk array into groups
+const chunkArray = <T,>(array: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 };
 
 interface CategoryOption {
@@ -483,6 +497,14 @@ const ExpensesPage = () => {
     return acc;
   }, {} as Record<string, number>);
 
+  // Create ordered categories array sorted by amount
+  const sortedCategories = Object.entries(expensesByCategory)
+    .sort(([, a], [, b]) => b - a)
+    .map(([category, amount]) => ({ category, amount }));
+
+  // Split categories into chunks of 4 for carousel
+  const categoryChunks = chunkArray(sortedCategories, 4);
+
   const allCategories = [...expenseCategories, ...customCategories];
 
   const getCategoryInfo = (categoryValue: string) =>
@@ -725,7 +747,7 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        {/* Por Categoría */}
+        {/* Por Categoría - CON CARRUSEL */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowCategories(!showCategories)} className="w-full flex items-center justify-between">
@@ -739,37 +761,82 @@ const ExpensesPage = () => {
           {showCategories && (
             <CardContent>
               {Object.keys(expensesByCategory).length === 0 ? (
-                <p className="text-zinc-500 text-center py-2 text-xs">Sin gastos</p>
+                <p className="text-zinc-500 text-center py-4 text-sm">No hay gastos</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {Object.entries(expensesByCategory).map(([category, amount]) => {
-                    const cat = getCategoryInfo(category);
-                    const Icon = cat.icon;
-                    const percentage = totalWithLoans > 0 ? (amount / totalWithLoans) * 100 : 0;
-                    const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
-                    return (
-                      <div key={category} className="p-3 bg-zinc-800/50 rounded-xl space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
-                            <Icon className={`w-4 h-4 ${cat.textColor}`} />
+                <div className="relative px-1">
+                  <Carousel
+                    className="w-full"
+                    opts={{
+                      align: "start",
+                      loop: false,
+                    }}
+                  >
+                    <CarouselContent className="ml-0">
+                      {categoryChunks.map((chunk, chunkIndex) => (
+                        <CarouselItem key={chunkIndex} className="p-0">
+                          <div className="space-y-2 px-1">
+                            {chunk.map(({ category, amount }) => {
+                              const cat = getCategoryInfo(category);
+                              const Icon = cat.icon;
+                              const percentage = totalWithLoans > 0 ? (amount / totalWithLoans) * 100 : 0;
+                              const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
+                              
+                              return (
+                                <div 
+                                  key={category} 
+                                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+                                >
+                                  {/* Icono de la categoría */}
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${cat.color}`}>
+                                    <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                                  </div>
+                                  
+                                  {/* Nombre de la categoría */}
+                                  <div className="flex-1 min-w-0 mx-3">
+                                    <p className="text-sm text-zinc-300 truncate">
+                                      {cat.label}
+                                    </p>
+                                    <p className="text-[10px] text-orange-400">
+                                      {incomePercentage.toFixed(1)}% de ingresos
+                                    </p>
+                                    {/* Barra de progreso horizontal */}
+                                    <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
+                                      <div 
+                                        className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
+                                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Importe y porcentaje */}
+                                  <div className="text-right flex-shrink-0">
+                                    <p className="text-sm font-bold text-white">
+                                      {formatCurrency(amount)}
+                                    </p>
+                                    <p className="text-[10px] text-zinc-500">
+                                      {percentage.toFixed(1)}%
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-white text-sm truncate">{cat.label}</p>
-                            <p className="text-xs text-orange-400">{incomePercentage.toFixed(1)}% de ingresos</p>
-                          </div>
-                          <p className="font-bold text-white text-sm">{formatCurrency(amount)}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-zinc-500">{percentage.toFixed(1)}% del total</span>
-                          </div>
-                          <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all" style={{ width: `${Math.min(percentage, 100)}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                  
+                  {/* Indicadores de posición (dots) */}
+                  {categoryChunks.length > 1 && (
+                    <div className="flex justify-center gap-1 mt-3">
+                      {categoryChunks.map((_, index) => (
+                        <div
+                          key={index}
+                          className="w-1.5 h-1.5 rounded-full bg-zinc-600"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
