@@ -501,7 +501,7 @@ const IncomePage = () => {
     const { data, error } = await supabase.from("patrimony").insert({
       user_id: session.user.id,
       name: newPatrimonyAsset.name,
-      category: newPatrimonyAsset.asset,
+      category: newPatrimonyAsset.category,
       value: parseFloat(newPatrimonyAsset.value),
     }).select().single();
 
@@ -680,6 +680,45 @@ const IncomePage = () => {
       />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Selectores de año/mes - MOVIDOS AQUÍ (arriba del card Total Ingresos) */}
+        <div className="grid grid-cols-2 gap-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">{filterYear}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white">
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">
+                  {months.find(m => m.value === filterMonth)?.label}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white">
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Card - Total Ingresos */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total Ingresos</p>
@@ -743,43 +782,7 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
-              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">{filterYear}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all" className="text-white">Todos</SelectItem>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white">
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
-              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">
-                  {months.find(m => m.value === filterMonth)?.label}
-                </span>
-              </div>
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white">
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+        {/* Dialog para nuevo ingreso */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full bg-green-500 hover:bg-green-600 text-black">
@@ -836,6 +839,7 @@ const IncomePage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Insight */}
         {insight && (
           <Card className={`${
             insight.type === 'positive' ? 'bg-green-900/20 border-green-800' :
@@ -861,6 +865,7 @@ const IncomePage = () => {
           </Card>
         )}
 
+        {/* Historial */}
         <div className="space-y-4">
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-3">
@@ -944,6 +949,7 @@ const IncomePage = () => {
         </div>
       </div>
 
+      {/* Dialogs para editar y eliminar */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1027,6 +1033,7 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Dialogs para inversión y patrimonio */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Nueva Inversión</DialogTitle></DialogHeader>
