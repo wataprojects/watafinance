@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#000000"/>
+  <rect x="24" y="24" width="144" height="144" rx="32" fill="#22c55e"/>
+  <g transform="translate(56, 56)">
+    <path d="M40 8C22.327 8 8 22.327 8 40s14.327 32 32 32 32-14.327 32-32S57.673 8 40 8zm0 8c6.627 0 12 5.373 12 12s-5.373 12-12 12-12-5.373-12-12 5.373-12 12-12zm8 12h-4v4c0 2.209-1.791 4-4 4s-4-1.791-4-4v-4h-4c-2.209 0-4-1.791-4-4s1.791-4 4-4h4v-4c0-2.209 1.791-4 4-4s4 1.791 4 4v4h4c2.209 0 4 1.791 4 4s-1.791 4-4 4z" fill="#000000" transform="scale(1.5) translate(10, 10)"/>
+    <rect x="20" y="30" width="40" height="32" rx="4" fill="#000000" opacity="0.9"/>
+    <rect x="24" y="34" width="32" height="24" rx="2" fill="#000000"/>
+    <text x="40" y="52" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#22c55e" text-anchor="middle">€</text>
+  </g>
+</svg>
