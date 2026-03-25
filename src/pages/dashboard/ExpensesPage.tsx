@@ -490,6 +490,8 @@ const ExpensesPage = () => {
 
   const subscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
   const totalSubscriptions = subscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  // Sort subscriptions from highest to lowest amount
+  const sortedSubscriptions = [...subscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
 
   const expensesByCategory = filteredExpenses.reduce((acc, e) => {
     if (!acc[e.category]) acc[e.category] = 0;
@@ -715,18 +717,27 @@ const ExpensesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Suscripciones */}
+        {/* Suscripciones - BLOQUE MEJORADO */}
         <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
           <CardHeader className="pb-2">
-            <button onClick={() => setShowSubscriptions(!showSubscriptions)} className="w-full flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <Smartphone className="w-4 h-4 text-pink-400" />
-                Suscripciones
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
-                {showSubscriptions ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
+            <button onClick={() => setShowSubscriptions(!showSubscriptions)} className="w-full text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-pink-400" />
+                  <CardTitle className="text-white text-sm">Suscripciones</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
+                  {showSubscriptions ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
+                </div>
               </div>
+              {/* Subtítulo contextual */}
+              {subscriptions.length > 0 && (
+                <p className="text-zinc-400 text-xs mt-1">
+                  {subscriptions.length} {subscriptions.length === 1 ? 'suscripción' : 'suscripciones'} · {formatCurrency(totalSubscriptions)}/mes
+                </p>
+              )}
+              <p className="text-zinc-500 text-[10px]">Gastos recurrentes automáticos</p>
             </button>
           </CardHeader>
           {showSubscriptions && (
@@ -734,14 +745,21 @@ const ExpensesPage = () => {
               {subscriptions.length === 0 ? (
                 <p className="text-zinc-500 text-center py-2 text-xs">Sin suscripciones</p>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {subscriptions.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                      <div><p className="font-medium text-white text-xs">{sub.description}</p></div>
-                      <p className="font-bold text-pink-400 text-xs">{formatCurrency(sub.amount)}</p>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  {/* Mensaje de optimización */}
+                  <div className="flex items-center gap-2 p-2 mb-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                    <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                    <p className="text-pink-300 text-xs">Revisa qué suscripciones puedes cancelar</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {sortedSubscriptions.map((sub) => (
+                      <div key={sub.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                        <div><p className="font-medium text-white text-xs">{sub.description}</p></div>
+                        <p className="font-bold text-pink-400 text-xs">{formatCurrency(sub.amount)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
           )}
