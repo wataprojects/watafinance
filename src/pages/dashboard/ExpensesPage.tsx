@@ -807,24 +807,32 @@ const ExpensesPage = () => {
                   <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                     <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
                     {sortedCategories.slice(0, 5).map((cat) => {
-                      const catInfo = getCategoryInfo(cat.category);
-                      const Icon = catInfo.icon;
-                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                      return (
-                        <div key={cat.category} className="flex items-center justify-between py-1">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
-                              <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
-                            </div>
-                            <span className="text-sm text-zinc-300">{catInfo.label}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
-                            <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                                          const catInfo = getCategoryInfo(cat.category);
+                                          const Icon = catInfo.icon;
+                                          const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                                          return (
+                                            <div key={cat.category} className="space-y-1.5 py-1">
+                                              <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                  <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
+                                                    <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
+                                                  </div>
+                                                  <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                                                  <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
+                                                </div>
+                                              </div>
+                                              <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
+                                                <div
+                                                  className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                                  style={{ width: `${percentage}%` }}
+                                                />
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                     {sortedCategories.length > 5 && (
                       <p className="text-xs text-zinc-500 text-center pt-2">
                         +{sortedCategories.length - 5} categorías más

@@ -751,21 +751,29 @@ const IncomePage = () => {
               <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                 <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
                 {topCategories.map((cat) => {
-                  const catInfo = getCategoryInfo(cat.category);
-                  const Icon = catInfo.icon;
-                  return (
-                    <div key={cat.category} className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
-                        <span className="text-sm text-zinc-300">{catInfo.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
-                        <span className="text-xs text-zinc-500">({cat.percentage.toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                                  const catInfo = getCategoryInfo(cat.category);
+                                  const Icon = catInfo.icon;
+                                  return (
+                                    <div key={cat.category} className="space-y-1.5 py-1">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
+                                          <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                                          <span className="text-xs text-zinc-500">({cat.percentage.toFixed(0)}%)</span>
+                                        </div>
+                                      </div>
+                                      <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                          style={{ width: `${cat.percentage}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
               </div>
             ) : (
               <div className="mt-4 pt-4 border-t border-zinc-700 text-center">
