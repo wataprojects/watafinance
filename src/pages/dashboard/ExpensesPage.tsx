@@ -469,6 +469,10 @@ const ExpensesPage = () => {
   const totalWithLoans = totalExpenses + totalLoans;
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
+  // Calculate percentages for the progress bar
+  const expensePercentage = totalWithLoans > 0 ? (totalExpenses / totalWithLoans) * 100 : 0;
+  const loansPercentage = totalWithLoans > 0 ? (totalLoans / totalWithLoans) * 100 : 0;
+
   const subscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
   const totalSubscriptions = subscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
@@ -596,13 +600,40 @@ const ExpensesPage = () => {
           </Select>
         </div>
 
-        {/* Total Gastos - Estilo igual a IncomePage */}
+        {/* Total Gastos - CON BARRA DE PROGRESO */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6 text-center">
             <p className="text-zinc-400 text-sm mb-1">Total de Gastos</p>
-            <p className="text-4xl font-bold text-red-500 mb-4">{formatCurrency(totalWithLoans)}</p>
-            {totalLoans > 0 && (
-              <p className="text-xs text-cyan-400">(+ {formatCurrency(totalLoans)} préstamos)</p>
+            <p className="text-4xl font-bold text-white mb-4">{formatCurrency(totalWithLoans)}</p>
+            
+            {/* Barra de progreso visual */}
+            {totalWithLoans > 0 && (
+              <div className="space-y-3">
+                <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
+                  {/* Barra de Gastos (rojo) */}
+                  <div 
+                    className="h-full bg-red-500 transition-all duration-500"
+                    style={{ width: `${expensePercentage}%` }}
+                  />
+                  {/* Barra de Préstamos (azul) */}
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${loansPercentage}%` }}
+                  />
+                </div>
+                
+                {/* Etiquetas debajo de la barra */}
+                <div className="flex justify-between items-center text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-zinc-400">Gastos: <span className="text-white font-medium">{formatCurrency(totalExpenses)}</span></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Préstamos: <span className="text-blue-400 font-medium">{formatCurrency(totalLoans)}</span></span>
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
