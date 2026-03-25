@@ -47,7 +47,6 @@ import {
   MoreHorizontal,
   X,
   ChevronRight,
-  Link2,
   ChevronDown,
   PieChart,
   Pencil,
@@ -160,6 +159,21 @@ const expenseCategories: CategoryOption[] = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
 
+const months = [
+  { value: "01", label: "Enero" },
+  { value: "02", label: "Febrero" },
+  { value: "03", label: "Marzo" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Mayo" },
+  { value: "06", label: "Junio" },
+  { value: "07", label: "Julio" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Septiembre" },
+  { value: "10", label: "Octubre" },
+  { value: "11", label: "Noviembre" },
+  { value: "12", label: "Diciembre" },
+];
+
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -188,7 +202,6 @@ const ExpensesPage = () => {
 
   const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [showCategories, setShowCategories] = useState(true);
-  const [showScheduledChange, setShowScheduledChange] = useState(false);
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYearStr = new Date().getFullYear().toString();
@@ -243,22 +256,6 @@ const ExpensesPage = () => {
     color: "bg-green-500/20",
     textColor: "text-green-400",
   });
-
-  const months = [
-    { value: "all", label: "Todos" },
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
 
   const categoryColors = [
     { value: "bg-blue-500/20", textColor: "text-blue-400", label: "Azul" },
@@ -473,12 +470,6 @@ const ExpensesPage = () => {
   const getSelectedCategoryInfo = (categoryValue: string) =>
     allCategories.find((c) => c.value === categoryValue) || expenseCategories.find((c) => c.value === categoryValue) || expenseCategories[0];
 
-  const getInvestmentLabel = () =>
-    newExpense.investment_id === "none" ? "Sin vincular" : investments.find((i) => i.id === newExpense.investment_id)?.name || "Sin vincular";
-
-  const getPatrimonyLabel = () =>
-    newExpense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p) => p.id === newExpense.patrimony_id)?.name || "Sin vincular";
-
   const handleCreateInvestment = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !newInvestment.name || !newInvestment.initial_value) return;
@@ -554,91 +545,43 @@ const ExpensesPage = () => {
         subtitle="Control de Gastos"
       />
       
-      <div className="container mx-auto px-4 py-6">
-        {/* Filtros y botón nuevo */}
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">Todos</SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Selectores de fecha grandes - debajo del header */}
+        <div className="grid grid-cols-2 gap-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">{filterYear}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">{month.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-red-500 hover:bg-red-600 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
-              </DialogHeader>
-              <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-                <X className="w-4 h-4" />
-              </button>
-              <ExpenseForm
-                expense={newExpense}
-                setExpense={setNewExpense}
-                onSubmit={handleAddExpense}
-                isSubmitting={isSubmitting}
-                isNew={true}
-                investments={investments}
-                patrimony={patrimony}
-                isNewInvestmentOpen={isNewInvestmentOpen}
-                setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                isNewPatrimonyOpen={isNewPatrimonyOpen}
-                setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                newInvestment={newInvestment}
-                setNewInvestment={setNewInvestment}
-                newPatrimonyAsset={newPatrimonyAsset}
-                setNewPatrimonyAsset={setNewPatrimonyAsset}
-                handleCreateInvestment={handleCreateInvestment}
-                handleCreatePatrimony={handleCreatePatrimony}
-                investmentTypes={investmentTypes}
-                patrimonyCategories={patrimonyCategories}
-                isCategoryDialogOpen={isCategoryDialogOpen}
-                setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-                isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-                setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-                isInvestmentDialogOpen={isInvestmentDialogOpen}
-                setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-                isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-                setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-                getSelectedCategoryInfo={getSelectedCategoryInfo}
-                customCategories={customCategories}
-                availableIcons={availableIcons}
-                categoryColors={categoryColors}
-                newCustomCategory={newCustomCategory}
-                setNewCustomCategory={setNewCustomCategory}
-                handleCreateCustomCategory={handleCreateCustomCategory}
-                showScheduledChange={showScheduledChange}
-                setShowScheduledChange={setShowScheduledChange}
-              />
-            </DialogContent>
-          </Dialog>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">
+                  {months.find(m => m.value === filterMonth)?.label}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Card className="bg-zinc-900 border-zinc-800 mb-4">
+        {/* Total Gastos */}
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4 text-center">
             <CreditCard className="w-6 h-6 mx-auto mb-1 text-red-500" />
             <p className="text-2xl font-bold text-red-500">{formatCurrency(totalWithLoans)}</p>
@@ -649,8 +592,67 @@ const ExpensesPage = () => {
           </CardContent>
         </Card>
 
+        {/* Botón Nuevo Gasto - ocupando el espacio de Préstamos */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 cursor-pointer hover:border-cyan-700 transition-all">
+            <CardContent className="p-6">
+              <Button 
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-6 text-base font-semibold"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Nuevo Gasto
+              </Button>
+            </CardContent>
+          </Card>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+            </DialogHeader>
+            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+              <X className="w-4 h-4" />
+            </button>
+            <ExpenseForm
+              expense={newExpense}
+              setExpense={setNewExpense}
+              onSubmit={handleAddExpense}
+              isSubmitting={isSubmitting}
+              isNew={true}
+              investments={investments}
+              patrimony={patrimony}
+              isNewInvestmentOpen={isNewInvestmentOpen}
+              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+              isNewPatrimonyOpen={isNewPatrimonyOpen}
+              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+              newInvestment={newInvestment}
+              setNewInvestment={setNewInvestment}
+              newPatrimonyAsset={newPatrimonyAsset}
+              setNewPatrimonyAsset={setNewPatrimonyAsset}
+              handleCreateInvestment={handleCreateInvestment}
+              handleCreatePatrimony={handleCreatePatrimony}
+              investmentTypes={investmentTypes}
+              patrimonyCategories={patrimonyCategories}
+              isCategoryDialogOpen={isCategoryDialogOpen}
+              setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+              isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+              setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+              isInvestmentDialogOpen={isInvestmentDialogOpen}
+              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+              getSelectedCategoryInfo={getSelectedCategoryInfo}
+              customCategories={customCategories}
+              availableIcons={availableIcons}
+              categoryColors={categoryColors}
+              newCustomCategory={newCustomCategory}
+              setNewCustomCategory={setNewCustomCategory}
+              handleCreateCustomCategory={handleCreateCustomCategory}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Préstamos - Solo mostrar si hay préstamos */}
         {loans.length > 0 && (
-          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 mb-4">
+          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800">
             <CardHeader className="pb-2">
               <CardTitle className="text-white flex items-center gap-2 text-sm">
                 <Landmark className="w-4 h-4 text-cyan-400" />
@@ -687,7 +689,8 @@ const ExpensesPage = () => {
           </Card>
         )}
 
-        <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800 mb-4">
+        {/* Suscripciones */}
+        <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowSubscriptions(!showSubscriptions)} className="w-full flex items-center justify-between">
               <CardTitle className="text-white flex items-center gap-2 text-sm">
@@ -718,7 +721,8 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800 mb-4">
+        {/* Por Categoría */}
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowCategories(!showCategories)} className="w-full flex items-center justify-between">
               <CardTitle className="text-white flex items-center gap-2 text-sm">
@@ -768,6 +772,7 @@ const ExpensesPage = () => {
           )}
         </Card>
 
+        {/* Historial */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2 text-sm">
@@ -860,8 +865,6 @@ const ExpensesPage = () => {
             newCustomCategory={newCustomCategory}
             setNewCustomCategory={setNewCustomCategory}
             handleCreateCustomCategory={handleCreateCustomCategory}
-            showScheduledChange={showScheduledChange}
-            setShowScheduledChange={setShowScheduledChange}
           />
         </DialogContent>
       </Dialog>
@@ -910,15 +913,11 @@ const ExpenseForm = ({
   getSelectedCategoryInfo,
   customCategories, availableIcons, categoryColors,
   newCustomCategory, setNewCustomCategory, handleCreateCustomCategory,
-  showScheduledChange, setShowScheduledChange,
 }: any) => {
   const getInvestmentLabel = () =>
     expense.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === expense.investment_id)?.name || "Sin vincular";
   const getPatrimonyLabel = () =>
     expense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
-  const handleScheduledChangeDate = (date: Date | undefined) => {
-    setExpense({ ...expense, scheduled_change_date: date || null });
-  };
 
   return (
     <div className="space-y-3 mt-2">
