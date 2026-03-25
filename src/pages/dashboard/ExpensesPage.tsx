@@ -63,6 +63,11 @@ import {
   Check,
   BadgeCheck,
 } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -825,46 +830,61 @@ const ExpensesPage = () => {
                   </div>
                 </div>
 
-                {/* Distribución por categoría */}
+                {/* Distribución por categoría - Carrusel */}
                 {sortedCategories.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
-                    <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
-                    {sortedCategories.slice(0, 5).map((cat) => {
-                      const catInfo = getCategoryInfo(cat.category);
-                      const Icon = catInfo.icon;
-                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                      const categoryType = getCategoryPredominantType(cat.category);
-                      return (
-                        <div key={cat.category} className="space-y-1.5 py-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
-                                <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
-                              </div>
-                              <span className="text-sm text-zinc-300">{catInfo.label}</span>
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
-                                {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
-                              <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
-                            </div>
-                          </div>
-                          <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {sortedCategories.length > 5 && (
-                      <p className="text-xs text-zinc-500 text-center pt-2">
-                        +{sortedCategories.length - 5} categorías más
+                  <div className="mt-4 pt-4 border-t border-zinc-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-zinc-500">Distribución por categoría</p>
+                      <p className="text-xs text-zinc-500">
+                        {sortedCategories.length} {sortedCategories.length === 1 ? 'categoría' : 'categorías'}
                       </p>
-                    )}
+                    </div>
+                    
+                    <Carousel
+                      opts={{
+                        align: "start",
+                        loop: false,
+                      }}
+                      className="w-full"
+                      orientation="horizontal"
+                    >
+                      <CarouselContent className="-ml-2">
+                        {sortedCategories.map((cat) => {
+                          const catInfo = getCategoryInfo(cat.category);
+                          const Icon = catInfo.icon;
+                          const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                          const categoryType = getCategoryPredominantType(cat.category);
+                          
+                          return (
+                            <CarouselItem key={cat.category} className="pl-2 basis-full">
+                              <div className="space-y-2 p-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${catInfo.color}`}>
+                                      <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
+                                    </div>
+                                    <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
+                                      {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
+                                  <span className="text-sm text-zinc-400">{percentage.toFixed(1)}%</span>
+                                </div>
+                                <div className="h-2 bg-zinc-700/50 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </CarouselItem>
+                          );
+                        })}
+                      </CarouselContent>
+                    </Carousel>
                   </div>
                 )}
 
