@@ -469,7 +469,6 @@ const ExpensesPage = () => {
       scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
       scheduled_new_amount: newExpense.scheduled_new_amount ? parseFloat(newExpense.scheduled_new_amount) : null,
       scheduled_change_type: newExpense.scheduled_change_type,
-      is_trimmed: false,
     });
     if (!error) {
       setIsDialogOpen(false);
