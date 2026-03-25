@@ -29,11 +29,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
-import {
   Plus,
   TrendingDown,
   ShoppingCart,
@@ -43,7 +38,6 @@ import {
   Film,
   TrendingUp,
   Building,
-  TrendingDown as TrendingDownIcon,
   Wifi,
   Smartphone,
   Heart,
@@ -60,11 +54,9 @@ import {
   X,
   ChevronRight,
   ChevronDown,
-  PieChart,
   Pencil,
   Trash2,
   RefreshCcw,
-  Landmark,
   Link2,
   Scissors,
   RotateCcw,
@@ -104,15 +96,6 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "-";
   const date = new Date(dateStr + "T00:00:00");
   return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
-};
-
-// Helper function to chunk array into groups
-const chunkArray = <T,>(array: T[], size: number): T[][] => {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
 };
 
 interface CategoryOption {
@@ -247,7 +230,6 @@ const ExpensesPage = () => {
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
 
   const [showSubscriptions, setShowSubscriptions] = useState(true);
-  const [showCategories, setShowCategories] = useState(true);
 
   // Trim subscription state
   const [isTrimModalOpen, setIsTrimModalOpen] = useState(false);
@@ -366,13 +348,11 @@ const ExpensesPage = () => {
     setLoading(false);
   };
 
-  // Handle trim subscription - open confirmation modal
   const handleTrimSubscription = (subscription: any) => {
     setSelectedSubscription(subscription);
     setIsTrimModalOpen(true);
   };
 
-  // Confirm trim - actually trim the subscription
   const confirmTrim = async () => {
     if (!selectedSubscription || trimLoading) return;
     
@@ -386,7 +366,6 @@ const ExpensesPage = () => {
         return;
       }
 
-      // Get the amount safely
       const subscriptionAmount = parseFloat(selectedSubscription.amount) || 0;
 
       const { error } = await supabase
@@ -395,20 +374,17 @@ const ExpensesPage = () => {
         .eq("id", selectedSubscription.id);
 
       if (error) {
-        console.error("[confirmTrim] Error updating expense:", error);
         toast.error(`Error al recortar: ${error.message}`);
         setTrimLoading(false);
         return;
       }
 
-      // Success - update local state
       setExpenses((prev) =>
         prev.map((e) =>
           e.id === selectedSubscription.id ? { ...e, is_trimmed: true } : e
         )
       );
       
-      // Close trim modal and open celebration
       setIsTrimModalOpen(false);
       setSavedAmount((prev) => prev + subscriptionAmount);
       setIsCelebrateModalOpen(true);
@@ -416,14 +392,12 @@ const ExpensesPage = () => {
       toast.success(`¡Ahorrarás ${formatCurrency(subscriptionAmount)}/mes!`);
       
     } catch (err) {
-      console.error("[confirmTrim] Unexpected error:", err);
       toast.error("Ha ocurrido un error inesperado");
     } finally {
       setTrimLoading(false);
     }
   };
 
-  // Handle restore subscription
   const handleRestoreSubscription = (subscription: any) => {
     setSelectedSubscription(subscription);
     setIsRestoreModalOpen(true);
@@ -450,29 +424,23 @@ const ExpensesPage = () => {
         .eq("id", selectedSubscription.id);
 
       if (error) {
-        console.error("[confirmRestore] Error updating expense:", error);
         toast.error(`Error al restaurar: ${error.message}`);
         setTrimLoading(false);
         return;
       }
 
-      // Update local state
       setExpenses((prev) =>
         prev.map((e) =>
           e.id === selectedSubscription.id ? { ...e, is_trimmed: false } : e
         )
       );
       
-      // Update savings
       setSavedAmount((prev) => Math.max(0, prev - subscriptionAmount));
-      
       setIsRestoreModalOpen(false);
       setSelectedSubscription(null);
-      
       toast.success("Suscripción restaurada correctamente");
       
     } catch (err) {
-      console.error("[confirmRestore] Unexpected error:", err);
       toast.error("Ha ocurrido un error inesperado");
     } finally {
       setTrimLoading(false);
@@ -615,7 +583,6 @@ const ExpensesPage = () => {
     return true;
   });
 
-  // Get all subscriptions including trimmed ones
   const allSubscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
   const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
   const trimmedSubscriptions = allSubscriptions.filter((e) => e.is_trimmed);
@@ -624,54 +591,38 @@ const ExpensesPage = () => {
   const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
 
-  // ==========================================
-  // NUEVO CÁLCULO: 3 segmentos para Total Gastos
-  // ==========================================
-  
-  // Gastos puntuales (is_recurring = false, no recortados)
   const puntualExpenses = filteredExpenses
     .filter(e => !e.is_recurring && !e.is_trimmed)
     .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  // Gastos recurrentes (is_recurring = true, no recortados)
   const recurrentExpenses = filteredExpenses
     .filter(e => e.is_recurring && !e.is_trimmed)
     .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  // Préstamos activos (cuotas mensuales)
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
 
-  // Total = Puntuales + Recurrentes + Préstamos
   const totalWithLoans = puntualExpenses + recurrentExpenses + totalLoans;
 
-  // Porcentajes para cada segmento
   const puntualPercentage = totalWithLoans > 0 ? (puntualExpenses / totalWithLoans) * 100 : 0;
   const recurrentPercentage = totalWithLoans > 0 ? (recurrentExpenses / totalWithLoans) * 100 : 0;
   const loansPercentage = totalWithLoans > 0 ? (totalLoans / totalWithLoans) * 100 : 0;
 
-  // Total de gastos (para otros cálculos)
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
-  // Sort subscriptions from highest to lowest amount
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
   const sortedTrimmedSubscriptions = [...trimmedSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
 
   const expensesByCategory = filteredExpenses.reduce((acc, e) => {
-    // Don't count trimmed subscriptions in category totals
     if (e.is_trimmed) return acc;
     if (!acc[e.category]) acc[e.category] = 0;
     acc[e.category] += parseFloat(e.amount);
     return acc;
   }, {} as Record<string, number>);
 
-  // Create ordered categories array sorted by amount
-  const sortedCategories = Object.entries(expensesByCategory)
-    .sort(([, a], [, b]) => b - a)
-    .map(([category, amount]) => ({ category, amount }));
-
-  // Split categories into chunks of 4 for carousel
-  const categoryChunks = chunkArray(sortedCategories, 4);
+  const sortedCategories: { category: string; amount: number }[] = Object.entries(expensesByCategory)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .map(([category, amount]) => ({ category, amount: amount as number }));
 
   const allCategories = [...expenseCategories, ...customCategories];
 
@@ -757,7 +708,7 @@ const ExpensesPage = () => {
       />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Selectores de fecha grandes - debajo del header */}
+        {/* Selectores de fecha */}
         <div className="grid grid-cols-2 gap-4">
           <Select value={filterYear} onValueChange={setFilterYear}>
             <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
@@ -791,36 +742,28 @@ const ExpensesPage = () => {
           </Select>
         </div>
 
-        {/* ========================================== */}
-        {/* Total Gastos - CON 3 SEGMENTOS Y DISTRIBUCIÓN */}
-        {/* ========================================== */}
+        {/* Total Gastos */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
-            {/* Título simplificado */}
             <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos</p>
             <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalWithLoans)}</p>
             
-            {/* Barra de 3 segmentos */}
             {totalWithLoans > 0 ? (
               <>
                 <div className="space-y-4">
-                  {/* Barra de progreso de 3 segmentos */}
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
-                    {/* Segmento Puntuales (rojo) */}
                     {puntualPercentage > 0 && (
                       <div 
                         className="h-full bg-red-500 transition-all duration-500"
                         style={{ width: `${puntualPercentage}%` }}
                       />
                     )}
-                    {/* Segmento Recurrentes (morado) */}
                     {recurrentPercentage > 0 && (
                       <div 
                         className="h-full bg-purple-500 transition-all duration-500"
                         style={{ width: `${recurrentPercentage}%` }}
                       />
                     )}
-                    {/* Segmento Préstamos (azul) */}
                     {loansPercentage > 0 && (
                       <div 
                         className="h-full bg-blue-500 transition-all duration-500"
@@ -829,9 +772,7 @@ const ExpensesPage = () => {
                     )}
                   </div>
 
-                  {/* Etiquetas debajo de la barra */}
                   <div className="flex justify-between items-start text-center">
-                    {/* Puntuales */}
                     <div className="flex-1">
                       <div className="flex items-center justify-center gap-1.5 mb-1">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
@@ -841,7 +782,6 @@ const ExpensesPage = () => {
                       <p className="text-zinc-500 text-xs">{puntualPercentage.toFixed(0)}%</p>
                     </div>
                     
-                    {/* Recurrentes */}
                     <div className="flex-1">
                       <div className="flex items-center justify-center gap-1.5 mb-1">
                         <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
@@ -851,7 +791,6 @@ const ExpensesPage = () => {
                       <p className="text-zinc-500 text-xs">{recurrentPercentage.toFixed(0)}%</p>
                     </div>
                     
-                    {/* Préstamos */}
                     <div className="flex-1">
                       <div className="flex items-center justify-center gap-1.5 mb-1">
                         <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
@@ -894,7 +833,6 @@ const ExpensesPage = () => {
                   </div>
                 )}
 
-                {/* Gastos recortados */}
                 {totalTrimmedSavings > 0 && (
                   <div className="mt-4 pt-4 border-t border-zinc-700">
                     <div className="flex items-center justify-center gap-2 p-2 bg-green-500/10 rounded-lg">
@@ -914,7 +852,7 @@ const ExpensesPage = () => {
           </CardContent>
         </Card>
 
-        {/* Botón Nuevo Gasto - Sin borde azul, estilo simple */}
+        {/* Botón Nuevo Gasto */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-6 text-base font-semibold">
@@ -968,7 +906,7 @@ const ExpensesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Suscripciones - BLOQUE MEJORADO CON RECORTE */}
+        {/* Suscripciones */}
         <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowSubscriptions(!showSubscriptions)} className="w-full text-left">
@@ -982,7 +920,6 @@ const ExpensesPage = () => {
                   {showSubscriptions ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
                 </div>
               </div>
-              {/* subtítulo contextual */}
               {activeSubscriptions.length > 0 && (
                 <p className="text-zinc-400 text-xs mt-1">
                   {activeSubscriptions.length} {activeSubscriptions.length === 1 ? 'suscripción' : 'suscripciones'} activas · {formatCurrency(totalActiveSubscriptions)}/mes
@@ -998,7 +935,6 @@ const ExpensesPage = () => {
           </CardHeader>
           {showSubscriptions && (
             <CardContent>
-              {/* Estado vacío */}
               {allSubscriptions.length === 0 ? (
                 <div className="text-center py-6">
                   <Smartphone className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
@@ -1007,7 +943,6 @@ const ExpensesPage = () => {
                 </div>
               ) : (
                 <>
-                  {/* Mensaje de optimización */}
                   {activeSubscriptions.length > 0 && (
                     <div className="flex items-center gap-2 p-2 mb-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
                       <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0" />
@@ -1015,7 +950,6 @@ const ExpensesPage = () => {
                     </div>
                   )}
 
-                  {/* Lista de suscripciones activas */}
                   {sortedActiveSubscriptions.length > 0 && (
                     <div className="grid grid-cols-2 gap-2 mb-4">
                       {sortedActiveSubscriptions.map((sub) => (
@@ -1023,7 +957,6 @@ const ExpensesPage = () => {
                           key={sub.id} 
                           className="relative p-3 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-pink-500/50 transition-all group"
                         >
-                          {/* Badge de recorte (si está recortada) */}
                           {sub.is_trimmed && (
                             <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                               <BadgeCheck className="w-3 h-3" />
@@ -1036,7 +969,6 @@ const ExpensesPage = () => {
                             <p className="font-bold text-pink-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
                           </div>
                           
-                          {/* Botón Recortar */}
                           <button
                             onClick={() => handleTrimSubscription(sub)}
                             className="w-full py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
@@ -1049,7 +981,6 @@ const ExpensesPage = () => {
                     </div>
                   )}
 
-                  {/* Suscripciones recortadas */}
                   {sortedTrimmedSubscriptions.length > 0 && (
                     <div className="border-t border-zinc-700 pt-4 mt-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -1065,7 +996,6 @@ const ExpensesPage = () => {
                             key={sub.id} 
                             className="relative p-3 bg-green-500/10 rounded-xl border border-green-500/20 opacity-60"
                           >
-                            {/* Badge Recortada */}
                             <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                               <BadgeCheck className="w-3 h-3" />
                               Recortada
@@ -1076,7 +1006,6 @@ const ExpensesPage = () => {
                               <p className="font-bold text-green-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
                             </div>
                             
-                            {/* Botón Restaurar */}
                             <button
                               onClick={() => handleRestoreSubscription(sub)}
                               className="w-full py-1.5 px-3 rounded-lg bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
@@ -1090,7 +1019,6 @@ const ExpensesPage = () => {
                     </div>
                   )}
 
-                  {/* Congratulación si todas recortadas */}
                   {sortedTrimmedSubscriptions.length > 0 && sortedActiveSubscriptions.length === 0 && (
                     <div className="text-center py-6 border-t border-green-500/20 mt-4 pt-4">
                       <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -1107,103 +1035,7 @@ const ExpensesPage = () => {
           )}
         </Card>
 
-        {/* Por Categoría - CON CARRUSEL */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-2">
-            <button onClick={() => setShowCategories(!showCategories)} className="w-full flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <PieChart className="w-4 h-4 text-orange-400" />
-                Por Categoría
-              </CardTitle>
-              {showCategories ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
-            </button>
-          </CardHeader>
-          {showCategories && (
-            <CardContent>
-              {Object.keys(expensesByCategory).length === 0 ? (
-                <p className="text-zinc-500 text-center py-4 text-sm">No hay gastos</p>
-              ) : (
-                <div className="relative px-1">
-                  <Carousel
-                    className="w-full"
-                    opts={{
-                      align: "start",
-                      loop: false,
-                    }}
-                  >
-                    <CarouselContent className="ml-0">
-                      {categoryChunks.map((chunk, chunkIndex) => (
-                        <CarouselItem key={chunkIndex} className="p-0">
-                          <div className="space-y-2 px-1">
-                            {chunk.map(({ category, amount }) => {
-                              const cat = getCategoryInfo(category);
-                              const Icon = cat.icon;
-                              const percentage = totalWithLoans > 0 ? (amount / totalWithLoans) * 100 : 0;
-                              const incomePercentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
-                              
-                              return (
-                                <div 
-                                  key={category} 
-                                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
-                                >
-                                  {/* Icono de la categoría */}
-                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${cat.color}`}>
-                                    <Icon className={`w-5 h-5 ${cat.textColor}`} />
-                                  </div>
-                                  
-                                  {/* Nombre de la categoría */}
-                                  <div className="flex-1 min-w-0 mx-3">
-                                    <p className="text-sm text-zinc-300 truncate">
-                                      {cat.label}
-                                    </p>
-                                    <p className="text-[10px] text-orange-400">
-                                      {incomePercentage.toFixed(1)}% de ingresos
-                                    </p>
-                                    {/* Barra de progreso horizontal */}
-                                    <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
-                                      <div 
-                                        className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
-                                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Importe y porcentaje */}
-                                  <div className="text-right flex-shrink-0">
-                                    <p className="text-sm font-bold text-white">
-                                      {formatCurrency(amount)}
-                                    </p>
-                                    <p className="text-[10px] text-zinc-500">
-                                      {percentage.toFixed(1)}%
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
-                  
-                  {/* Indicadores de posición (dots) */}
-                  {categoryChunks.length > 1 && (
-                    <div className="flex justify-center gap-1 mt-3">
-                      {categoryChunks.map((_, index) => (
-                        <div
-                          key={index}
-                          className="w-1.5 h-1.5 rounded-full bg-zinc-600"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Historial - UNIFICADO CON INCOMEPAGE */}
+        {/* Historial */}
         <div className="space-y-4">
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-3">
@@ -1450,7 +1282,6 @@ const ExpenseForm = ({
 
   return (
     <div className="space-y-3 mt-2">
-      {/* Campo: Concepto */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Concepto</label>
         <Input 
@@ -1461,7 +1292,6 @@ const ExpenseForm = ({
         />
       </div>
 
-      {/* Campo: Importe */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Importe (€)</label>
         <Input 
@@ -1473,7 +1303,6 @@ const ExpenseForm = ({
         />
       </div>
 
-      {/* Campo: Categoría */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
@@ -1534,7 +1363,6 @@ const ExpenseForm = ({
         </Dialog>
       </div>
 
-      {/* Campo: Fecha */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
         <DatePicker
@@ -1543,7 +1371,6 @@ const ExpenseForm = ({
         />
       </div>
 
-      {/* Campo: Tipo de gasto */}
       <div>
         <label className="text-xs text-zinc-400 mb-2 block">Tipo de gasto</label>
         <div className="grid grid-cols-2 gap-2">
@@ -1570,7 +1397,6 @@ const ExpenseForm = ({
         </div>
       </div>
 
-      {/* Campo: Vincular a Inversión */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversión</label>
         <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
@@ -1662,7 +1488,6 @@ const ExpenseForm = ({
         </Dialog>
       </div>
 
-      {/* Campo: Vincular a Patrimonio */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
         <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
@@ -1754,7 +1579,6 @@ const ExpenseForm = ({
         </Dialog>
       </div>
 
-      {/* Botón Guardar */}
       <Button 
         onClick={onSubmit} 
         className="w-full bg-red-500 hover:bg-red-600 text-white text-sm py-4" 
