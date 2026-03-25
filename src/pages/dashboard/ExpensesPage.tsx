@@ -76,6 +76,7 @@ import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import TrimConfirmModal from "@/components/dashboard/TrimConfirmModal";
 import CelebrateAnimation from "@/components/dashboard/CelebrateAnimation";
+import { toast } from "sonner";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -373,39 +374,53 @@ const ExpensesPage = () => {
 
   // Confirm trim - actually trim the subscription
   const confirmTrim = async () => {
-    if (!selectedSubscription) return;
+    if (!selectedSubscription || trimLoading) return;
     
     setTrimLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setTrimLoading(false);
-      return;
-    }
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("No has iniciado sesión");
+        setTrimLoading(false);
+        return;
+      }
 
-    const { error } = await supabase
-      .from("expenses")
-      .update({ is_trimmed: true })
-      .eq("id", selectedSubscription.id);
+      // Get the amount safely
+      const subscriptionAmount = parseFloat(selectedSubscription.amount) || 0;
 
-    if (!error) {
-      // Update local state
+      const { error } = await supabase
+        .from("expenses")
+        .update({ is_trimmed: true })
+        .eq("id", selectedSubscription.id);
+
+      if (error) {
+        console.error("[confirmTrim] Error updating expense:", error);
+        toast.error(`Error al recortar: ${error.message}`);
+        setTrimLoading(false);
+        return;
+      }
+
+      // Success - update local state
       setExpenses((prev) =>
         prev.map((e) =>
           e.id === selectedSubscription.id ? { ...e, is_trimmed: true } : e
         )
       );
       
-      // Calculate new savings
-      const newSavedAmount = selectedSubscription.amount;
-      setSavedAmount((prev) => prev + parseFloat(newSavedAmount));
-      
       // Close trim modal and open celebration
       setIsTrimModalOpen(false);
-      setSavedAmount(savedAmount + parseFloat(newSavedAmount));
+      setSavedAmount((prev) => prev + subscriptionAmount);
       setIsCelebrateModalOpen(true);
+      
+      toast.success(`¡Ahorrarás ${formatCurrency(subscriptionAmount)}/mes!`);
+      
+    } catch (err) {
+      console.error("[confirmTrim] Unexpected error:", err);
+      toast.error("Ha ocurrido un error inesperado");
+    } finally {
+      setTrimLoading(false);
     }
-    
-    setTrimLoading(false);
   };
 
   // Handle restore subscription
@@ -415,21 +430,32 @@ const ExpensesPage = () => {
   };
 
   const confirmRestore = async () => {
-    if (!selectedSubscription) return;
+    if (!selectedSubscription || trimLoading) return;
     
     setTrimLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setTrimLoading(false);
-      return;
-    }
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("No has iniciado sesión");
+        setTrimLoading(false);
+        return;
+      }
 
-    const { error } = await supabase
-      .from("expenses")
-      .update({ is_trimmed: false })
-      .eq("id", selectedSubscription.id);
+      const subscriptionAmount = parseFloat(selectedSubscription.amount) || 0;
 
-    if (!error) {
+      const { error } = await supabase
+        .from("expenses")
+        .update({ is_trimmed: false })
+        .eq("id", selectedSubscription.id);
+
+      if (error) {
+        console.error("[confirmRestore] Error updating expense:", error);
+        toast.error(`Error al restaurar: ${error.message}`);
+        setTrimLoading(false);
+        return;
+      }
+
       // Update local state
       setExpenses((prev) =>
         prev.map((e) =>
@@ -438,13 +464,19 @@ const ExpensesPage = () => {
       );
       
       // Update savings
-      setSavedAmount((prev) => Math.max(0, prev - parseFloat(selectedSubscription.amount)));
+      setSavedAmount((prev) => Math.max(0, prev - subscriptionAmount));
       
       setIsRestoreModalOpen(false);
+      setSelectedSubscription(null);
+      
+      toast.success("Suscripción restaurada correctamente");
+      
+    } catch (err) {
+      console.error("[confirmRestore] Unexpected error:", err);
+      toast.error("Ha ocurrido un error inesperado");
+    } finally {
+      setTrimLoading(false);
     }
-    
-    setTrimLoading(false);
-    setSelectedSubscription(null);
   };
 
   const handleAddExpense = async () => {
@@ -1178,22 +1210,29 @@ const ExpensesPage = () => {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-3 sm:gap-3">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => {
                 setIsRestoreModalOpen(false);
                 setSelectedSubscription(null);
               }}
-              className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
               disabled={trimLoading}
+              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
             >
               Cancelar
             </Button>
             <Button
               onClick={confirmRestore}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-black"
               disabled={trimLoading}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-black font-semibold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
             >
-              {trimLoading ? "Guardando..." : "Sí, restaurar"}
+              {trimLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  Guardando...
+                </span>
+              ) : (
+                "Sí, restaurar"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

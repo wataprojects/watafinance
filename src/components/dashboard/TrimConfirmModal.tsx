@@ -37,6 +37,11 @@ const TrimConfirmModal = ({
 }: TrimConfirmModalProps) => {
   if (!subscription) return null;
 
+  const handleConfirm = () => {
+    if (isLoading) return;
+    onConfirm();
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent className="bg-zinc-900 border-zinc-800 max-w-sm">
@@ -58,19 +63,26 @@ const TrimConfirmModal = ({
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-row gap-3 sm:gap-3">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
             disabled={isLoading}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
           >
             Cancelar
           </Button>
           <Button
-            onClick={onConfirm}
-            className="flex-1 bg-green-500 hover:bg-green-600 text-black"
+            onClick={handleConfirm}
             disabled={isLoading}
+            className="flex-1 bg-green-500 hover:bg-green-600 text-black font-semibold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
           >
-            {isLoading ? "Guardando..." : "Sí, recortar"}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Guardando...
+              </span>
+            ) : (
+              "Sí, recortar"
+            )}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
