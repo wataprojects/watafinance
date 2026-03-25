@@ -856,7 +856,7 @@ const ExpensesPage = () => {
                           const categoryType = getCategoryPredominantType(cat.category);
                           
                           return (
-                            <CarouselItem key={cat.category} className="pl-2 basis-full">
+                            <CarouselItem key={cat.category} className="pl-2 basis-1/5">
                               <div className="space-y-2 p-1">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
