@@ -244,6 +244,10 @@ const ExpensesPage = () => {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
   const [filterYear, setFilterYear] = useState<string>(currentYearStr);
 
+  // Filter type for expenses history
+  type ExpenseFilterType = "all" | "puntual" | "recurrente" | "prestamo";
+  const [filterExpenseType, setFilterExpenseType] = useState<ExpenseFilterType>("all");
+
   const [newExpense, setNewExpense] = useState({
     source: "",
     amount: "",
@@ -700,6 +704,25 @@ const ExpensesPage = () => {
     return types[type] || types.other;
   };
 
+  // Helper function to determine the predominant type of a category
+  const getCategoryPredominantType = (category: string) => {
+    let puntual = 0;
+    let recurrente = 0;
+    filteredExpenses
+      .filter((e) => e.category === category && !e.is_trimmed)
+      .forEach((e) => {
+        if (e.is_recurring) {
+          recurrente += parseFloat(e.amount);
+        } else {
+          puntual += parseFloat(e.amount);
+        }
+      });
+    if (recurrente > puntual) {
+      return { type: "recurrente", color: "bg-purple-500/20 text-purple-400" };
+    }
+    return { type: "puntual", color: "bg-red-500/20 text-red-400" };
+  };
+
   return (
     <div className="min-h-screen bg-black pb-28">
       <DashboardHeader 
@@ -807,32 +830,36 @@ const ExpensesPage = () => {
                   <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2">
                     <p className="text-xs text-zinc-500 mb-2">Distribución por categoría</p>
                     {sortedCategories.slice(0, 5).map((cat) => {
-                                          const catInfo = getCategoryInfo(cat.category);
-                                          const Icon = catInfo.icon;
-                                          const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                                          return (
-                                            <div key={cat.category} className="space-y-1.5 py-1">
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                  <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
-                                                    <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
-                                                  </div>
-                                                  <span className="text-sm text-zinc-300">{catInfo.label}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                  <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
-                                                  <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
-                                                </div>
-                                              </div>
-                                              <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
-                                                <div
-                                                  className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                                  style={{ width: `${percentage}%` }}
-                                                />
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
+                      const catInfo = getCategoryInfo(cat.category);
+                      const Icon = catInfo.icon;
+                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                      const categoryType = getCategoryPredominantType(cat.category);
+                      return (
+                        <div key={cat.category} className="space-y-1.5 py-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-6 h-6 rounded-md flex items-center justify-center ${catInfo.color}`}>
+                                <Icon className={`w-3.5 h-3.5 ${catInfo.textColor}`} />
+                              </div>
+                              <span className="text-sm text-zinc-300">{catInfo.label}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
+                                {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-white">{formatCurrency(cat.amount)}</span>
+                              <span className="text-xs text-zinc-500">({percentage.toFixed(0)}%)</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                     {sortedCategories.length > 5 && (
                       <p className="text-xs text-zinc-500 text-center pt-2">
                         +{sortedCategories.length - 5} categorías más
@@ -1055,70 +1082,167 @@ const ExpensesPage = () => {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Filter buttons */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <button
+                  onClick={() => setFilterExpenseType("all")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterExpenseType === "all"
+                      ? "bg-zinc-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setFilterExpenseType("puntual")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterExpenseType === "puntual"
+                      ? "bg-red-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Puntuales
+                </button>
+                <button
+                  onClick={() => setFilterExpenseType("recurrente")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterExpenseType === "recurrente"
+                      ? "bg-purple-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Recurrentes
+                </button>
+                <button
+                  onClick={() => setFilterExpenseType("prestamo")}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                    filterExpenseType === "prestamo"
+                      ? "bg-blue-500 text-white"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  Préstamos
+                </button>
+              </div>
+
               {loading ? (
                 <p className="text-zinc-500 text-center text-xs">Cargando...</p>
+              ) : filterExpenseType === "prestamo" ? (
+                loans.length === 0 ? (
+                  <p className="text-zinc-500 text-center text-xs">Sin préstamos activos</p>
+                ) : (
+                  <div className="space-y-4">
+                    {loans.map((loan) => {
+                      const loanInfo = getLoanTypeInfo(loan.type);
+                      return (
+                        <div
+                          key={loan.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${loanInfo.color}`}>
+                              <Building className={`w-5 h-5 ${loanInfo.textColor}`} />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm text-white">
+                                {loan.name}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-400">
+                                  Préstamo
+                                </span>
+                                <span className="text-xs text-zinc-500">
+                                  {formatCurrency(loan.monthly_payment)}/mes
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm text-red-500">
+                              -{formatCurrency(loan.monthly_payment)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : filteredExpenses.length === 0 ? (
                 <p className="text-zinc-500 text-center text-xs">Sin gastos</p>
               ) : (
                 <div className="space-y-4">
-                  {filteredExpenses.map((expense) => {
-                    const cat = getCategoryInfo(expense.category);
-                    const Icon = cat.icon;
-                    const isTrimmed = expense.is_trimmed === true;
-                    
-                    return (
-                      <div 
-                        key={expense.id} 
-                        className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                          isTrimmed 
-                            ? "bg-green-500/5 opacity-50" 
-                            : "bg-zinc-800/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
-                            <Icon className={`w-5 h-5 ${cat.textColor}`} />
-                          </div>
-                          <div>
-                            <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
-                              {expense.description || cat.label}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs text-zinc-500">{formatDateSafe(expense.date)}</p>
-                              {isTrimmed && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
-                                  <BadgeCheck className="w-3 h-3" />
-                                  Recortada
+                  {filteredExpenses
+                    .filter((expense) => {
+                      if (filterExpenseType === "puntual") return !expense.is_recurring;
+                      if (filterExpenseType === "recurrente") return expense.is_recurring;
+                      return true;
+                    })
+                    .map((expense) => {
+                      const cat = getCategoryInfo(expense.category);
+                      const Icon = cat.icon;
+                      const isTrimmed = expense.is_trimmed === true;
+                      
+                      return (
+                        <div
+                          key={expense.id}
+                          className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                            isTrimmed
+                              ? "bg-green-500/5 opacity-50"
+                              : "bg-zinc-800/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cat.color}`}>
+                              <Icon className={`w-5 h-5 ${cat.textColor}`} />
+                            </div>
+                            <div>
+                              <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
+                                {expense.description || cat.label}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-zinc-500">{formatDateSafe(expense.date)}</p>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  expense.is_recurring
+                                    ? "bg-purple-500/20 text-purple-400"
+                                    : "bg-red-500/20 text-red-400"
+                                }`}>
+                                  {expense.is_recurring ? "Recurrente" : "Puntual"}
                                 </span>
-                              )}
+                                {isTrimmed && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
+                                    <BadgeCheck className="w-3 h-3" />
+                                    Recortada
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
-                              {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
-                            </p>
-                          </div>
-                          {!isTrimmed && (
-                            <div className="flex flex-col gap-1">
-                              <button onClick={() => openEditDialog(expense)} className="p-1.5 rounded-lg hover:bg-zinc-700 transition-colors">
-                                <Pencil className="w-4 h-4 text-zinc-400" />
-                              </button>
-                              <button onClick={() => openDeleteDialog(expense)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
-                                <Trash2 className="w-4 h-4 text-red-400" />
-                              </button>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
+                                {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
+                              </p>
                             </div>
-                          )}
-                          {isTrimmed && (
-                            <button onClick={() => handleRestoreSubscription(expense)} className="p-1.5 rounded-lg hover:bg-green-500/20 transition-colors">
-                              <RotateCcw className="w-4 h-4 text-green-400" />
-                            </button>
-                          )}
+                            {!isTrimmed && (
+                              <div className="flex flex-col gap-1">
+                                <button onClick={() => openEditDialog(expense)} className="p-1.5 rounded-lg hover:bg-zinc-700 transition-colors">
+                                  <Pencil className="w-4 h-4 text-zinc-400" />
+                                </button>
+                                <button onClick={() => openDeleteDialog(expense)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
+                                  <Trash2 className="w-4 h-4 text-red-400" />
+                                </button>
+                              </div>
+                            )}
+                            {isTrimmed && (
+                              <button onClick={() => handleRestoreSubscription(expense)} className="p-1.5 rounded-lg hover:bg-green-500/20 transition-colors">
+                                <RotateCcw className="w-4 h-4 text-green-400" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               )}
             </CardContent>
