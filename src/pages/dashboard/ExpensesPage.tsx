@@ -58,10 +58,16 @@ import {
   RefreshCcw,
   Landmark,
   Link2,
+  Scissors,
+  RotateCcw,
+  Check,
+  BadgeCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import TrimConfirmModal from "@/components/dashboard/TrimConfirmModal";
+import CelebrateAnimation from "@/components/dashboard/CelebrateAnimation";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -231,8 +237,16 @@ const ExpensesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
 
-  const [showSubscriptions, setShowSubscriptions] = useState(false);
+  const [showSubscriptions, setShowSubscriptions] = useState(true);
   const [showCategories, setShowCategories] = useState(true);
+
+  // Trim subscription state
+  const [isTrimModalOpen, setIsTrimModalOpen] = useState(false);
+  const [isCelebrateModalOpen, setIsCelebrateModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
+  const [savedAmount, setSavedAmount] = useState(0);
+  const [trimLoading, setTrimLoading] = useState(false);
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYearStr = new Date().getFullYear().toString();
@@ -343,6 +357,88 @@ const ExpensesPage = () => {
     setLoading(false);
   };
 
+  // Handle trim subscription - open confirmation modal
+  const handleTrimSubscription = (subscription: any) => {
+    setSelectedSubscription(subscription);
+    setIsTrimModalOpen(true);
+  };
+
+  // Confirm trim - actually trim the subscription
+  const confirmTrim = async () => {
+    if (!selectedSubscription) return;
+    
+    setTrimLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setTrimLoading(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("expenses")
+      .update({ is_trimmed: true })
+      .eq("id", selectedSubscription.id);
+
+    if (!error) {
+      // Update local state
+      setExpenses((prev) =>
+        prev.map((e) =>
+          e.id === selectedSubscription.id ? { ...e, is_trimmed: true } : e
+        )
+      );
+      
+      // Calculate new savings
+      const newSavedAmount = selectedSubscription.amount;
+      setSavedAmount((prev) => prev + parseFloat(newSavedAmount));
+      
+      // Close trim modal and open celebration
+      setIsTrimModalOpen(false);
+      setSavedAmount(savedAmount + parseFloat(newSavedAmount));
+      setIsCelebrateModalOpen(true);
+    }
+    
+    setTrimLoading(false);
+  };
+
+  // Handle restore subscription
+  const handleRestoreSubscription = (subscription: any) => {
+    setSelectedSubscription(subscription);
+    setIsRestoreModalOpen(true);
+  };
+
+  const confirmRestore = async () => {
+    if (!selectedSubscription) return;
+    
+    setTrimLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setTrimLoading(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("expenses")
+      .update({ is_trimmed: false })
+      .eq("id", selectedSubscription.id);
+
+    if (!error) {
+      // Update local state
+      setExpenses((prev) =>
+        prev.map((e) =>
+          e.id === selectedSubscription.id ? { ...e, is_trimmed: false } : e
+        )
+      );
+      
+      // Update savings
+      setSavedAmount((prev) => Math.max(0, prev - parseFloat(selectedSubscription.amount)));
+      
+      setIsRestoreModalOpen(false);
+    }
+    
+    setTrimLoading(false);
+    setSelectedSubscription(null);
+  };
+
   const handleAddExpense = async () => {
     if (isSubmitting) return;
     if (!newExpense.amount || !newExpense.source) return;
@@ -365,6 +461,7 @@ const ExpensesPage = () => {
       scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
       scheduled_new_amount: newExpense.scheduled_new_amount ? parseFloat(newExpense.scheduled_new_amount) : null,
       scheduled_change_type: newExpense.scheduled_change_type,
+      is_trimmed: false,
     });
     if (!error) {
       setIsDialogOpen(false);
@@ -479,21 +576,32 @@ const ExpensesPage = () => {
     return true;
   });
 
+  // Get all subscriptions including trimmed ones
+  const allSubscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
+  const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
+  const trimmedSubscriptions = allSubscriptions.filter((e) => e.is_trimmed);
+  
+  const totalActiveSubscriptions = activeSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
+
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
-  const totalWithLoans = totalExpenses + totalLoans;
+  // Don't count trimmed subscriptions in total
+  const totalWithLoans = (totalExpenses - totalTrimmedSavings) + totalLoans;
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
   // Calculate percentages for the progress bar
-  const expensePercentage = totalWithLoans > 0 ? (totalExpenses / totalWithLoans) * 100 : 0;
+  const expensePercentage = totalWithLoans > 0 ? ((totalExpenses - totalTrimmedSavings) / totalWithLoans) * 100 : 0;
   const loansPercentage = totalWithLoans > 0 ? (totalLoans / totalWithLoans) * 100 : 0;
 
-  const subscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
-  const totalSubscriptions = subscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   // Sort subscriptions from highest to lowest amount
-  const sortedSubscriptions = [...subscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+  const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+  const sortedTrimmedSubscriptions = [...trimmedSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
 
   const expensesByCategory = filteredExpenses.reduce((acc, e) => {
+    // Don't count trimmed subscriptions in category totals
+    if (e.is_trimmed) return acc;
     if (!acc[e.category]) acc[e.category] = 0;
     acc[e.category] += parseFloat(e.amount);
     return acc;
@@ -651,7 +759,7 @@ const ExpensesPage = () => {
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-zinc-400">Total Gastos <span className="text-white font-medium">{formatCurrency(totalExpenses)}</span></span>
+                    <span className="text-zinc-400">Total Gastos <span className="text-white font-medium">{formatCurrency(totalExpenses - totalTrimmedSavings)}</span></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-zinc-400">Préstamos: <span className="text-blue-400 font-medium">{formatCurrency(totalLoans)}</span></span>
@@ -717,7 +825,7 @@ const ExpensesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Suscripciones - BLOQUE MEJORADO */}
+        {/* Suscripciones - BLOQUE MEJORADO CON RECORTE */}
         <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
           <CardHeader className="pb-2">
             <button onClick={() => setShowSubscriptions(!showSubscriptions)} className="w-full text-left">
@@ -727,14 +835,19 @@ const ExpensesPage = () => {
                   <CardTitle className="text-white text-sm">Suscripciones</CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-pink-400">{formatCurrency(totalSubscriptions)}</span>
+                  <span className="text-lg font-bold text-pink-400">{formatCurrency(totalActiveSubscriptions)}</span>
                   {showSubscriptions ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
                 </div>
               </div>
               {/* Subtítulo contextual */}
-              {subscriptions.length > 0 && (
+              {activeSubscriptions.length > 0 && (
                 <p className="text-zinc-400 text-xs mt-1">
-                  {subscriptions.length} {subscriptions.length === 1 ? 'suscripción' : 'suscripciones'} · {formatCurrency(totalSubscriptions)}/mes
+                  {activeSubscriptions.length} {activeSubscriptions.length === 1 ? 'suscripción' : 'suscripciones'} activas · {formatCurrency(totalActiveSubscriptions)}/mes
+                </p>
+              )}
+              {trimmedSubscriptions.length > 0 && (
+                <p className="text-green-400 text-xs mt-1">
+                  Recortadas: {trimmedSubscriptions.length} · Ahorro: {formatCurrency(totalTrimmedSavings)}/mes
                 </p>
               )}
               <p className="text-zinc-500 text-[10px]">Gastos recurrentes automáticos</p>
@@ -742,23 +855,109 @@ const ExpensesPage = () => {
           </CardHeader>
           {showSubscriptions && (
             <CardContent>
-              {subscriptions.length === 0 ? (
-                <p className="text-zinc-500 text-center py-2 text-xs">Sin suscripciones</p>
+              {/* Estado vacío */}
+              {allSubscriptions.length === 0 ? (
+                <div className="text-center py-6">
+                  <Smartphone className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
+                  <p className="text-zinc-400 text-sm mb-1">No tienes suscripciones registradas</p>
+                  <p className="text-zinc-500 text-xs">Añade gastos de tipo "Suscripciones" para empezar</p>
+                </div>
               ) : (
                 <>
                   {/* Mensaje de optimización */}
-                  <div className="flex items-center gap-2 p-2 mb-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
-                    <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                    <p className="text-pink-300 text-xs">Revisa qué suscripciones puedes cancelar</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {sortedSubscriptions.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                        <div><p className="font-medium text-white text-xs">{sub.description}</p></div>
-                        <p className="font-bold text-pink-400 text-xs">{formatCurrency(sub.amount)}</p>
+                  {activeSubscriptions.length > 0 && (
+                    <div className="flex items-center gap-2 p-2 mb-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                      <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                      <p className="text-pink-300 text-xs">Revisa qué suscripciones puedes cancelar para ahorrar</p>
+                    </div>
+                  )}
+
+                  {/* Lista de suscripciones activas */}
+                  {sortedActiveSubscriptions.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      {sortedActiveSubscriptions.map((sub) => (
+                        <div 
+                          key={sub.id} 
+                          className="relative p-3 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-pink-500/50 transition-all group"
+                        >
+                          {/* Badge de recorte (si está recortada) */}
+                          {sub.is_trimmed && (
+                            <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                              <BadgeCheck className="w-3 h-3" />
+                              Recortada
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium text-white text-sm truncate pr-2">{sub.description}</p>
+                            <p className="font-bold text-pink-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
+                          </div>
+                          
+                          {/* Botón Recortar */}
+                          <button
+                            onClick={() => handleTrimSubscription(sub)}
+                            className="w-full py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                          >
+                            <Scissors className="w-3.5 h-3.5" />
+                            Recortar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Suscripciones recortadas */}
+                  {sortedTrimmedSubscriptions.length > 0 && (
+                    <div className="border-t border-zinc-700 pt-4 mt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Check className="w-4 h-4 text-green-400" />
+                        <p className="text-green-400 text-xs font-medium">
+                          {sortedTrimmedSubscriptions.length} recortada{sortedTrimmedSubscriptions.length > 1 ? 's' : ''} · Ahorro total: {formatCurrency(totalTrimmedSavings)}/mes
+                        </p>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        {sortedTrimmedSubscriptions.map((sub) => (
+                          <div 
+                            key={sub.id} 
+                            className="relative p-3 bg-green-500/10 rounded-xl border border-green-500/20 opacity-60"
+                          >
+                            {/* Badge Recortada */}
+                            <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                              <BadgeCheck className="w-3 h-3" />
+                              Recortada
+                            </div>
+                            
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-medium text-white text-sm truncate pr-2 line-through">{sub.description}</p>
+                              <p className="font-bold text-green-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
+                            </div>
+                            
+                            {/* Botón Restaurar */}
+                            <button
+                              onClick={() => handleRestoreSubscription(sub)}
+                              className="w-full py-1.5 px-3 rounded-lg bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              Restaurar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Congratulación si todas recortadas */}
+                  {sortedTrimmedSubscriptions.length > 0 && sortedActiveSubscriptions.length === 0 && (
+                    <div className="text-center py-6 border-t border-green-500/20 mt-4 pt-4">
+                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Check className="w-6 h-6 text-green-400" />
+                      </div>
+                      <p className="text-green-400 font-medium mb-1">¡Felicidades!</p>
+                      <p className="text-zinc-400 text-sm">Has recortado todas tus suscripciones</p>
+                      <p className="text-green-300 text-xs mt-2">Ahorro total: {formatCurrency(totalTrimmedSavings)}/mes</p>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
@@ -879,29 +1078,57 @@ const ExpensesPage = () => {
                 {filteredExpenses.map((expense) => {
                   const cat = getCategoryInfo(expense.category);
                   const Icon = cat.icon;
+                  const isTrimmed = expense.is_trimmed === true;
+                  
                   return (
-                    <div key={expense.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                    <div 
+                      key={expense.id} 
+                      className={`flex items-center justify-between p-2 rounded-lg transition-all ${
+                        isTrimmed 
+                          ? "bg-green-500/5 opacity-50" 
+                          : "bg-zinc-800/50"
+                      }`}
+                    >
                       <div className="flex items-center gap-2">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.color}`}>
                           <Icon className={`w-4 h-4 ${cat.textColor}`} />
                         </div>
                         <div>
-                          <p className="font-medium text-white text-sm">{expense.description || cat.label}</p>
-                          <p className="text-[10px] text-zinc-500">{formatDateSafe(expense.date)}</p>
+                          <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
+                            {expense.description || cat.label}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-[10px] text-zinc-500">{formatDateSafe(expense.date)}</p>
+                            {isTrimmed && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
+                                <BadgeCheck className="w-2.5 h-2.5" />
+                                Recortada
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <p className="font-bold text-red-500 text-sm">-{formatCurrency(expense.amount)}</p>
+                          <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
+                            {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
+                          </p>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <button onClick={() => openEditDialog(expense)} className="p-1 rounded hover:bg-zinc-700 transition-colors">
-                            <Pencil className="w-3 h-3 text-zinc-400" />
+                        {!isTrimmed && (
+                          <div className="flex flex-col gap-1">
+                            <button onClick={() => openEditDialog(expense)} className="p-1 rounded hover:bg-zinc-700 transition-colors">
+                              <Pencil className="w-3 h-3 text-zinc-400" />
+                            </button>
+                            <button onClick={() => openDeleteDialog(expense)} className="p-1 rounded hover:bg-red-500/20 transition-colors">
+                              <Trash2 className="w-3 h-3 text-red-400" />
+                            </button>
+                          </div>
+                        )}
+                        {isTrimmed && (
+                          <button onClick={() => handleRestoreSubscription(expense)} className="p-1 rounded hover:bg-green-500/20 transition-colors">
+                            <RotateCcw className="w-3 h-3 text-green-400" />
                           </button>
-                          <button onClick={() => openDeleteDialog(expense)} className="p-1 rounded hover:bg-red-500/20 transition-colors">
-                            <Trash2 className="w-3 h-3 text-red-400" />
-                          </button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -911,6 +1138,59 @@ const ExpensesPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de confirmación de recorte */}
+      <TrimConfirmModal
+        isOpen={isTrimModalOpen}
+        onOpenChange={setIsTrimModalOpen}
+        subscription={selectedSubscription}
+        onConfirm={confirmTrim}
+        isLoading={trimLoading}
+      />
+
+      {/* Modal de celebración */}
+      <CelebrateAnimation
+        isOpen={isCelebrateModalOpen}
+        onClose={() => setIsCelebrateModalOpen(false)}
+        amount={selectedSubscription ? parseFloat(selectedSubscription.amount) : 0}
+      />
+
+      {/* Modal de restauración */}
+      <AlertDialog open={isRestoreModalOpen} onOpenChange={setIsRestoreModalOpen}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 max-w-sm">
+          <AlertDialogHeader className="text-center pb-2">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+              <RotateCcw className="w-8 h-8 text-green-400" />
+            </div>
+            <AlertDialogTitle className="text-xl text-white">
+              ¿Restaurar esta suscripción?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 text-center">
+              La suscripción volverá a contar en tus gastos mensuales. Dejará de considerarse como recortada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row gap-3 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsRestoreModalOpen(false);
+                setSelectedSubscription(null);
+              }}
+              className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+              disabled={trimLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmRestore}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-black"
+              disabled={trimLoading}
+            >
+              {trimLoading ? "Guardando..." : "Sí, restaurar"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
