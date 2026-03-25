@@ -2,24 +2,29 @@
 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  Wallet, 
-  TrendingUp, 
-  PiggyBank, 
-  Shield, 
+import {
+  Wallet,
+  TrendingUp,
+  PiggyBank,
+  Shield,
   ArrowRight,
   CreditCard,
   Target,
-  BarChart3
+  BarChart3,
+  Download,
 } from "lucide-react";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
 
 const Landing = () => {
   const navigate = useNavigate();
 
+  const handleDownloadApp = () => {
+    const link = document.querySelector('[data-install-app-button="true"]') as HTMLButtonElement | null;
+    link?.click();
+  };
+
   return (
     <div className="min-h-screen bg-black">
-      {/* Install Prompt Banner */}
       <InstallPromptBanner />
 
       <header className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -29,7 +34,7 @@ const Landing = () => {
           </div>
           <span className="text-xl font-bold text-white">FinPro</span>
         </div>
-        <Button 
+        <Button
           className="bg-green-500 hover:bg-green-600 text-black text-sm px-4 py-2 font-semibold"
           onClick={() => navigate("/dashboard")}
         >
@@ -43,26 +48,36 @@ const Landing = () => {
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             <span className="text-green-400 text-xs">Particulares, Emprendedores y Profesionales</span>
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
             Controla tus finanzas
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600">
               como un profesional
             </span>
           </h1>
-          
+
           <p className="text-sm md:text-base text-zinc-400 mb-6">
-            La herramienta definitiva para gestionar ingresos, gastos, inversiones y alcanzar 
+            La herramienta definitiva para gestionar ingresos, gastos, inversiones y alcanzar
             la libertad financiera.
           </p>
-          
-          <Button 
-            className="bg-green-500 hover:bg-green-600 text-black w-full md:w-auto font-semibold"
-            onClick={() => navigate("/dashboard")}
-          >
-            Iniciar Sesión
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              className="bg-green-500 hover:bg-green-600 text-black w-full sm:w-auto font-semibold"
+              onClick={() => navigate("/dashboard")}
+            >
+              Iniciar Sesión
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <button
+              type="button"
+              onClick={handleDownloadApp}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-400 hover:bg-green-500/20 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Descargar app
+            </button>
+          </div>
         </div>
       </section>
 
@@ -126,7 +141,7 @@ const Landing = () => {
           <p className="text-zinc-400 text-sm mb-4">
             Únete a miles de personas.
           </p>
-          <Button 
+          <Button
             className="bg-green-500 text-black hover:bg-green-600 w-full font-semibold"
             onClick={() => navigate("/dashboard")}
           >
@@ -136,12 +151,33 @@ const Landing = () => {
         </div>
       </section>
 
-      <footer className="container mx-auto px-4 py-4 border-t border-zinc-800">
-        <div className="flex justify-center items-center gap-2">
-          <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
-            <Wallet className="w-3 h-3 text-black" />
+      <footer className="border-t border-zinc-800">
+        <div className="container mx-auto px-4 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 justify-center sm:justify-start">
+            <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
+              <Wallet className="w-3 h-3 text-black" />
+            </div>
+            <span className="text-white text-sm font-semibold">FinPro</span>
           </div>
-          <span className="text-white text-sm font-semibold">FinPro</span>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadApp}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-black hover:bg-green-600 transition-colors"
+              data-install-app-button="true"
+            >
+              <Download className="w-4 h-4" />
+              Descargar la app
+            </button>
+            <Button
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => navigate("/dashboard")}
+            >
+              Ir al dashboard
+            </Button>
+          </div>
         </div>
       </footer>
     </div>
