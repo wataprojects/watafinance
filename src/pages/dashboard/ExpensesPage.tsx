@@ -23,7 +23,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import {
   Plus,
   TrendingDown,
-  CreditCard,
   ShoppingCart,
   Car,
   Home,
@@ -118,6 +117,23 @@ const availableIcons = [
   { value: "DollarSign", icon: DollarSign },
   { value: "MoreHorizontal", icon: MoreHorizontal },
 ];
+
+function CreditCard({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
 
 function DropletsIcon({ className }: { className?: string }) {
   return (
@@ -580,30 +596,25 @@ const ExpensesPage = () => {
           </Select>
         </div>
 
-        {/* Total Gastos */}
+        {/* Total Gastos - Estilo igual a IncomePage */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4 text-center">
-            <CreditCard className="w-6 h-6 mx-auto mb-1 text-red-500" />
-            <p className="text-2xl font-bold text-red-500">{formatCurrency(totalWithLoans)}</p>
-            <p className="text-zinc-400 text-xs">Total de Gastos</p>
+          <CardContent className="p-6 text-center">
+            <p className="text-zinc-400 text-sm mb-1">Total de Gastos</p>
+            <p className="text-4xl font-bold text-red-500 mb-4">{formatCurrency(totalWithLoans)}</p>
             {totalLoans > 0 && (
-              <p className="text-[10px] text-cyan-400 mt-1">(+ {formatCurrency(totalLoans)} préstamos)</p>
+              <p className="text-xs text-cyan-400">(+ {formatCurrency(totalLoans)} préstamos)</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Botón Nuevo Gasto - ocupando el espacio de Préstamos */}
+        {/* Botón Nuevo Gasto - Sin borde azul, estilo simple */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Card className="bg-gradient-to-r from-cyan-900 to-zinc-900 border-cyan-800 cursor-pointer hover:border-cyan-700 transition-all">
-            <CardContent className="p-6">
-              <Button 
-                className="w-full bg-red-500 hover:bg-red-600 text-white py-6 text-base font-semibold"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Nuevo Gasto
-              </Button>
-            </CardContent>
-          </Card>
+          <DialogTrigger asChild>
+            <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-6 text-base font-semibold">
+              <Plus className="w-5 h-5 mr-2" />
+              Nuevo Gasto
+            </Button>
+          </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
