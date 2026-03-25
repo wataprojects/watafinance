@@ -624,15 +624,34 @@ const ExpensesPage = () => {
   const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
 
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-  const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
-  // Don't count trimmed subscriptions in total
-  const totalWithLoans = (totalExpenses - totalTrimmedSavings) + totalLoans;
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  // ==========================================
+  // NUEVO CÁLCULO: 3 segmentos para Total Gastos
+  // ==========================================
+  
+  // Gastos puntuales (is_recurring = false, no recortados)
+  const puntualExpenses = filteredExpenses
+    .filter(e => !e.is_recurring && !e.is_trimmed)
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  // Calculate percentages for the progress bar
-  const expensePercentage = totalWithLoans > 0 ? ((totalExpenses - totalTrimmedSavings) / totalWithLoans) * 100 : 0;
+  // Gastos recurrentes (is_recurring = true, no recortados)
+  const recurrentExpenses = filteredExpenses
+    .filter(e => e.is_recurring && !e.is_trimmed)
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+  // Préstamos activos (cuotas mensuales)
+  const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
+
+  // Total = Puntuales + Recurrentes + Préstamos
+  const totalWithLoans = puntualExpenses + recurrentExpenses + totalLoans;
+
+  // Porcentajes para cada segmento
+  const puntualPercentage = totalWithLoans > 0 ? (puntualExpenses / totalWithLoans) * 100 : 0;
+  const recurrentPercentage = totalWithLoans > 0 ? (recurrentExpenses / totalWithLoans) * 100 : 0;
   const loansPercentage = totalWithLoans > 0 ? (totalLoans / totalWithLoans) * 100 : 0;
+
+  // Total de gastos (para otros cálculos)
+  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
   // Sort subscriptions from highest to lowest amount
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
@@ -772,39 +791,92 @@ const ExpensesPage = () => {
           </Select>
         </div>
 
-        {/* Total Gastos - CON BARRA DE PROGRESO */}
+        {/* ========================================== */}
+        {/* Total Gastos - NUEVO DISEÑO CON 3 SEGMENTOS */}
+        {/* ========================================== */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6 text-center">
-            <p className="text-zinc-400 text-sm mb-1">Total de Gastos: Fijos Y Variables</p>
-            <p className="text-4xl font-bold text-white mb-4">{formatCurrency(totalWithLoans)}</p>
+          <CardContent className="p-6">
+            <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos: Fijos Y Variables</p>
+            <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalWithLoans)}</p>
             
-            {/* Barra de progreso visual */}
-            {totalWithLoans > 0 && (
-              <div className="space-y-3">
-                <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
-                  {/* Barra de Gastos (rojo) */}
-                  <div 
-                    className="h-full bg-red-500 transition-all duration-500"
-                    style={{ width: `${expensePercentage}%` }}
-                  />
-                  {/* Barra de Préstamos (azul) */}
-                  <div 
-                    className="h-full bg-blue-500 transition-all duration-500"
-                    style={{ width: `${loansPercentage}%` }}
-                  />
-                </div>
-                
-                {/* Etiquetas debajo de la barra */}
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-zinc-400">Total Gastos <span className="text-white font-medium">{formatCurrency(totalExpenses - totalTrimmedSavings)}</span></span>
+            {/* Barra de 3 segmentos */}
+            {totalWithLoans > 0 ? (
+              <>
+                <div className="space-y-4">
+                  {/* Barra de progreso de 3 segmentos */}
+                  <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
+                    {/* Segmento Puntuales (rojo) */}
+                    {puntualPercentage > 0 && (
+                      <div 
+                        className="h-full bg-red-500 transition-all duration-500"
+                        style={{ width: `${puntualPercentage}%` }}
+                      />
+                    )}
+                    {/* Segmento Recurrentes (morado) */}
+                    {recurrentPercentage > 0 && (
+                      <div 
+                        className="h-full bg-purple-500 transition-all duration-500"
+                        style={{ width: `${recurrentPercentage}%` }}
+                      />
+                    )}
+                    {/* Segmento Préstamos (azul) */}
+                    {loansPercentage > 0 && (
+                      <div 
+                        className="h-full bg-blue-500 transition-all duration-500"
+                        style={{ width: `${loansPercentage}%` }}
+                      />
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-400">Préstamos: <span className="text-blue-400 font-medium">{formatCurrency(totalLoans)}</span></span>
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+
+                  {/* Etiquetas debajo de la barra */}
+                  <div className="flex justify-between items-start text-center">
+                    {/* Puntuales */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                        <span className="text-zinc-400 text-xs font-medium">Puntuales</span>
+                      </div>
+                      <p className="text-white font-bold text-sm">{formatCurrency(puntualExpenses)}</p>
+                      <p className="text-zinc-500 text-xs">{puntualPercentage.toFixed(0)}%</p>
+                    </div>
+                    
+                    {/* Recurrentes */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+                        <span className="text-zinc-400 text-xs font-medium">Recurrentes</span>
+                      </div>
+                      <p className="text-white font-bold text-sm">{formatCurrency(recurrentExpenses)}</p>
+                      <p className="text-zinc-500 text-xs">{recurrentPercentage.toFixed(0)}%</p>
+                    </div>
+                    
+                    {/* Préstamos */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                        <span className="text-zinc-400 text-xs font-medium">Préstamos</span>
+                      </div>
+                      <p className="text-white font-bold text-sm">{formatCurrency(totalLoans)}</p>
+                      <p className="text-zinc-500 text-xs">{loansPercentage.toFixed(0)}%</p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Gastos recortados */}
+                {totalTrimmedSavings > 0 && (
+                  <div className="mt-4 pt-4 border-t border-zinc-700">
+                    <div className="flex items-center justify-center gap-2 p-2 bg-green-500/10 rounded-lg">
+                      <BadgeCheck className="w-4 h-4 text-green-400" />
+                      <p className="text-green-400 text-xs">
+                        <span className="font-medium">{formatCurrency(totalTrimmedSavings)}/mes</span> recortados de suscripciones
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-zinc-500 text-sm">No hay gastos registrados</p>
               </div>
             )}
           </CardContent>
@@ -1447,20 +1519,20 @@ const ExpenseForm = ({
             type="button" 
             onClick={() => setExpense({ ...expense, is_recurring: true })} 
             className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-              expense.is_recurring ? "border-pink-500 bg-pink-500/20" : "border-zinc-700 bg-zinc-800"
+              expense.is_recurring ? "border-purple-500 bg-purple-500/20" : "border-zinc-700 bg-zinc-800"
             }`}
           >
-            <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} />
+            <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-purple-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
           </button>
           <button 
             type="button" 
             onClick={() => setExpense({ ...expense, is_recurring: false })} 
             className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-              !expense.is_recurring ? "border-zinc-500 bg-zinc-700" : "border-zinc-700 bg-zinc-800"
+              !expense.is_recurring ? "border-red-500 bg-red-500/20" : "border-zinc-700 bg-zinc-800"
             }`}
           >
-            <DollarSign className={`w-5 h-5 ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`} />
+            <DollarSign className={`w-5 h-5 ${!expense.is_recurring ? "text-red-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
           </button>
         </div>
