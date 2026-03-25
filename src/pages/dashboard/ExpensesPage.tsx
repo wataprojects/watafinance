@@ -52,6 +52,7 @@ import {
   Trash2,
   RefreshCcw,
   Landmark,
+  Link2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -956,49 +957,331 @@ const ExpenseForm = ({
   customCategories, availableIcons, categoryColors,
   newCustomCategory, setNewCustomCategory, handleCreateCustomCategory,
 }: any) => {
+  
   const getInvestmentLabel = () =>
     expense.investment_id === "none" ? "Sin vincular" : investments.find((i: any) => i.id === expense.investment_id)?.name || "Sin vincular";
+  
   const getPatrimonyLabel = () =>
     expense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
 
+  const handleDateChange = (date: Date | undefined) => {
+    setExpense({ ...expense, date: date || new Date() });
+  };
+
   return (
     <div className="space-y-3 mt-2">
+      {/* Campo: Concepto */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Concepto</label>
-        <Input placeholder="Ej: Supermercado..." value={expense.source} onChange={(e) => setExpense({ ...expense, source: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" />
+        <Input 
+          placeholder="Ej: Supermercado..." 
+          value={expense.source} 
+          onChange={(e) => setExpense({ ...expense, source: e.target.value })} 
+          className="bg-zinc-800 border-zinc-700 text-white text-sm" 
+        />
       </div>
+
+      {/* Campo: Importe */}
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Importe</label>
-        <Input type="number" placeholder="0.00" value={expense.amount} onChange={(e) => setExpense({ ...expense, amount: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white text-sm" />
+        <label className="text-xs text-zinc-400 mb-1 block">Importe (€)</label>
+        <Input 
+          type="number" 
+          placeholder="0.00" 
+          value={expense.amount} 
+          onChange={(e) => setExpense({ ...expense, amount: e.target.value })} 
+          className="bg-zinc-800 border-zinc-700 text-white text-sm" 
+        />
       </div>
+
+      {/* Campo: Categoría */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
           <DialogTrigger asChild>
             <button type="button" className="w-full p-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg flex items-center gap-2 hover:border-zinc-600 transition-all">
-              {(() => { const cat = getSelectedCategoryInfo(expense.category); const Icon = cat.icon; return (<><div className={`w-6 h-6 rounded flex items-center justify-center ${cat.color}`}><Icon className={`w-3 h-3 ${cat.textColor}`} /></div><span className="text-white text-sm">{cat.label}</span><ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" /></>); })()}
+              {(() => { 
+                const cat = getSelectedCategoryInfo(expense.category); 
+                const Icon = cat.icon; 
+                return (
+                  <>
+                    <div className={`w-6 h-6 rounded flex items-center justify-center ${cat.color}`}>
+                      <Icon className={`w-3 h-3 ${cat.textColor}`} />
+                    </div>
+                    <span className="text-white text-sm">{cat.label}</span>
+                    <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
+                  </>
+                ); 
+              })()}
             </button>
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[70vh] overflow-y-auto">
             <DialogHeader><DialogTitle className="text-white text-sm">Categoría</DialogTitle></DialogHeader>
             <button onClick={() => setIsCategoryDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {expenseCategories.map((cat) => { const Icon = cat.icon; return (<button key={cat.value} type="button" onClick={() => { setExpense({ ...expense, category: cat.value }); setIsCategoryDialogOpen(false); }} className={`p-2 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${expense.category === cat.value ? "border-red-500 bg-red-500/20" : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"}`}><div className={`w-8 h-8 rounded flex items-center justify-center ${cat.color}`}><Icon className={`w-4 h-4 ${cat.textColor}`} /></div><span className={`text-[10px] font-medium ${expense.category === cat.value ? "text-white" : "text-zinc-400"}`}>{cat.label}</span></button>); })}
+              {expenseCategories.map((cat) => { 
+                const Icon = cat.icon; 
+                return (
+                  <button 
+                    key={cat.value} 
+                    type="button" 
+                    onClick={() => { 
+                      setExpense({ ...expense, category: cat.value }); 
+                      setIsCategoryDialogOpen(false); 
+                    }} 
+                    className={`p-2 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                      expense.category === cat.value ? "border-red-500 bg-red-500/20" : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded flex items-center justify-center ${cat.color}`}>
+                      <Icon className={`w-4 h-4 ${cat.textColor}`} />
+                    </div>
+                    <span className={`text-[10px] font-medium ${expense.category === cat.value ? "text-white" : "text-zinc-400"}`}>{cat.label}</span>
+                  </button>
+                ); 
+              })}
             </div>
-            <button type="button" onClick={() => { setIsCategoryDialogOpen(false); setTimeout(() => setIsCreateCategoryDialogOpen(true), 100); }} className="w-full p-2 rounded-lg border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-1 hover:border-red-500 hover:bg-red-500/10 transition-all mt-2">
+            <button 
+              type="button" 
+              onClick={() => { 
+                setIsCategoryDialogOpen(false); 
+                setTimeout(() => setIsCreateCategoryDialogOpen(true), 100); 
+              }} 
+              className="w-full p-2 rounded-lg border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-1 hover:border-red-500 hover:bg-red-500/10 transition-all mt-2"
+            >
               <Plus className="w-4 h-4 text-red-400" /><span className="text-red-400 text-xs">Crear</span>
             </button>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Campo: Fecha */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
+        <DatePicker
+          date={expense.date}
+          onDateChange={handleDateChange}
+        />
+      </div>
+
+      {/* Campo: Tipo de gasto */}
       <div>
         <label className="text-xs text-zinc-400 mb-2 block">Tipo de gasto</label>
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setExpense({ ...expense, is_recurring: true })} className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${expense.is_recurring ? "border-pink-500 bg-pink-500/20" : "border-zinc-700 bg-zinc-800"}`}><RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} /><span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span></button>
-          <button type="button" onClick={() => setExpense({ ...expense, is_recurring: false })} className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${!expense.is_recurring ? "border-zinc-500 bg-zinc-700" : "border-zinc-700 bg-zinc-800"}`}><DollarSign className={`w-5 h-5 ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`} /><span className={`font-medium text-xs ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span></button>
+          <button 
+            type="button" 
+            onClick={() => setExpense({ ...expense, is_recurring: true })} 
+            className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+              expense.is_recurring ? "border-pink-500 bg-pink-500/20" : "border-zinc-700 bg-zinc-800"
+            }`}
+          >
+            <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-pink-400" : "text-zinc-400"}`} />
+            <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
+          </button>
+          <button 
+            type="button" 
+            onClick={() => setExpense({ ...expense, is_recurring: false })} 
+            className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+              !expense.is_recurring ? "border-zinc-500 bg-zinc-700" : "border-zinc-700 bg-zinc-800"
+            }`}
+          >
+            <DollarSign className={`w-5 h-5 ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`} />
+            <span className={`font-medium text-xs ${!expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Puntual</span>
+          </button>
         </div>
       </div>
-      <Button onClick={onSubmit} className="w-full bg-red-500 hover:bg-red-600 text-white text-sm py-4" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : isNew ? "Guardar" : "Guardar cambios"}</Button>
+
+      {/* Campo: Vincular a Inversión */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversión</label>
+        <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.investment_id !== "none" 
+                  ? "border-emerald-500/50 bg-emerald-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                expense.investment_id !== "none" 
+                  ? "bg-emerald-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <TrendingUp className={`w-4 h-4 ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
+                {getInvestmentLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsInvestmentDialogOpen(false)} 
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, investment_id: "none" });
+                  setIsInvestmentDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.investment_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {investments.map((inv: any) => (
+                <button
+                  key={inv.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, investment_id: inv.id });
+                    setIsInvestmentDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.investment_id === inv.id
+                      ? "border-emerald-500 bg-emerald-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-white font-medium">{inv.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInvestmentDialogOpen(false);
+                  setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Campo: Vincular a Patrimonio */}
+      <div>
+        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
+        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`w-full p-3 bg-zinc-800 border-2 rounded-xl flex items-center gap-3 transition-all ${
+                expense.patrimony_id !== "none" 
+                  ? "border-sky-500/50 bg-sky-500/10" 
+                  : "border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                expense.patrimony_id !== "none" 
+                  ? "bg-sky-500/20" 
+                  : "bg-zinc-700"
+              }`}>
+                <Building className={`w-4 h-4 ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`} />
+              </div>
+              <span className={`font-medium ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
+                {getPatrimonyLabel()}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Vincular a Patrimonio</DialogTitle>
+            </DialogHeader>
+            <button 
+              onClick={() => setIsPatrimonyDialogOpen(false)} 
+              className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpense({ ...expense, patrimony_id: "none" });
+                  setIsPatrimonyDialogOpen(false);
+                }}
+                className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                  expense.patrimony_id === "none"
+                    ? "border-zinc-500 bg-zinc-800"
+                    : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-zinc-400" />
+                </div>
+                <span className="text-zinc-400 font-medium">Sin vincular</span>
+              </button>
+
+              {patrimony.map((pat: any) => (
+                <button
+                  key={pat.id}
+                  type="button"
+                  onClick={() => {
+                    setExpense({ ...expense, patrimony_id: pat.id });
+                    setIsPatrimonyDialogOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    expense.patrimony_id === pat.id
+                      ? "border-sky-500 bg-sky-500/20"
+                      : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <span className="text-white font-medium">{pat.name}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPatrimonyDialogOpen(false);
+                  setTimeout(() => setIsNewPatrimonyOpen(true), 100);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-sky-500 hover:bg-sky-500/10 transition-all"
+              >
+                <Plus className="w-4 h-4 text-sky-400" />
+                <span className="text-sky-400 font-medium">Crear nuevo patrimonio</span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Botón Guardar */}
+      <Button 
+        onClick={onSubmit} 
+        className="w-full bg-red-500 hover:bg-red-600 text-white text-sm py-4" 
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Guardando..." : isNew ? "Guardar" : "Guardar cambios"}
+      </Button>
     </div>
   );
 };
