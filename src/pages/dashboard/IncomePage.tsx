@@ -1,3 +1,4 @@
+filteredIncomes">
 "use client";
 
 import { useState, useEffect } from "react";
@@ -252,7 +253,7 @@ const IncomePage = () => {
   });
 
   // Calculate totals
-  const totalIncome = filteredInenses.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
