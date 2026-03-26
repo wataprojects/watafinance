@@ -62,7 +62,6 @@ import {
   RotateCcw,
   Check,
   BadgeCheck,
-  Calendar,
 } from "lucide-react";
 import {
   Carousel,
@@ -583,8 +582,6 @@ const ExpensesPage = () => {
       is_recurring: expense.is_recurring === true || expense.is_recurring === 1 || expense.is_recurring === "true",
       category: expense.category,
       date: expenseDate,
-      start_date: expense.start_date ? safeDate(expense.start_date) : null,
-      end_date: expense.end_date ? safeDate(expense.end_date) : null,
       investment_id: expense.investment_id || "none",
       patrimony_id: expense.patrimony_id || "none",
       has_scheduled_change: expense.has_scheduled_change === true || expense.has_scheduled_change === 1 || expense.has_scheduled_change === "true",
@@ -689,7 +686,7 @@ const ExpensesPage = () => {
   ].filter(item => item.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  const totalExpenses = displayExpenses.reduce((sum, e: any) => sum + parseFloat(e.amount), 0);
+  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
@@ -1318,31 +1315,27 @@ const ExpensesPage = () => {
                     })}
                   </div>
                 )
-              ) : displayExpenses.length === 0 ? (
+              ) : filteredExpenses.length === 0 ? (
                 <p className="text-zinc-500 text-center text-xs">Sin gastos</p>
               ) : (
                 <div className="space-y-4">
-                  {displayExpenses
-                    .filter((expense: any) => {
+                  {filteredExpenses
+                    .filter((expense) => {
                       if (filterExpenseType === "puntual") return !expense.is_recurring;
                       if (filterExpenseType === "recurrente") return expense.is_recurring;
                       return true;
                     })
-                    .map((expense: any, index: number) => {
+                    .map((expense) => {
                       const cat = getCategoryInfo(expense.category);
                       const Icon = cat.icon;
                       const isTrimmed = expense.is_trimmed === true;
-                      const isExpanded = expense.is_expanded;
-                      const displayDate = expense.display_date || expense.date;
                       
                       return (
                         <div
-                          key={`${expense.id}-${index}`}
+                          key={expense.id}
                           className={`flex items-center justify-between p-3 rounded-xl transition-all ${
                             isTrimmed
                               ? "bg-green-500/5 opacity-50"
-                              : isExpanded
-                              ? "bg-purple-500/10 border border-purple-500/30"
                               : "bg-zinc-800/50"
                           }`}
                         >
@@ -1351,27 +1344,18 @@ const ExpensesPage = () => {
                               <Icon className={`w-5 h-5 ${cat.textColor}`} />
                             </div>
                             <div>
+                              <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
+                                {expense.description || cat.label}
+                              </p>
                               <div className="flex items-center gap-2">
-                                <p className={`font-medium text-sm ${isTrimmed ? "line-through text-zinc-500" : "text-white"}`}>
-                                  {expense.description || cat.label}
-                                </p>
-                                {isExpanded && (
-                                  <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] rounded">
-                                    Recurrente
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-zinc-500">{formatDateSafe(displayDate)}</p>
-                                {!isExpanded && (
-                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                    expense.is_recurring
-                                      ? "bg-purple-500/20 text-purple-400"
-                                      : "bg-red-500/20 text-red-400"
-                                  }`}>
-                                    {expense.is_recurring ? "Recurrente" : "Puntual"}
-                                  </span>
-                                )}
+                                <p className="text-xs text-zinc-500">{formatDateSafe(expense.date)}</p>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  expense.is_recurring
+                                    ? "bg-purple-500/20 text-purple-400"
+                                    : "bg-red-500/20 text-red-400"
+                                }`}>
+                                  {expense.is_recurring ? "Recurrente" : "Puntual"}
+                                </span>
                                 {isTrimmed && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">
                                     <BadgeCheck className="w-3 h-3" />
@@ -1571,8 +1555,8 @@ const ExpenseForm = ({
   const getPatrimonyLabel = () =>
     expense.patrimony_id === "none" ? "Sin vincular" : patrimony.find((p: any) => p.id === expense.patrimony_id)?.name || "Sin vincular";
 
-  const handleDateChange = (field: 'date' | 'start_date' | 'end_date', date: Date | undefined) => {
-    setExpense({ ...expense, [field]: date || null });
+  const handleDateChange = (date: Date | undefined) => {
+    setExpense({ ...expense, date: date || new Date() });
   };
 
   return (
@@ -1662,7 +1646,7 @@ const ExpenseForm = ({
         <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
         <DatePicker
           date={expense.date}
-          onDateChange={(date) => handleDateChange('date', date)}
+          onDateChange={handleDateChange}
         />
       </div>
 
@@ -1679,9 +1663,9 @@ const ExpenseForm = ({
             <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-purple-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setExpense({ ...expense, is_recurring: false })}
+          <button 
+            type="button" 
+            onClick={() => setExpense({ ...expense, is_recurring: false })} 
             className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
               !expense.is_recurring ? "border-red-500 bg-red-500/20" : "border-zinc-700 bg-zinc-800"
             }`}
@@ -1691,36 +1675,6 @@ const ExpenseForm = ({
           </button>
         </div>
       </div>
-
-      {/* Recurring period fields */}
-      {expense.is_recurring && (
-        <div className="space-y-3 p-3 bg-purple-500/10 rounded-xl border border-purple-500/20">
-          <div className="flex items-center gap-2 text-purple-400">
-            <Calendar className="w-4 h-4" />
-            <span className="text-xs font-medium">Periodo de recurrencia (opcional)</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Fecha inicio</label>
-              <DatePicker
-                date={expense.start_date}
-                onDateChange={(date) => handleDateChange('start_date', date)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Fecha fin</label>
-              <DatePicker
-                date={expense.end_date}
-                onDateChange={(date) => handleDateChange('end_date', date)}
-              />
-            </div>
-          </div>
-          <p className="text-[10px] text-zinc-500">
-            Si no especificas fechas, el gasto aparecerá en todos los meses desde la fecha indicada.
-          </p>
-        </div>
-      )}
 
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversión</label>

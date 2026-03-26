@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Home, TrendingUp, PieChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
-import { expandRecurringToMonths } from "@/lib/recurring";
 
 interface IncomeBalanceProps {
   selectedMonth: string;
@@ -29,23 +28,23 @@ const IncomeBalance: React.FC<IncomeBalanceProps> = ({ selectedMonth, selectedYe
       return;
     }
 
-    // Fetch all incomes (we'll filter client-side for recurring logic)
+    const year = selectedYear;
+    const startDate = `${year}-${selectedMonth}-01`;
+    const endDate = `${year}-${selectedMonth}-31`;
+
     const { data } = await supabase
       .from("incomes")
-      .select("amount, is_passive, date, is_recurring, start_date, end_date")
-      .eq("user_id", session.user.id);
+      .select("amount, is_passive, date")
+      .eq("user_id", session.user.id)
+      .gte("date", startDate)
+      .lte("date", endDate);
 
     if (data) setIncomes(data);
     setLoading(false);
   };
 
-  // Expand recurring incomes for the selected month
-  const viewMonth = parseInt(selectedMonth) - 1;
-  const viewYear = parseInt(selectedYear);
-  const activeIncomes = expandRecurringToMonths(incomes, viewYear, viewMonth);
-
-  const activeIncome = activeIncomes.filter((i: any) => !i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
-  const passiveIncome = activeIncomes.filter((i: any) => i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
+  const activeIncome = incomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const totalIncome = activeIncome + passiveIncome;
   const passivePercentage = totalIncome > 0 ? Math.round((passiveIncome / totalIncome) * 100) : 0;
   const activePercentage = totalIncome > 0 ? Math.round((activeIncome / totalIncome) * 100) : 0;

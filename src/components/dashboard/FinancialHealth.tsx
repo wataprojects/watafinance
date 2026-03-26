@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
-import { isRecurringActiveInMonth, expandRecurringToMonths } from "@/lib/recurring";
 
 interface Metric {
   name: string;
@@ -131,17 +130,25 @@ const FinancialHealth = () => {
   };
 
   const fetchMonthData = async (userId: string, year: number, month: number) => {
-    // Fetch all incomes for the user (we'll filter client-side for recurring logic)
+    const lastDayOfMonth = new Date(year, month, 0).getDate();
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+
+    // Fetch incomes for the month
     const incomesResult = await supabase
       .from("incomes")
-      .select("amount, is_passive, is_recurring, category, date, start_date, end_date")
-      .eq("user_id", userId);
+      .select("amount, is_passive, is_recurring, category")
+      .eq("user_id", userId)
+      .gte("date", startDate)
+      .lte("date", endDate);
 
-    // Fetch all expenses for the user (we'll filter client-side for recurring logic)
+    // Fetch expenses for the month
     const expensesResult = await supabase
       .from("expenses")
-      .select("amount, date, is_recurring, start_date, end_date")
-      .eq("user_id", userId);
+      .select("amount")
+      .eq("user_id", userId)
+      .gte("date", startDate)
+      .lte("date", endDate);
 
     // Fetch active loans for monthly payments
     const loansResult = await supabase
@@ -150,24 +157,18 @@ const FinancialHealth = () => {
       .eq("user_id", userId)
       .eq("status", "active");
 
-    // Expand recurring transactions for this month
-    const allIncomes = incomesResult.data || [];
-    const allExpenses = expensesResult.data || [];
+    const incomes = incomesResult.data || [];
+    const expenses = expensesResult.data || [];
     const loans = loansResult.data || [];
-    
-    // Convert month to 0-11 format for the recurring function
-    const viewMonth = month - 1;
-    const incomes = expandRecurringToMonths(allIncomes, year, viewMonth);
-    const expenses = expandRecurringToMonths(allExpenses, year, viewMonth);
 
-    const totalIncome = incomes.reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
-    const totalExpenses = expenses.reduce((sum, e: any) => sum + parseFloat(e.amount || 0), 0);
+    const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     const loansMonthly = loans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
     const totalExpensesWithLoans = totalExpenses + loansMonthly;
     
-    const passiveIncome = incomes.filter((i: any) => i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
-    const activeIncome = incomes.filter((i: any) => !i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
-    const recurringIncome = incomes.filter((i: any) => i.is_recurring).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
+    const passiveIncome = incomes.filter(i => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+    const activeIncome = incomes.filter(i => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+    const recurringIncome = incomes.filter(i => i.is_recurring).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
     // Fetch all-time debt data for load calculation
     const allDebtsResult = await supabase
@@ -180,7 +181,7 @@ const FinancialHealth = () => {
 
     // NUEVA LÓGICA: Calcular fuentes de ingreso únicas y su peso
     const incomeByCategory: Record<string, number> = {};
-    incomes.forEach((income: any) => {
+    incomes.forEach(income => {
       const cat = income.category || 'other';
       incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount || 0);
     });
