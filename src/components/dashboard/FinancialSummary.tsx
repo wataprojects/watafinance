@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Plus } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import YearMonthPicker from "./YearMonthPicker";
+import { isRecurringActiveInMonth, expandRecurringToMonths } from "@/lib/recurring";
 
 interface FinancialSummaryProps {
   selectedMonth: string;
@@ -42,25 +43,17 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       return;
     }
 
-    const year = selectedYear;
-    const startDate = `${year}-${selectedMonth}-01`;
-    const endDate = `${year}-${selectedMonth}-31`;
-
-    // Fetch incomes for the selected month and year
+    // Fetch all incomes for the user (we'll filter client-side for recurring logic)
     const incomesResult = await supabase
       .from("incomes")
-      .select("amount, date")
-      .eq("user_id", session.user.id)
-      .gte("date", startDate)
-      .lte("date", endDate);
+      .select("amount, date, is_recurring, start_date, end_date")
+      .eq("user_id", session.user.id);
 
-    // Fetch expenses for the selected month and year
+    // Fetch all expenses for the user (we'll filter client-side for recurring logic)
     const expensesResult = await supabase
       .from("expenses")
-      .select("amount, date")
-      .eq("user_id", session.user.id)
-      .gte("date", startDate)
-      .lte("date", endDate);
+      .select("amount, date, is_recurring, start_date, end_date")
+      .eq("user_id", session.user.id);
 
     // Fetch active loans for the user
     const loansResult = await supabase
@@ -75,11 +68,19 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     setLoading(false);
   };
 
-  // Total incomes for the selected month
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  // Calculate month from selectedMonth (convert from "01" format to 0-11)
+  const viewMonth = parseInt(selectedMonth) - 1;
+  const viewYear = parseInt(selectedYear);
+
+  // Expand recurring incomes for the selected month
+  const activeIncomes = expandRecurringToMonths(incomes, viewYear, viewMonth);
+  const activeExpenses = expandRecurringToMonths(expenses, viewYear, viewMonth);
+
+  // Total incomes for the selected month (with recurring expansion)
+  const totalIncome = activeIncomes.reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
   
-  // Total expenses for the selected month
-  const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  // Total expenses for the selected month (with recurring expansion)
+  const totalExpenses = activeExpenses.reduce((sum, e: any) => sum + parseFloat(e.amount || 0), 0);
   
   // Total loans monthly payment (only active loans)
   const totalLoansMonthly = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
