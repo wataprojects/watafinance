@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -236,8 +236,12 @@ const ExpensesPage = () => {
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
 
   const [showSubscriptions, setShowSubscriptions] = useState(false);
-
-  // Trim subscription state
+  
+    // Carousel state for category indicators
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [carouselApi, setCarouselApi] = useState<any>(null);
+  
+    // Trim subscription state
   const [isTrimModalOpen, setIsTrimModalOpen] = useState(false);
   const [isCelebrateModalOpen, setIsCelebrateModalOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
@@ -357,6 +361,22 @@ const ExpensesPage = () => {
     if (data) setExpenses(data);
     setLoading(false);
   };
+
+  // Effect to track carousel selection changes
+  useEffect(() => {
+    if (!carouselApi) return;
+    
+    const onSelect = () => {
+      setSelectedIndex(carouselApi.selectedScrollSnap());
+    };
+    
+    carouselApi.on("select", onSelect);
+    onSelect(); // Set initial state
+    
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
 
   const handleTrimSubscription = (subscription: any) => {
     setSelectedSubscription(subscription);
@@ -882,56 +902,74 @@ const ExpensesPage = () => {
                     
                                         {/* Carrusel de categorías */}
                                         {sortedCategories.length > 0 ? (
-                                          <Carousel className="w-full" opts={{ align: "start", loop: false }}>
-                                            <CarouselContent className="gap-3">
-                                              {chunkArray(sortedCategories, 3).map((chunk, chunkIndex) => (
-                                                <CarouselItem key={chunkIndex} className="basis-full">
-                                                  <div className="space-y-3">
-                                                    {chunk.map((cat) => {
-                                                      const catInfo = getCategoryInfo(cat.category);
-                                                      const Icon = catInfo.icon;
-                                                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                                                      const categoryType = getCategoryPredominatedType(cat.category);
-                                                      
-                                                      return (
-                                                        <div
-                                                          key={cat.category}
-                                                          className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
-                                                        >
-                                                          <div className="flex items-center gap-3 mb-3">
-                                                            {/* Icono y nombre */}
-                                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
-                                                                <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
+                                          <>
+                                            <Carousel className="w-full" opts={{ align: "start", loop: false }} setApi={setCarouselApi}>
+                                              <CarouselContent className="gap-3">
+                                                {chunkArray(sortedCategories, 3).map((chunk, chunkIndex) => (
+                                                  <CarouselItem key={chunkIndex} className="basis-full">
+                                                    <div className="space-y-3">
+                                                      {chunk.map((cat) => {
+                                                        const catInfo = getCategoryInfo(cat.category);
+                                                        const Icon = catInfo.icon;
+                                                        const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                                                        const categoryType = getCategoryPredominatedType(cat.category);
+                                                        
+                                                        return (
+                                                          <div
+                                                            key={cat.category}
+                                                            className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
+                                                          >
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                              {/* Icono y nombre */}
+                                                              <div className="flex items-center gap-2 flex-shrink-0">
+                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
+                                                                  <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
+                                                                </div>
+                                                                <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
+                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
+                                                                  {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
+                                                                </span>
                                                               </div>
-                                                              <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
-                                                              <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
-                                                                {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
-                                                              </span>
+                                                              
+                                                              {/* Cantidad y porcentaje a la derecha */}
+                                                              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                                                                <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
+                                                                <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
+                                                              </div>
                                                             </div>
                                                             
-                                                            {/* Cantidad y porcentaje a la derecha */}
-                                                            <div className="ml-auto flex items-center gap-3 flex-shrink-0">
-                                                              <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
-                                                              <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
+                                                            {/* Barra de progreso */}
+                                                            <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
+                                                              <div
+                                                                className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                                                style={{ width: `${percentage}%` }}
+                                                              />
                                                             </div>
                                                           </div>
-                                                          
-                                                          {/* Barra de progreso */}
-                                                          <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
-                                                            <div
-                                                              className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                                              style={{ width: `${percentage}%` }}
-                                                            />
-                                                          </div>
-                                                        </div>
-                                                      );
-                                                    })}
-                                                  </div>
-                                                </CarouselItem>
-                                              ))}
-                                            </CarouselContent>
-                                          </Carousel>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  </CarouselItem>
+                                                ))}
+                                              </CarouselContent>
+                                            </Carousel>
+                                            
+                                            {/* Indicadores de carrusel (puntitos estilo Instagram) */}
+                                            {chunkArray(sortedCategories, 3).length > 1 && (
+                                              <div className="flex justify-center gap-1.5 mt-3">
+                                                {chunkArray(sortedCategories, 3).map((_, index) => (
+                                                  <div
+                                                    key={index}
+                                                    className={`rounded-full transition-all ${
+                                                      index === selectedIndex
+                                                        ? "w-2 h-2 bg-green-500"
+                                                        : "w-1.5 h-1.5 bg-zinc-600"
+                                                    }`}
+                                                  />
+                                                ))}
+                                              </div>
+                                            )}
+                                          </>
                                         ) : null}
                   </div>
                 )}
