@@ -84,6 +84,7 @@ import TrimConfirmModal from "@/components/dashboard/TrimConfirmModal";
 import CelebrateAnimation from "@/components/dashboard/CelebrateAnimation";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/currency";
+import { getVisualBarWidth } from "@/utils/helpers";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -814,7 +815,7 @@ const ExpensesPage = () => {
                       <div
                         key={item.type}
                         className={`h-full ${item.color} transition-all duration-500`}
-                        style={{ width: `${Math.max(item.percentage, 5)}%` }}
+                        style={{ width: `${getVisualBarWidth(item.percentage, 5)}%` }}
                       />
                     ))}
                   </div>
@@ -942,7 +943,7 @@ const ExpensesPage = () => {
                                                             <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                                                               <div
                                                                 className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                                                style={{ width: `${Math.max(percentage, 5)}%` }}
+                                                                style={{ width: `${getVisualBarWidth(percentage, 5)}%` }}
                                                               />
                                                             </div>
                                                           </div>

@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
+import { getVisualBarWidth } from "@/utils/helpers";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -465,8 +466,8 @@ const IncomePage = () => {
               <>
                 <div className="space-y-3 mb-4">
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${activePercentage}%` }} />
-                    <div className="h-full bg-green-500 transition-all" style={{ width: `${passivePercentage}%` }} />
+                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${getVisualBarWidth(activePercentage, 5)}%` }} />
+                    <div className="h-full bg-green-500 transition-all" style={{ width: `${getVisualBarWidth(passivePercentage, 5)}%` }} />
                   </div>
                   <div className="flex justify-between items-center text-center">
                     <div className="flex-1">
@@ -574,7 +575,7 @@ const IncomePage = () => {
                             <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace("/20", "")}`}
-                                style={{ width: `${Math.max(percentage, 5)}%` }}
+                                style={{ width: `${getVisualBarWidth(percentage, 5)}%` }}
                               />
                             </div>
                           </div>
@@ -1078,8 +1079,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
       </div>
 
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
-        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label<dyad-write path="src/pages/dashboard/IncomePage.tsx" description="Updating IncomePage.tsx to use visual bar width for small percentages (continued)">
+              <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
           <DialogTrigger asChild>
             <button
               type="button"
