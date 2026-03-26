@@ -6,16 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/utils/currency";
 import YearMonthPicker from "./YearMonthPicker";
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 interface FinancialSummaryProps {
   selectedMonth: string;

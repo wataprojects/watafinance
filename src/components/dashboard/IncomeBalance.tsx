@@ -2,17 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Home, TrendingUp, PieChart, DollarSign } from "lucide-react";
+import { Briefcase, Home, TrendingUp, PieChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
+import { formatCurrency } from "@/utils/currency";
 
 interface IncomeBalanceProps {
   selectedMonth: string;

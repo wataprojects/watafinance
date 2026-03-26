@@ -22,15 +22,7 @@ import {
   Wallet
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
+import { formatCurrency } from "@/utils/currency";
 
 interface Metric {
   name: string;
@@ -126,9 +118,9 @@ const FinancialHealth = () => {
     // Calculate previous score if we have data
     if (prevData.hasData) {
       const prevMetrics = calculateMetrics(prevData);
-      const prevScore = calculateScore(prevMetrics);
-      setPreviousScore(Math.round(prevScore));
-      setTrend(Math.round(calculatedScore - prevScore));
+      const prevScoreCalc = calculateScore(prevMetrics);
+      setPreviousScore(Math.round(prevScoreCalc));
+      setTrend(Math.round(calculatedScore - prevScoreCalc));
     } else {
       setPreviousScore(0);
       setTrend(0);

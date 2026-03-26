@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, ChevronDown, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, ChevronRight, Link2 } from "lucide-react";
+import { Plus, Landmark, TrendingUp, Building, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-
-const formatCurrency = (amount: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+import { formatCurrency } from "@/utils/currency";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
@@ -268,11 +267,11 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
         <div><label className="text-sm text-zinc-400 mb-1 block">Banco *</label><Input placeholder="Ej: BBVA" value={loan.bank} onChange={(e) => setLoan({ ...loan, bank: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.bank ? "border-red-500" : ""}`} />{errors.bank && <p className="text-red-400 text-xs mt-1">{errors.bank}</p>}</div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-sm text-zinc-400 mb-1 block">Importe total (€) *</label><Input type="number" placeholder="€ 0.00" value={loan.total_amount} onChange={(e) => setLoan({ ...loan, total_amount: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.total_amount ? "border-red-500" : ""}`} />{errors.total_amount && <p className="text-red-400 text-xs mt-1">{errors.total_amount}</p>}</div>
-        <div><label className="text-sm text-zinc-400 mb-1 block">Capital pendiente (€) *</label><Input type="number" placeholder="€ 0.00" value={loan.pending_amount} onChange={(e) => setLoan({ ...loan, pending_amount: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />{errors.pending_amount && <p className="text-red-400 text-xs mt-1">{errors.pending_amount}</p>}</div>
+        <div><label className="text-sm text-zinc-400 mb-1 block">Importe total (€) *</label><Input type="number" step="0.01" placeholder="€ 0.00" value={loan.total_amount} onChange={(e) => setLoan({ ...loan, total_amount: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.total_amount ? "border-red-500" : ""}`} />{errors.total_amount && <p className="text-red-400 text-xs mt-1">{errors.total_amount}</p>}</div>
+        <div><label className="text-sm text-zinc-400 mb-1 block">Capital pendiente (€) *</label><Input type="number" step="0.01" placeholder="€ 0.00" value={loan.pending_amount} onChange={(e) => setLoan({ ...loan, pending_amount: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.pending_amount ? "border-red-500" : ""}`} />{errors.pending_amount && <p className="text-red-400 text-xs mt-1">{errors.pending_amount}</p>}</div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-sm text-zinc-400 mb-1 block">Cuota mensual (€) *</label><Input type="number" placeholder="€ 0.00" value={loan.monthly_payment} onChange={(e) => setLoan({ ...loan, monthly_payment: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />{errors.monthly_payment && <p className="text-red-400 text-xs mt-1">{errors.monthly_payment}</p>}</div>
+        <div><label className="text-sm text-zinc-400 mb-1 block">Cuota mensual (€) *</label><Input type="number" step="0.01" placeholder="€ 0.00" value={loan.monthly_payment} onChange={(e) => setLoan({ ...loan, monthly_payment: e.target.value })} className={`bg-zinc-800 border-zinc-700 text-white ${errors.monthly_payment ? "border-red-500" : ""}`} />{errors.monthly_payment && <p className="text-red-400 text-xs mt-1">{errors.monthly_payment}</p>}</div>
         <div><label className="text-sm text-zinc-400 mb-1 block">Día de cobro *</label>
           <Select value={loan.collection_day} onValueChange={(v) => setLoan({ ...loan, collection_day: v })}>
             <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Selecciona" /></SelectTrigger>

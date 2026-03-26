@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/utils/currency";
 
 interface TrimConfirmModalProps {
   isOpen: boolean;
@@ -18,15 +19,6 @@ interface TrimConfirmModalProps {
   onConfirm: () => void;
   isLoading?: boolean;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 const TrimConfirmModal = ({
   isOpen,

@@ -9,16 +9,8 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/utils/currency";
 import { UtensilsCrossed, Car, Home, Zap, ShoppingBag, Film, MoreHorizontal, DropletsIcon, Shield, Wifi, Smartphone, Flame, Sparkles, Train, Shirt, Briefcase, Landmark } from "lucide-react";
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 const getCategoryIcon = (category: string) => {
   const icons: Record<string, React.ReactNode> = {

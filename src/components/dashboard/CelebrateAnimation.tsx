@@ -2,21 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
+import { formatCurrency } from "@/utils/currency";
 
 interface CelebrateAnimationProps {
   amount: number;
   onClose: () => void;
   isOpen: boolean;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 const CelebrateAnimation = ({ amount, onClose, isOpen }: CelebrateAnimationProps) => {
   const [particles, setParticles] = useState<Array<{ id: number; x: number; delay: number; color: string }>>([]);

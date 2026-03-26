@@ -11,8 +11,7 @@ import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Brie
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-
-const formatCurrency = (amount: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+import { formatCurrency } from "@/utils/currency";
 
 interface CategoryOption {
   value: string; label: string; icon: any; color: string; textColor: string;
@@ -148,8 +147,8 @@ const InvestmentsPage = () => {
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial (€) *</label><Input type="number" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-                  <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual (€) *</label><Input type="number" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+                  <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial (€) *</label><Input type="number" step="0.01" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+                  <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual (€) *</label><Input type="number" step="0.01" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
                 </div>
                 {error && <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg"><p className="text-red-400 text-sm">{error}</p></div>}
                 <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600" disabled={saving}>{saving ? "Guardando..." : "Guardar"}</Button>
@@ -209,8 +208,8 @@ const InvestmentsPage = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial (€) *</label><Input type="number" value={editInvestment.initial_value} onChange={(e) => setEditInvestment({ ...editInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
-              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual (€) *</label><Input type="number" value={editInvestment.current_value} onChange={(e) => setEditInvestment({ ...editInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor inicial (€) *</label><Input type="number" step="0.01" value={editInvestment.initial_value} onChange={(e) => setEditInvestment({ ...editInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
+              <div><label className="text-sm text-zinc-400 mb-1 block">Valor actual (€) *</label><Input type="number" step="0.01" value={editInvestment.current_value} onChange={(e) => setEditInvestment({ ...editInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" /></div>
             </div>
             <Button onClick={handleEditInvestment} className="w-full bg-purple-500 hover:bg-purple-600" disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
           </div>
