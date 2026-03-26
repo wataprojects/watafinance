@@ -1106,8 +1106,8 @@ const ExpensesPage = () => {
                           )}
                           
                           <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium text-white text-sm truncate pr-2">{sub.description}</p>
-                            <p className="font-bold text-pink-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
+                            <p className="font-medium text-white text-xs truncate pr-2 flex-1 min-w-0">{sub.description}</p>
+                            <p className="font-bold text-pink-400 text-xs whitespace-nowrap ml-2">{formatCurrency(sub.amount)}</p>
                           </div>
                           
                           <button
@@ -1143,8 +1143,8 @@ const ExpensesPage = () => {
                             </div>
                             
                             <div className="flex items-center justify-between mb-2">
-                              <p className="font-medium text-white text-sm truncate pr-2 line-through">{sub.description}</p>
-                              <p className="font-bold text-green-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
+                              <p className="font-medium text-white text-xs truncate pr-2 line-through flex-1 min-w-0">{sub.description}</p>
+                              <p className="font-bold text-green-400 text-xs whitespace-nowrap ml-2">{formatCurrency(sub.amount)}</p>
                             </div>
                             
                             <button
@@ -1264,8 +1264,8 @@ const ExpensesPage = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm text-red-500">
+                          <div className="text-right max-w-[100px]">
+                            <p className="font-bold text-sm text-red-500 whitespace-nowrap">
                               -{formatCurrency(loan.monthly_payment)}
                             </p>
                           </div>
@@ -1325,8 +1325,8 @@ const ExpensesPage = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
+                            <div className="text-right max-w-[100px]">
+                              <p className={`font-bold text-sm whitespace-nowrap ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
                                 {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
                               </p>
                             </div>
