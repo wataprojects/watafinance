@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL } from "@/lib/supabase-env";
 import { formatCurrency } from "@/utils/currency";
 import DebtStatusBadge from "./DebtStatusBadge";
 import DebtTimeline from "./DebtTimeline";
@@ -110,7 +111,7 @@ const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || 'https://eoupodozovwxbldzptlp.supabase.co'}/functions/v1/confirm-debt`,
+        `${SUPABASE_URL}/functions/v1/confirm-debt`,
         {
           method: 'POST',
           headers: {
@@ -129,7 +130,6 @@ const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
       const result = await response.json();
 
       if (result.success) {
-        // Refresh debt data
         fetchDebtDetail();
       }
     } catch (error) {

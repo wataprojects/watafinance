@@ -1,8 +1,9 @@
 -- ============================================
--- Collaborative Debt System v2 - Database
+-- Sistema de Deudas Colaborativo v2 - FinPro
+-- Migration: Add collaborative debt system tables
 -- ============================================
 
--- 1. Modify debts table to add new columns
+-- 1. Add new columns to debts table
 ALTER TABLE debts ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending' 
   CHECK (status IN ('pending', 'accepted', 'negotiating', 'partially_paid', 'paid', 'rejected'));
 
