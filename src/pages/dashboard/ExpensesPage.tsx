@@ -235,7 +235,7 @@ const ExpensesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customCategories, setCustomCategories] = useState<CategoryOption[]>([]);
 
-  const [showSubscriptions, setShowSubscriptions] = useState(true);
+  const [showSubscriptions, setShowSubscriptions] = useState(false);
 
   // Trim subscription state
   const [isTrimModalOpen, setIsTrimModalOpen] = useState(false);
