@@ -916,35 +916,34 @@ const ExpensesPage = () => {
                                                         const categoryType = getCategoryPredominatedType(cat.category);
                                                         
                                                         return (
-                                                          <div
-                                                            key={cat.category}
-                                                            className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
-                                                          >
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                              {/* Icono y nombre */}
-                                                              <div className="flex items-center gap-2 flex-shrink-0">
-                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
-                                                                  <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
-                                                                </div>
-                                                                <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
-                                                                  {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
-                                                                </span>
+                                                          <div key={cat.category} className="w-full p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all">
+                                                            {/* Fila 1: Icono + Barra de progreso con % */}
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${catInfo.color}`}>
+                                                                <Icon className={`w-4 h-4 ${catInfo.textColor}`} />
                                                               </div>
                                                               
-                                                              {/* Cantidad y porcentaje a la derecha */}
-                                                              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
-                                                                <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
-                                                                <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
+                                                              {/* Barra de progreso con % dentro */}
+                                                              <div className="relative flex-1 h-3 bg-zinc-700 rounded-full overflow-hidden">
+                                                                <div
+                                                                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                                                  style={{ width: `${getVisualBarWidth(percentage, 5)}%` }}
+                                                                />
+                                                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white drop-shadow-sm">
+                                                                  {percentage.toFixed(1)}%
+                                                                </span>
                                                               </div>
                                                             </div>
                                                             
-                                                            {/* Barra de progreso */}
-                                                            <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
-                                                              <div
-                                                                className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                                                style={{ width: `${getVisualBarWidth(percentage, 5)}%` }}
-                                                              />
+                                                            {/* Fila 2: Nombre + Badge + Monto */}
+                                                            <div className="flex items-center justify-between pl-12">
+                                                              <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-zinc-200 font-medium">{catInfo.label}</span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${categoryType.color}`}>
+                                                                  {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
+                                                                </span>
+                                                              </div>
+                                                              <span className="font-bold text-white text-sm">{formatCurrency(cat.amount)}</span>
                                                             </div>
                                                           </div>
                                                         );
