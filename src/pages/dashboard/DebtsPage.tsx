@@ -354,37 +354,35 @@ const DebtsPage = () => {
         {/* Lista de deudas */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between w-full">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-amber-500" />
-                Deudas
-              </CardTitle>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => setFilterType("all")}
-                  className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                    filterType === "all" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                  }`}
-                >
-                  Todas
-                </button>
-                <button
-                  onClick={() => setFilterType("they_owe")}
-                  className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                    filterType === "they_owe" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                  }`}
-                >
-                  Me deben
-                </button>
-                <button
-                  onClick={() => setFilterType("i_owe")}
-                  className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                    filterType === "i_owe" ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                  }`}
-                >
-                  Debo yo
-                </button>
-              </div>
+            <CardTitle className="text-white flex items-center gap-2 mb-4">
+              <Banknote className="w-5 h-5 text-amber-500" />
+              Deudas
+            </CardTitle>
+            <div className="flex gap-1.5 flex-wrap">
+              <button
+                onClick={() => setFilterType("all")}
+                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "all" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setFilterType("they_owe")}
+                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "they_owe" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Me deben
+              </button>
+              <button
+                onClick={() => setFilterType("i_owe")}
+                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "i_owe" ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Debo yo
+              </button>
             </div>
           </CardHeader>
           <CardContent>
