@@ -553,7 +553,7 @@ const IncomePage = () => {
                         const isPassive = catInfo.value === "rental" || catInfo.value === "investments" || catInfo.value === "dividends" || catInfo.value === "royalties";
 
                         return (
-                          <div key={cat.category} className="w-full p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all">
+                          <div key={cat.category} className="w-full p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all min-w-0 overflow-hidden">
                             {/* Fila 1: Icono + Barra de progreso con % */}
                             <div className="flex items-center gap-3 mb-2">
                               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${catInfo.color}`}>
@@ -573,14 +573,14 @@ const IncomePage = () => {
                             </div>
                             
                             {/* Fila 2: Nombre + Badge + Monto */}
-                            <div className="flex items-center justify-between pl-12">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-zinc-200 font-medium">{catInfo.label}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${isPassive ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400"}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-shrink">
+                                <span className="text-xs text-zinc-200 font-medium truncate">{catInfo.label}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium flex-shrink-0 ${isPassive ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400"}`}>
                                   {isPassive ? "Pasivo" : "Activo"}
                                 </span>
                               </div>
-                              <span className="font-bold text-white text-sm">{formatCurrency(cat.amount)}</span>
+                              <span className="font-bold text-white text-sm flex-shrink-0 truncate">{formatCurrency(cat.amount)}</span>
                             </div>
                           </div>
                         );
