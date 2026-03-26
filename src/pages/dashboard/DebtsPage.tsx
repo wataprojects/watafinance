@@ -20,7 +20,8 @@ import {
   TrendingDown,
   Mail,
   AlertCircle,
-  Bell
+  Bell,
+  CheckCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
