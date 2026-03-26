@@ -255,9 +255,9 @@ const TopExpenses = () => {
                               </p>
                               {/* Barra de progreso horizontal */}
                               <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-1">
-                                <div 
+                                <div
                                   className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all"
-                                  style={{ width: `${percentage}%` }}
+                                  style={{ width: `${Math.max(percentage, 5)}%` }}
                                 />
                               </div>
                             </div>

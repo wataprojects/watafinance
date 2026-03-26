@@ -811,10 +811,10 @@ const ExpensesPage = () => {
                 <div className="space-y-4">
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
                     {expenseTypesSorted.map((item, index) => (
-                      <div 
+                      <div
                         key={item.type}
                         className={`h-full ${item.color} transition-all duration-500`}
-                        style={{ width: `${item.percentage}%` }}
+                        style={{ width: `${Math.max(item.percentage, 5)}%` }}
                       />
                     ))}
                   </div>
@@ -942,7 +942,7 @@ const ExpensesPage = () => {
                                                             <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                                                               <div
                                                                 className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                                                style={{ width: `${percentage}%` }}
+                                                                style={{ width: `${Math.max(percentage, 5)}%` }}
                                                               />
                                                             </div>
                                                           </div>

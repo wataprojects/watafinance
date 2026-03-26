@@ -574,7 +574,7 @@ const IncomePage = () => {
                             <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace("/20", "")}`}
-                                style={{ width: `${percentage}%` }}
+                                style={{ width: `${Math.max(percentage, 5)}%` }}
                               />
                             </div>
                           </div>
