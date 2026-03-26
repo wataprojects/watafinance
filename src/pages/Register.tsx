@@ -5,23 +5,37 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, Eye, EyeOff } from "lucide-react";
+import { Wallet, Eye, EyeOff, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -30,9 +44,23 @@ const Login = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate("/dashboard");
+      // Show success message and redirect to login
+      setError("");
+      navigate("/login");
     }
   };
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const passwordRequirements = [
+    { met: password.length >= 6, text: "Al menos 6 caracteres" },
+    { met: /[A-Z]/.test(password), text: "Una mayúscula" },
+    { met: /[0-9]/.test(password), text: "Un número" },
+  ];
+
+  const allRequirementsMet = passwordRequirements.every((req) => req.met);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -46,13 +74,13 @@ const Login = () => {
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">Bienvenido</CardTitle>
+            <CardTitle className="text-2xl text-white">Crear Cuenta</CardTitle>
             <CardDescription className="text-zinc-400">
-              Inicia sesión para continuar
+              Regístrate para empezar a gestionar tus finanzas
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm text-zinc-400">Correo electrónico</label>
                 <Input
@@ -84,6 +112,43 @@ const Login = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                
+                {/* Password requirements */}
+                {password.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {passwordRequirements.map((req, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center ${req.met ? "bg-green-500" : "bg-zinc-700"}`}>
+                          {req.met ? (
+                            <Check className="w-2.5 h-2.5 text-black" />
+                          ) : (
+                            <X className="w-2.5 h-2.5 text-zinc-500" />
+                          )}
+                        </div>
+                        <span className={`text-xs ${req.met ? "text-green-400" : "text-zinc-500"}`}>
+                          {req.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-zinc-400">Confirmar Contraseña</label>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 ${
+                    confirmPassword && password !== confirmPassword ? "border-red-500" : ""
+                  }`}
+                  required
+                />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-red-400">Las contraseñas no coinciden</p>
+                )}
               </div>
 
               {error && (
@@ -94,19 +159,19 @@ const Login = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isValidEmail(email) || !allRequirementsMet || password !== confirmPassword}
                 className="w-full bg-green-500 hover:bg-green-600 text-black py-6 font-semibold"
               >
-                {loading ? "Cargando..." : "Iniciar Sesión"}
+                {loading ? "Creando cuenta..." : "Crear Cuenta"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => navigate("/login")}
                 className="text-green-400 hover:text-green-300 text-sm"
               >
-                ¿No tienes cuenta? Crea una aquí
+                ¿Ya tienes cuenta? Inicia sesión aquí
               </button>
             </div>
           </CardContent>
@@ -116,4 +181,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
