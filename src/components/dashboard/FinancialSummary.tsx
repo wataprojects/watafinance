@@ -135,15 +135,15 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       {/* Fila 3: Ingresos / Gastos */}
       <div className="grid grid-cols-2 gap-6">
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
-              <TrendingUp className="w-6 h-6 text-green-500" />
-              <span className="text-sm text-green-400 font-medium">Ingresos</span>
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+              <span className="text-xs sm:text-sm text-green-400 font-medium">Ingresos</span>
             </div>
             {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
-              <p className="text-3xl font-bold text-white">
+              <p className="text-2xl sm:text-3xl font-bold text-white text-center">
                 {formatCurrency(totalIncome)}
               </p>
             )}
@@ -151,15 +151,15 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
         </Card>
 
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
-              <TrendingDown className="w-6 h-6 text-red-500" />
-              <span className="text-sm text-red-400 font-medium">Gastos</span>
+              <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+              <span className="text-xs sm:text-sm text-red-400 font-medium">Gastos</span>
             </div>
             {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-red-500"></div>
             ) : (
-              <p className="text-3xl font-bold text-white">
+              <p className="text-2xl sm:text-3xl font-bold text-white text-center">
                 {formatCurrency(totalGastos)}
               </p>
             )}
@@ -170,15 +170,15 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       {/* Fila 4: Balance / Tasa de Ahorro */}
       <div className="grid grid-cols-2 gap-6">
         <Card className={`${balance >= 0 ? "bg-zinc-900" : "bg-red-900/20"} border ${balance >= 0 ? "border-zinc-800" : "border-red-800"}`}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
-              <DollarSign className={`w-6 h-6 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
-              <span className={`text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
+              <DollarSign className={`w-5 h-5 sm:w-6 sm:h-6 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
+              <span className={`text-xs sm:text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
             </div>
             {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
-              <p className={`text-3xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
+              <p className={`text-2xl sm:text-3xl font-bold text-center ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
                 {formatCurrency(balance)}
               </p>
             )}
@@ -186,15 +186,15 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
         </Card>
 
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
-              <PiggyBank className="w-6 h-6 text-green-500" />
-              <span className="text-sm text-green-400 font-medium">Tasa de Ahorro</span>
+              <PiggyBank className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+              <span className="text-xs sm:text-sm text-green-400 font-medium">Tasa de Ahorro</span>
             </div>
             {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
-              <p className="text-3xl font-bold text-white">
+              <p className="text-2xl sm:text-3xl font-bold text-white text-center">
                 {savingsRate.toFixed(1)}%
               </p>
             )}
