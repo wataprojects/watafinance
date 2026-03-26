@@ -179,7 +179,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
               <p className={`text-3xl font-bold ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
+                {formatCurrency(balance)}
               </p>
             )}
           </CardContent>
