@@ -113,6 +113,9 @@ const months = [
   { value: "12", label: "Diciembre" },
 ];
 
+// Filter type for income history
+type IncomeFilterType = "all" | "active" | "passive";
+
 const IncomePage = () => {
   const navigate = useNavigate();
   const [incomes, setIncomes] = useState<any[]>([]);
@@ -131,6 +134,9 @@ const IncomePage = () => {
   const [isNewPatrimonyOpen, setIsNewPatrimonyOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Filter state
+  const [filterIncomeType, setFilterIncomeType] = useState<IncomeFilterType>("all");
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYear = new Date().getFullYear().toString();
@@ -238,11 +244,15 @@ const IncomePage = () => {
     const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, "0");
     if (filterYear !== "all" && incomeYear !== filterYear) return false;
     if (filterMonth !== "all" && incomeMonth !== filterMonth) return false;
+
+    // Filter by income type
+    if (filterIncomeType === "active") return !income.is_passive;
+    if (filterIncomeType === "passive") return income.is_passive;
     return true;
   });
 
   // Calculate totals
-  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const totalIncome = filteredInenses.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
@@ -616,6 +626,41 @@ const IncomePage = () => {
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
             <p className="text-white font-semibold mb-4">Ingresos</p>
+
+            {/* Filter buttons */}
+            <div className="flex gap-2 mb-4 flex-wrap">
+              <button
+                onClick={() => setFilterIncomeType("all")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterIncomeType === "all"
+                    ? "bg-zinc-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilterIncomeType("active")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterIncomeType === "active"
+                    ? "bg-blue-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Activos
+              </button>
+              <button
+                onClick={() => setFilterIncomeType("passive")}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterIncomeType === "passive"
+                    ? "bg-green-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                Pasivos
+              </button>
+            </div>
+
             {loading ? (
               <p className="text-zinc-500 text-center">Cargando...</p>
             ) : filteredIncomes.length === 0 ? (
