@@ -168,7 +168,7 @@ const DebtsPage = () => {
     <div className="min-h-screen bg-black pb-28">
       <DashboardHeader title="FinPro" subtitle="Gestión de Deudas" />
       
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="flex gap-2 flex-1">
             <Select value={filterYear} onValueChange={setFilterYear}>
@@ -192,90 +192,6 @@ const DebtsPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-                <Plus className="w-4 h-4 mr-2" />Nueva
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-white">Nueva deuda</DialogTitle>
-              </DialogHeader>
-              <button
-                onClick={() => setIsDialogOpen(false)}
-                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Tipo de deuda</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setNewDebt({ ...newDebt, debt_type: "they_owe" })}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                        newDebt.debt_type === "they_owe"
-                          ? "border-green-500 bg-green-500/20"
-                          : "border-zinc-700 bg-zinc-800"
-                      }`}
-                    >
-                      <TrendingUp className={`w-6 h-6 ${newDebt.debt_type === "they_owe" ? "text-green-400" : "text-zinc-400"}`} />
-                      <span className={`font-medium ${newDebt.debt_type === "they_owe" ? "text-white" : "text-zinc-400"}`}>Me deben</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewDebt({ ...newDebt, debt_type: "i_owe" })}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
-                        newDebt.debt_type === "i_owe"
-                          ? "border-red-500 bg-red-500/20"
-                          : "border-zinc-700 bg-zinc-800"
-                      }`}
-                    >
-                      <TrendingDownIcon className={`w-6 h-6 ${newDebt.debt_type === "i_owe" ? "text-red-400" : "text-zinc-400"}`} />
-                      <span className={`font-medium ${newDebt.debt_type === "i_owe" ? "text-white" : "text-zinc-400"}`}>Debo yo</span>
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Persona *</label>
-                  <Input
-                    placeholder="Nombre"
-                    value={newDebt.person_name}
-                    onChange={(e) => setNewDebt({ ...newDebt, person_name: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Cantidad (€) *</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={newDebt.amount}
-                    onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Motivo</label>
-                  <Input
-                    placeholder="Ej: Cena sábado..."
-                    value={newDebt.description}
-                    onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <Button
-                  onClick={handleAddDebt}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-black"
-                  disabled={saving}
-                >
-                  {saving ? "Guardando..." : "Registrar deuda"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -331,6 +247,95 @@ const DebtsPage = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Botón Nueva Deuda - Estilo igual que en Historial de Expenses */}
+            <div className="mb-4">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nueva Deuda
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Nueva deuda</DialogTitle>
+                  </DialogHeader>
+                  <button
+                    onClick={() => setIsDialogOpen(false)}
+                    className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <label className="text-sm text-zinc-400 mb-2 block">Tipo de deuda</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setNewDebt({ ...newDebt, debt_type: "they_owe" })}
+                          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                            newDebt.debt_type === "they_owe"
+                              ? "border-green-500 bg-green-500/20"
+                              : "border-zinc-700 bg-zinc-800"
+                          }`}
+                        >
+                          <TrendingUp className={`w-6 h-6 ${newDebt.debt_type === "they_owe" ? "text-green-400" : "text-zinc-400"}`} />
+                          <span className={`font-medium ${newDebt.debt_type === "they_owe" ? "text-white" : "text-zinc-400"}`}>Me deben</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewDebt({ ...newDebt, debt_type: "i_owe" })}
+                          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
+                            newDebt.debt_type === "i_owe"
+                              ? "border-red-500 bg-red-500/20"
+                              : "border-zinc-700 bg-zinc-800"
+                          }`}
+                        >
+                          <TrendingDownIcon className={`w-6 h-6 ${newDebt.debt_type === "i_owe" ? "text-red-400" : "text-zinc-400"}`} />
+                          <span className={`font-medium ${newDebt.debt_type === "i_owe" ? "text-white" : "text-zinc-400"}`}>Debo yo</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-zinc-400 mb-1 block">Persona *</label>
+                      <Input
+                        placeholder="Nombre"
+                        value={newDebt.person_name}
+                        onChange={(e) => setNewDebt({ ...newDebt, person_name: e.target.value })}
+                        className="bg-zinc-800 border-zinc-700 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-zinc-400 mb-1 block">Cantidad (€) *</label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={newDebt.amount}
+                        onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
+                        className="bg-zinc-800 border-zinc-700 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-zinc-400 mb-1 block">Motivo</label>
+                      <Input
+                        placeholder="Ej: Cena sábado..."
+                        value={newDebt.description}
+                        onChange={(e) => setNewDebt({ ...newDebt, description: e.target.value })}
+                        className="bg-zinc-800 border-zinc-700 text-white"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleAddDebt}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                      disabled={saving}
+                    >
+                      {saving ? "Guardando..." : "Registrar deuda"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
             {loading ? (
               <p className="text-zinc-500 text-center">Cargando...</p>
             ) : filteredDebts.length === 0 ? (
