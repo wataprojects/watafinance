@@ -13,7 +13,7 @@ export const formatCurrency = (amount: number, showDecimals: boolean = true): st
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: showDecimals ? 2 : 0,
-    maximumFractionDigits: showDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 

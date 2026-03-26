@@ -74,15 +74,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import TrimConfirmModal from "@/components/dashboard/TrimConfirmModal";
 import CelebrateAnimation from "@/components/dashboard/CelebrateAnimation";
 import { toast } from "sonner";
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
+import { formatCurrency } from "@/utils/currency";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();

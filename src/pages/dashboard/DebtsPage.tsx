@@ -11,8 +11,7 @@ import { Plus, Banknote, User, TrendingUp, TrendingDown as TrendingDownIcon, X, 
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-
-const formatCurrency = (amount: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+import { formatCurrency } from "@/utils/currency";
 
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe";
