@@ -458,13 +458,14 @@ const IncomePage = () => {
         {/* Total Ingresos con distribución por categorías */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
+            {/* Header centrado */}
             <p className="text-zinc-400 text-sm mb-1 text-center">Total Ingresos</p>
-            <p className="text-4xl font-bold text-green-500 mb-4">{formatCurrency(totalIncome)}</p>
+            <p className="text-4xl font-bold text-green-500 mb-4 text-center">{formatCurrency(totalIncome)}</p>
 
             {totalIncome > 0 && (
               <>
                 {/* Barra de activos vs pasivos */}
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3 mb-4">
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
                     <div className="h-full bg-blue-500 transition-all" style={{ width: `${activePercentage}%` }} />
                     <div className="h-full bg-green-500 transition-all" style={{ width: `${passivePercentage}%` }} />
@@ -488,6 +489,54 @@ const IncomePage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Botón Nuevo Ingreso - Movido aquí dentro de la tarjeta */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-green-500 hover:bg-green-600 text-black py-4 text-sm font-semibold mb-4">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo Ingreso
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
+                    </DialogHeader>
+                    <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                    <IncomeForm
+                      income={newIncome}
+                      setIncome={setNewIncome}
+                      onSubmit={handleAddIncome}
+                      isSubmitting={isSubmitting}
+                      isNew={true}
+                      investments={investments}
+                      patrimony={patrimony}
+                      isCategoryDialogOpen={isCategoryDialogOpen}
+                      setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                      isInvestmentDialogOpen={isInvestmentDialogOpen}
+                      setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                      isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                      setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                      isNewInvestmentOpen={isNewInvestmentOpen}
+                      setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                      isNewPatrimonyOpen={isNewPatrimonyOpen}
+                      setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                      newInvestment={newInvestment}
+                      setNewInvestment={setNewInvestment}
+                      newPatrimonyAsset={newPatrimonyAsset}
+                      setNewPatrimonyAsset={setNewPatrimonyAsset}
+                      handleCreateInvestment={handleCreateInvestment}
+                      handleCreatePatrimony={handleCreatePatrimony}
+                      investmentTypes={investmentTypes}
+                      patrimonyCategories={patrimonyCategories}
+                      getSelectedCategoryInfo={getSelectedCategoryInfo}
+                      getInvestmentLabel={getInvestmentLabel}
+                      getPatrimonyLabel={getPatrimonyLabel}
+                    />
+                  </DialogContent>
+                </Dialog>
 
                 {/* Distribución por categorías */}
                 {topCategories.length > 0 && (
@@ -562,54 +611,6 @@ const IncomePage = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Botón Nuevo Ingreso */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-green-500 hover:bg-green-600 text-black py-6 text-base font-semibold">
-              <Plus className="w-5 h-5 mr-2" />
-              Nuevo Ingreso
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
-            </DialogHeader>
-            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-              <X className="w-4 h-4" />
-            </button>
-            <IncomeForm
-              income={newIncome}
-              setIncome={setNewIncome}
-              onSubmit={handleAddIncome}
-              isSubmitting={isSubmitting}
-              isNew={true}
-              investments={investments}
-              patrimony={patrimony}
-              isCategoryDialogOpen={isCategoryDialogOpen}
-              setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-              isInvestmentDialogOpen={isInvestmentDialogOpen}
-              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-              isNewInvestmentOpen={isNewInvestmentOpen}
-              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-              isNewPatrimonyOpen={isNewPatrimonyOpen}
-              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-              newInvestment={newInvestment}
-              setNewInvestment={setNewInvestment}
-              newPatrimonyAsset={newPatrimonyAsset}
-              setNewPatrimonyAsset={setNewPatrimonyAsset}
-              handleCreateInvestment={handleCreateInvestment}
-              handleCreatePatrimony={handleCreatePatrimony}
-              investmentTypes={investmentTypes}
-              patrimonyCategories={patrimonyCategories}
-              getSelectedCategoryInfo={getSelectedCategoryInfo}
-              getInvestmentLabel={getInvestmentLabel}
-              getPatrimonyLabel={getPatrimonyLabel}
-            />
-          </DialogContent>
-        </Dialog>
 
         {/* Historial de Ingresos */}
         <Card className="bg-zinc-900 border-zinc-800">
