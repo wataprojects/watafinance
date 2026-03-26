@@ -807,14 +807,7 @@ const ExpensesPage = () => {
                 {/* Distribución por categoría - Filas independientes */}
                 {sortedCategories.length > 0 && (
                   <div className="mt-6 pt-4 border-t border-zinc-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs text-zinc-500 font-medium">Distribución por categoría</p>
-                      <p className="text-xs text-zinc-500">
-                        {sortedCategories.length} {sortedCategories.length === 1 ? 'categoría' : 'categorías'}
-                      </p>
-                    </div>
-                    
-                    {/* ✅ Botón "Nuevo Gasto" - AHORA ANTES DE LAS CATEGORÍAS */}
+                    {/* ✅ Botón "Nuevo Gasto" - ENCIMA DEL HEADER */}
                     <div className="mb-4">
                       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
@@ -868,6 +861,14 @@ const ExpensesPage = () => {
                           />
                         </DialogContent>
                       </Dialog>
+                    </div>
+
+                    {/* Header de categorías */}
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-xs text-zinc-500 font-medium">Distribución por categoría</p>
+                      <p className="text-xs text-zinc-500">
+                        {sortedCategories.length} {sortedCategories.length === 1 ? 'categoría' : 'categorías'}
+                      </p>
                     </div>
 
                     {/* Lista de categorías */}
