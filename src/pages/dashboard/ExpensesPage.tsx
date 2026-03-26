@@ -69,6 +69,15 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
+
+// Helper function to chunk array into groups of size
+const chunkArray = <T,>(array: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+};
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import TrimConfirmModal from "@/components/dashboard/TrimConfirmModal";
@@ -864,56 +873,66 @@ const ExpensesPage = () => {
                     </div>
 
                     {/* Header de categorías */}
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs text-zinc-500 font-medium">Distribución por categoría</p>
-                      <p className="text-xs text-zinc-500">
-                        {sortedCategories.length} {sortedCategories.length === 1 ? 'categoría' : 'categorías'}
-                      </p>
-                    </div>
-
-                    {/* Lista de categorías */}
-                    <div className="space-y-3">
-                      {sortedCategories.map((cat) => {
-                        const catInfo = getCategoryInfo(cat.category);
-                        const Icon = catInfo.icon;
-                        const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                        const categoryType = getCategoryPredominatedType(cat.category);
-                        
-                        return (
-                          <div 
-                            key={cat.category} 
-                            className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
-                          >
-                            <div className="flex items-center gap-3 mb-3">
-                              {/* Icono y nombre */}
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
-                                  <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
-                                </div>
-                                <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
-                                  {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
-                                </span>
-                              </div>
-                              
-                              {/* Cantidad y porcentaje a la derecha */}
-                              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
-                                <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
-                                <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
-                              </div>
-                            </div>
-                            
-                            {/* Barra de progreso */}
-                            <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                                        <div className="flex items-center justify-between mb-4">
+                                          <p className="text-xs text-zinc-500 font-medium">Distribución por categoría</p>
+                                          <p className="text-xs text-zinc-500">
+                                            {sortedCategories.length} {sortedCategories.length === 1 ? 'categoría' : 'categorías'}
+                                          </p>
+                                        </div>
+                    
+                                        {/* Carrusel de categorías */}
+                                        {sortedCategories.length > 0 ? (
+                                          <Carousel className="w-full" opts={{ align: "start", loop: false }}>
+                                            <CarouselContent className="gap-3">
+                                              {chunkArray(sortedCategories, 3).map((chunk, chunkIndex) => (
+                                                <CarouselItem key={chunkIndex} className="basis-full">
+                                                  <div className="space-y-3">
+                                                    {chunk.map((cat) => {
+                                                      const catInfo = getCategoryInfo(cat.category);
+                                                      const Icon = catInfo.icon;
+                                                      const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
+                                                      const categoryType = getCategoryPredominatedType(cat.category);
+                                                      
+                                                      return (
+                                                        <div
+                                                          key={cat.category}
+                                                          className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
+                                                        >
+                                                          <div className="flex items-center gap-3 mb-3">
+                                                            {/* Icono y nombre */}
+                                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
+                                                                <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
+                                                              </div>
+                                                              <span className="text-sm text-zinc-200 font-medium">{catInfo.label}</span>
+                                                              <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${categoryType.color}`}>
+                                                                {categoryType.type === "recurrente" ? "Recurrente" : "Puntual"}
+                                                              </span>
+                                                            </div>
+                                                            
+                                                            {/* Cantidad y porcentaje a la derecha */}
+                                                            <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                                                              <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
+                                                              <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
+                                                            </div>
+                                                          </div>
+                                                          
+                                                          {/* Barra de progreso */}
+                                                          <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
+                                                            <div
+                                                              className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                                              style={{ width: `${percentage}%` }}
+                                                            />
+                                                          </div>
+                                                        </div>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                </CarouselItem>
+                                              ))}
+                                            </CarouselContent>
+                                          </Carousel>
+                                        ) : null}
                   </div>
                 )}
 
