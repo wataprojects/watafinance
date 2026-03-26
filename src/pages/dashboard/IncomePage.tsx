@@ -1,4 +1,3 @@
-filteredIncomes">
 "use client";
 
 import { useState, useEffect } from "react";
@@ -92,7 +91,7 @@ const incomeCategories: CategoryOption[] = [
   { value: "business", label: "Negocio", icon: Building, color: "bg-rose-500/20", textColor: "text-rose-400" },
   { value: "rental_income", label: "Renta", icon: Home, color: "bg-teal-500/20", textColor: "text-teal-400" },
   { value: "dividends", label: "Dividendos", icon: TrendingUp, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
-  { value: "royalties", label: "Regalías", icon: BookOpen, color: "bg-orange-500/20", textColor: "text-orange-400" },
+  { value: "royalties", label: "Regalias", icon: BookOpen, color: "bg-orange-500/20", textColor: "text-orange-400" },
   { value: "transport", label: "Transporte", icon: Car, color: "bg-sky-500/20", textColor: "text-sky-400" },
   { value: "travel", label: "Viajes", icon: Plane, color: "bg-violet-500/20", textColor: "text-violet-400" },
   { value: "entertainment", label: "Entretenimiento", icon: Music, color: "bg-pink-500/20", textColor: "text-pink-400" },
@@ -114,7 +113,6 @@ const months = [
   { value: "12", label: "Diciembre" },
 ];
 
-// Filter type for income history
 type IncomeFilterType = "all" | "active" | "passive";
 
 const IncomePage = () => {
@@ -124,7 +122,6 @@ const IncomePage = () => {
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
 
-  // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -136,7 +133,6 @@ const IncomePage = () => {
   const [selectedIncome, setSelectedIncome] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter state
   const [filterIncomeType, setFilterIncomeType] = useState<IncomeFilterType>("all");
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
@@ -192,8 +188,8 @@ const IncomePage = () => {
   ];
 
   const patrimonyCategories = [
-    { value: "real_estate", label: "Bienes Raíces" },
-    { value: "vehicle", label: "Vehículos" },
+    { value: "real_estate", label: "Bienes Raices" },
+    { value: "vehicle", label: "Vehiculos" },
     { value: "investments", label: "Inversiones" },
     { value: "savings", label: "Ahorros" },
     { value: "business", label: "Negocios" },
@@ -236,7 +232,6 @@ const IncomePage = () => {
   const getSelectedCategoryInfo = (categoryValue: string) =>
     incomeCategories.find((c) => c.value === categoryValue) || incomeCategories[0];
 
-  // Filter incomes
   const filteredIncomes = incomes.filter((income) => {
     if (!income.date) return false;
     const incomeDate = new Date(income.date + "T00:00:00");
@@ -245,21 +240,17 @@ const IncomePage = () => {
     const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, "0");
     if (filterYear !== "all" && incomeYear !== filterYear) return false;
     if (filterMonth !== "all" && incomeMonth !== filterMonth) return false;
-
-    // Filter by income type
     if (filterIncomeType === "active") return !income.is_passive;
     if (filterIncomeType === "passive") return income.is_passive;
     return true;
   });
 
-  // Calculate totals
   const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
-  // Calculate category distribution
   const incomeByCategory: Record<string, number> = {};
   filteredIncomes.forEach((income) => {
     const cat = income.category || "other";
@@ -428,14 +419,13 @@ const IncomePage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      <DashboardHeader title="FinPro" subtitle="Gestión de Ingresos" />
+      <DashboardHeader title="FinPro" subtitle="Gestion de Ingresos" />
 
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Selectores de fecha */}
         <div className="grid grid-cols-2 gap-4">
           <Select value={filterYear} onValueChange={setFilterYear}>
             <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
-              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Ano</span>
               <div className="flex items-center gap-2">
                 <span className="text-white font-semibold text-lg">{filterYear}</span>
               </div>
@@ -466,16 +456,13 @@ const IncomePage = () => {
           </Select>
         </div>
 
-        {/* Total Ingresos con distribución por categorías */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
-            {/* Header centrado */}
             <p className="text-zinc-400 text-sm mb-1 text-center">Total Ingresos</p>
             <p className="text-4xl font-bold text-green-500 mb-4 text-center">{formatCurrency(totalIncome)}</p>
 
             {totalIncome > 0 && (
               <>
-                {/* Barra de activos vs pasivos */}
                 <div className="space-y-3 mb-4">
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
                     <div className="h-full bg-blue-500 transition-all" style={{ width: `${activePercentage}%` }} />
@@ -501,7 +488,6 @@ const IncomePage = () => {
                   </div>
                 </div>
 
-                {/* Botón Nuevo Ingreso - Movido aquí dentro de la tarjeta */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="w-full bg-green-500 hover:bg-green-600 text-black py-4 text-sm font-semibold mb-4">
@@ -549,13 +535,12 @@ const IncomePage = () => {
                   </DialogContent>
                 </Dialog>
 
-                {/* Distribución por categorías */}
                 {topCategories.length > 0 && (
                   <div className="pt-4 border-t border-zinc-700">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs text-zinc-500 font-medium">Distribución por categoría</p>
+                      <p className="text-xs text-zinc-500 font-medium">Distribucion por categoria</p>
                       <p className="text-xs text-zinc-500">
-                        {topCategories.length} {topCategories.length === 1 ? 'categoría' : 'categorías'}
+                        {topCategories.length} {topCategories.length === 1 ? "categoria" : "categorias"}
                       </p>
                     </div>
 
@@ -572,7 +557,6 @@ const IncomePage = () => {
                             className="w-full p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all"
                           >
                             <div className="flex items-center gap-3 mb-3">
-                              {/* Icono y nombre */}
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${catInfo.color}`}>
                                   <Icon className={`w-5 h-5 ${catInfo.textColor}`} />
@@ -582,18 +566,14 @@ const IncomePage = () => {
                                   {isPassive ? "Pasivo" : "Activo"}
                                 </span>
                               </div>
-
-                              {/* Cantidad y porcentaje a la derecha */}
                               <div className="ml-auto flex items-center gap-3 flex-shrink-0">
                                 <span className="font-bold text-white text-lg">{formatCurrency(cat.amount)}</span>
                                 <span className="text-sm text-zinc-400 w-12 text-right">{percentage.toFixed(1)}%</span>
                               </div>
                             </div>
-
-                            {/* Barra de progreso */}
                             <div className="h-2.5 bg-zinc-700 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace('/20', '')}`}
+                                className={`h-full rounded-full transition-all duration-500 ${catInfo.color.replace("/20", "")}`}
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
@@ -604,7 +584,7 @@ const IncomePage = () => {
                       {otherTotal > 0 && (
                         <div className="w-full p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-zinc-500">Otras categorías ({sortedCategories.length - 5})</span>
+                            <span className="text-sm text-zinc-500">Otras categorias ({sortedCategories.length - 5})</span>
                             <span className="font-bold text-zinc-400">{formatCurrency(otherTotal)}</span>
                           </div>
                         </div>
@@ -623,12 +603,10 @@ const IncomePage = () => {
           </CardContent>
         </Card>
 
-        {/* Historial de Ingresos */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
             <p className="text-white font-semibold mb-4">Ingresos</p>
 
-            {/* Filter buttons */}
             <div className="flex gap-2 mb-4 flex-wrap">
               <button
                 onClick={() => setFilterIncomeType("all")}
@@ -714,7 +692,6 @@ const IncomePage = () => {
         </Card>
       </div>
 
-      {/* Modal edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -756,7 +733,6 @@ const IncomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal eliminación */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -766,7 +742,7 @@ const IncomePage = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="space-y-4 mt-4">
-            <p className="text-zinc-300 text-sm">¿Eliminar este ingreso?</p>
+            <p className="text-zinc-300 text-sm">Eliminar este ingreso?</p>
             {selectedIncome && (
               <div className="p-3 bg-zinc-800/50 rounded-lg">
                 <p className="text-white font-medium">{selectedIncome.description}</p>
@@ -856,7 +832,6 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
 
   return (
     <div className="space-y-3 mt-2">
-      {/* Concepto */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Concepto</label>
         <Input
@@ -867,9 +842,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         />
       </div>
 
-      {/* Importe */}
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Importe (€)</label>
+        <label className="text-xs text-zinc-400 mb-1 block">Importe (EUR)</label>
         <Input
           type="number"
           step="0.01"
@@ -880,7 +854,6 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         />
       </div>
 
-      {/* Fecha */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Fecha</label>
         <DatePicker
@@ -889,9 +862,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         />
       </div>
 
-      {/* Categoría */}
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
+        <label className="text-xs text-zinc-400 mb-1 block">Categoria</label>
         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
           <DialogTrigger asChild>
             <button
@@ -907,7 +879,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[70vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-white text-sm">Categoría</DialogTitle>
+              <DialogTitle className="text-white text-sm">Categoria</DialogTitle>
             </DialogHeader>
             <button
               onClick={() => setIsCategoryDialogOpen(false)}
@@ -946,7 +918,6 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         </Dialog>
       </div>
 
-      {/* Tipo de ingreso (Activo/Pasivo) */}
       <div>
         <label className="text-xs text-zinc-400 mb-2 block">Tipo de ingreso</label>
         <div className="grid grid-cols-2 gap-2">
@@ -981,9 +952,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         </div>
       </div>
 
-      {/* ¿Es recurrente? */}
       <div>
-        <label className="text-xs text-zinc-400 mb-2 block">¿Es recurrente?</label>
+        <label className="text-xs text-zinc-400 mb-2 block">Es recurrente?</label>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -996,7 +966,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           >
             <RefreshCcw className={`w-5 h-5 ${income.is_recurring ? "text-purple-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${income.is_recurring ? "text-white" : "text-zinc-400"}`}>
-              Sí
+              Si
             </span>
           </button>
           <button
@@ -1016,9 +986,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         </div>
       </div>
 
-      {/* Vincular a Inversión */}
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversión</label>
+        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversion</label>
         <Dialog open={isInvestmentDialogOpen} onOpenChange={setIsInvestmentDialogOpen}>
           <DialogTrigger asChild>
             <button
@@ -1044,7 +1013,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800">
             <DialogHeader>
-              <DialogTitle className="text-white">Vincular a Inversión</DialogTitle>
+              <DialogTitle className="text-white">Vincular a Inversion</DialogTitle>
             </DialogHeader>
             <button
               onClick={() => setIsInvestmentDialogOpen(false)}
@@ -1101,14 +1070,13 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
               >
                 <Plus className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Crear nueva inversión</span>
+                <span className="text-emerald-400 font-medium">Crear nueva inversion</span>
               </button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Vincular a Patrimonio */}
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
         <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
@@ -1200,7 +1168,6 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         </Dialog>
       </div>
 
-      {/* Botón submit */}
       <Button
         onClick={onSubmit}
         className="w-full bg-green-500 hover:bg-green-600 text-black text-sm py-4"
@@ -1209,11 +1176,10 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
         {isSubmitting ? "Guardando..." : isNew ? "Guardar" : "Guardar cambios"}
       </Button>
 
-      {/* Diálogos para crear inversión/patrimonio desde el formulario */}
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle className="text-white">Nueva Inversión</DialogTitle>
+            <DialogTitle className="text-white">Nueva Inversion</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
@@ -1279,7 +1245,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Categoría</label>
+              <label className="text-xs text-zinc-400 mb-1 block">Categoria</label>
               <Select value={newPatrimonyAsset.category} onValueChange={(v) => setNewPatrimonyAsset({ ...newPatrimonyAsset, category: v })}>
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
