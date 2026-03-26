@@ -358,27 +358,34 @@ const DebtsPage = () => {
               <Banknote className="w-5 h-5 text-amber-500" />
               Deudas
             </CardTitle>
-            <div className="flex gap-1.5 flex-wrap">
+            {/* Filtros - Ahora con ancho completo como en IncomePage */}
+            <div className="flex gap-2 mb-4 flex-wrap">
               <button
                 onClick={() => setFilterType("all")}
-                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "all" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "all"
+                    ? "bg-green-500 text-black"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                 }`}
               >
                 Todas
               </button>
               <button
                 onClick={() => setFilterType("they_owe")}
-                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "they_owe" ? "bg-green-500 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "they_owe"
+                    ? "bg-green-500 text-black"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                 }`}
               >
                 Me deben
               </button>
               <button
                 onClick={() => setFilterType("i_owe")}
-                className={`px-2.5 py-1.5 rounded-lg font-medium text-xs transition-all ${
-                  filterType === "i_owe" ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-xs transition-all ${
+                  filterType === "i_owe"
+                    ? "bg-red-500 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                 }`}
               >
                 Debo yo
