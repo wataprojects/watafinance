@@ -195,21 +195,21 @@ const DebtsPage = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="bg-green-900/30 border-green-800">
-            <CardContent className="p-6 text-center">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-              <p className="text-3xl font-bold text-green-500">{formatCurrency(totalTheyOwe)}</p>
-              <p className="text-green-400 text-sm">Me deben</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-red-900/30 border-red-800">
-            <CardContent className="p-6 text-center">
-              <TrendingDownIcon className="w-8 h-8 mx-auto mb-2 text-red-500" />
-              <p className="text-3xl font-bold text-red-500">{formatCurrency(totalIOwe)}</p>
-              <p className="text-red-400 text-sm">Debo yo</p>
-            </CardContent>
-          </Card>
-        </div>
+                  <Card className="bg-green-900/30 border-green-800">
+                    <CardContent className="p-4 text-center">
+                      <TrendingUp className="w-6 h-6 mx-auto mb-1 text-green-500" />
+                      <p className="text-xl sm:text-2xl font-bold text-green-500 truncate">{formatCurrency(totalTheyOwe)}</p>
+                      <p className="text-green-400 text-xs">Me deben</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-red-900/30 border-red-800">
+                    <CardContent className="p-4 text-center">
+                      <TrendingDownIcon className="w-6 h-6 mx-auto mb-1 text-red-500" />
+                      <p className="text-xl sm:text-2xl font-bold text-red-500 truncate">{formatCurrency(totalIOwe)}</p>
+                      <p className="text-red-400 text-xs">Debo yo</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
         {/* Botón Nueva Deuda - Movido fuera del Card */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
