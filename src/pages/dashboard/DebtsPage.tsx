@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Banknote, User, TrendingUp, TrendingDown as TrendingDownIcon, X, Pencil, Trash2 } from "lucide-react";
+import { Plus, Banknote, User, TrendingUp, TrendingDown as TrendingDownIcon, X, Pencil, Trash2, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -42,7 +42,9 @@ const DebtsPage = () => {
     debt_type: "they_owe" as DebtType,
   });
 
-  const years = Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => new Date().getFullYear() - i);
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+  
   const months = [
     { value: "01", label: "Enero" },
     { value: "02", label: "Febrero" },
@@ -59,9 +61,9 @@ const DebtsPage = () => {
   ];
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  const currentYear = new Date().getFullYear().toString();
+  const currentYearStr = currentYear.toString();
   const [filterMonth, setFilterMonth] = useState(currentMonth);
-  const [filterYear, setFilterYear] = useState(currentYear);
+  const [filterYear, setFilterYear] = useState(currentYearStr);
 
   useEffect(() => {
     checkAuth();
@@ -154,67 +156,118 @@ const DebtsPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  // Filter debts by type AND date
   const filteredDebts = debts.filter((debt) => {
-    if (filterType === "all") return true;
-    if (filterType === "they_owe") return debt.category === "they_owe";
-    if (filterType === "i_owe") return debt.category === "i_owe";
+    // Filter by type
+    if (filterType !== "all") {
+      if (filterType === "they_owe" && debt.category !== "they_owe") return false;
+      if (filterType === "i_owe" && debt.category !== "i_owe") return false;
+    }
+    
+    // Filter by date (created_at)
+    if (debt.created_at) {
+      const debtDate = new Date(debt.created_at);
+      const debtYear = debtDate.getFullYear().toString();
+      const debtMonth = (debtDate.getMonth() + 1).toString().padStart(2, '0');
+      
+      if (filterYear !== "all" && debtYear !== filterYear) return false;
+      if (filterMonth !== "all" && debtMonth !== filterMonth) return false;
+    }
+    
     return true;
   });
 
-  const totalTheyOwe = debts.filter(d => d.category === "they_owe").reduce((sum, d) => sum + parseFloat(d.current_amount || d.initial_amount || 0), 0);
-  const totalIOwe = debts.filter(d => d.category === "i_owe").reduce((sum, d) => sum + parseFloat(d.current_amount || d.initial_amount || 0), 0);
+  // Calculate totals for filtered debts
+  const totalTheyOwe = filteredDebts
+    .filter(d => d.category === "they_owe")
+    .reduce((sum, d) => sum + parseFloat(d.current_amount || d.initial_amount || 0), 0);
+  
+  const totalIOwe = filteredDebts
+    .filter(d => d.category === "i_owe")
+    .reduce((sum, d) => sum + parseFloat(d.current_amount || d.initial_amount || 0), 0);
+
+  const netBalance = totalTheyOwe - totalIOwe;
 
   return (
     <div className="min-h-screen bg-black pb-28">
       <DashboardHeader title="FinPro" subtitle="Gestión de Deudas" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
-          <div className="flex gap-2 flex-1">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-white text-xs">{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-[90px] bg-zinc-800 border-zinc-700 text-white text-xs">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value} className="text-white text-xs">{month.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Fila 1: Selectores de Año y Mes - Estilo IncomePage */}
+        <div className="grid grid-cols-2 gap-4">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">{filterYear}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800 max-h-[300px]">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
+              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-lg">
+                  {filterMonth === "all" ? "Todos" : months.find(m => m.value === filterMonth)?.label}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all" className="text-white">Todos</SelectItem>
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-                  <Card className="bg-green-900/30 border-green-800">
-                    <CardContent className="p-4 text-center">
-                      <TrendingUp className="w-6 h-6 mx-auto mb-1 text-green-500" />
-                      <p className="text-xl sm:text-2xl font-bold text-green-500 truncate">{formatCurrency(totalTheyOwe)}</p>
-                      <p className="text-green-400 text-xs">Me deben</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-red-900/30 border-red-800">
-                    <CardContent className="p-4 text-center">
-                      <TrendingDownIcon className="w-6 h-6 mx-auto mb-1 text-red-500" />
-                      <p className="text-xl sm:text-2xl font-bold text-red-500 truncate">{formatCurrency(totalIOwe)}</p>
-                      <p className="text-red-400 text-xs">Debo yo</p>
-                    </CardContent>
-                  </Card>
-                </div>
+        {/* Fila 2: Totales filtrados */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="bg-gradient-to-br from-green-900/40 to-zinc-900 border-green-800/50">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className="text-green-400 text-xs font-medium">Me deben</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{formatCurrency(totalTheyOwe)}</p>
+              <p className="text-zinc-500 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "they_owe").length} deudas</p>
+            </CardContent>
+          </Card>
 
-        {/* Botón Nueva Deuda - Movido fuera del Card */}
+          <Card className="bg-gradient-to-br from-red-900/40 to-zinc-900 border-red-800/50">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <TrendingDownIcon className="w-4 h-4 text-red-500" />
+                <span className="text-red-400 text-xs font-medium">Debo yo</span>
+              </div>
+              <p className="text-2xl font-bold text-red-400">{formatCurrency(totalIOwe)}</p>
+              <p className="text-zinc-500 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "i_owe").length} deudas</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Balance neto */}
+        {netBalance !== 0 && (
+          <Card className={`${netBalance >= 0 ? "bg-green-900/20 border-green-800/30" : "bg-red-900/20 border-red-800/30"}`}>
+            <CardContent className="p-3 text-center">
+              <p className={`text-sm font-medium ${netBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
+                Balance: {netBalance >= 0 ? "+" : ""}{formatCurrency(netBalance)}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Botón Nueva Deuda */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
+            <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black py-4 text-sm font-semibold">
               <Plus className="w-4 h-4 mr-2" />
               Nueva Deuda
             </Button>
@@ -298,6 +351,7 @@ const DebtsPage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Lista de deudas */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between w-full">
@@ -335,15 +389,20 @@ const DebtsPage = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-zinc-500 text-center">Cargando...</p>
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
+              </div>
             ) : filteredDebts.length === 0 ? (
-              <p className="text-zinc-500 text-center">No hay deudas registradas</p>
+              <div className="text-center py-8">
+                <Banknote className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
+                <p className="text-zinc-500 text-sm">No hay deudas en este período</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {filteredDebts.map((debt) => {
                   const isTheyOwe = debt.category === "they_owe";
                   return (
-                    <div key={debt.id} className="p-4 bg-zinc-800/50 rounded-xl">
+                    <div key={debt.id} className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-all">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isTheyOwe ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
@@ -385,6 +444,7 @@ const DebtsPage = () => {
         </Card>
       </div>
 
+      {/* Modal editar */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
@@ -425,6 +485,7 @@ const DebtsPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal eliminar */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
