@@ -814,6 +814,63 @@ const ExpensesPage = () => {
                       </p>
                     </div>
                     
+                    {/* ✅ Botón "Nuevo Gasto" - AHORA ANTES DE LAS CATEGORÍAS */}
+                    <div className="mb-4">
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Nuevo Gasto
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+                          </DialogHeader>
+                          <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                            <X className="w-4 h-4" />
+                          </button>
+                          <ExpenseForm
+                            expense={newExpense}
+                            setExpense={setNewExpense}
+                            onSubmit={handleAddExpense}
+                            isSubmitting={isSubmitting}
+                            isNew={true}
+                            investments={investments}
+                            patrimony={patrimony}
+                            isNewInvestmentOpen={isNewInvestmentOpen}
+                            setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                            isNewPatrimonyOpen={isNewPatrimonyOpen}
+                            setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                            newInvestment={newInvestment}
+                            setNewInvestment={setNewInvestment}
+                            newPatrimonyAsset={newPatrimonyAsset}
+                            setNewPatrimonyAsset={setNewPatrimonyAsset}
+                            handleCreateInvestment={handleCreateInvestment}
+                            handleCreatePatrimony={handleCreatePatrimony}
+                            investmentTypes={investmentTypes}
+                            patrimonyCategories={patrimonyCategories}
+                            isCategoryDialogOpen={isCategoryDialogOpen}
+                            setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                            isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                            setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                            isInvestmentDialogOpen={isInvestmentDialogOpen}
+                            setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                            isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                            setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                            getSelectedCategoryInfo={getSelectedCategoryInfo}
+                            customCategories={customCategories}
+                            availableIcons={availableIcons}
+                            categoryColors={categoryColors}
+                            newCustomCategory={newCustomCategory}
+                            setNewCustomCategory={setNewCustomCategory}
+                            handleCreateCustomCategory={handleCreateCustomCategory}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+
+                    {/* Lista de categorías */}
                     <div className="space-y-3">
                       {sortedCategories.map((cat) => {
                         const catInfo = getCategoryInfo(cat.category);
@@ -858,62 +915,6 @@ const ExpensesPage = () => {
                     </div>
                   </div>
                 )}
-
-                {/* 3. Mover botón "Nuevo Gasto" dentro del card, después de categorías */}
-                <div className="mt-6">
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nuevo Gasto
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
-                      </DialogHeader>
-                      <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-                        <X className="w-4 h-4" />
-                      </button>
-                      <ExpenseForm
-                        expense={newExpense}
-                        setExpense={setNewExpense}
-                        onSubmit={handleAddExpense}
-                        isSubmitting={isSubmitting}
-                        isNew={true}
-                        investments={investments}
-                        patrimony={patrimony}
-                        isNewInvestmentOpen={isNewInvestmentOpen}
-                        setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-                        isNewPatrimonyOpen={isNewPatrimonyOpen}
-                        setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-                        newInvestment={newInvestment}
-                        setNewInvestment={setNewInvestment}
-                        newPatrimonyAsset={newPatrimonyAsset}
-                        setNewPatrimonyAsset={setNewPatrimonyAsset}
-                        handleCreateInvestment={handleCreateInvestment}
-                        handleCreatePatrimony={handleCreatePatrimony}
-                        investmentTypes={investmentTypes}
-                        patrimonyCategories={patrimonyCategories}
-                        isCategoryDialogOpen={isCategoryDialogOpen}
-                        setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-                        isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-                        setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-                        isInvestmentDialogOpen={isInvestmentDialogOpen}
-                        setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-                        isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-                        setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-                        getSelectedCategoryInfo={getSelectedCategoryInfo}
-                        customCategories={customCategories}
-                        availableIcons={availableIcons}
-                        categoryColors={categoryColors}
-                        newCustomCategory={newCustomCategory}
-                        setNewCustomCategory={setNewCustomCategory}
-                        handleCreateCustomCategory={handleCreateCustomCategory}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </div>
 
                 {totalTrimmedSavings > 0 && (
                   <div className="mt-4 pt-4 border-t border-zinc-700">
@@ -1020,7 +1021,7 @@ const ExpensesPage = () => {
               {allSubscriptions.length === 0 ? (
                 <div className="text-center py-6">
                   <Smartphone className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
-                  <p className="text-zinc-400 text-sm mb-1">No tienes suscripciones registradas</p>
+                  <p className="text-zinc-400 text-sm mb-1">No tienes suscripciones registrada</p>
                   <p className="text-zinc-500 text-xs">Añade gastos de tipo "Suscripciones" para empezar</p>
                 </div>
               ) : (
