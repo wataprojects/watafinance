@@ -1079,8 +1079,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
       </div>
 
       <div>
-        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label<dyad-write path="src/pages/dashboard/IncomePage.tsx" description="Updating IncomePage.tsx to use visual bar width for small percentages (continued)">
-              <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
+        <label className="text-xs text-zinc-400 mb-1 block">Vincular a Patrimonio</label>
+        <Dialog open={isPatrimonyDialogOpen} onOpenChange={setIsPatrimonyDialogOpen}>
           <DialogTrigger asChild>
             <button
               type="button"
