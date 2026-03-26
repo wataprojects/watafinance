@@ -608,6 +608,14 @@ const ExpensesPage = () => {
   const recurrentPercentage = totalWithLoans > 0 ? (recurrentExpenses / totalWithLoans) * 100 : 0;
   const loansPercentage = totalWithLoans > 0 ? (totalLoans / totalWithLoans) * 100 : 0;
 
+  // 1. Crear array ordenado de tipos de gastos (de mayor a menor)
+  const expenseTypesSorted = [
+    { type: "puntual", amount: puntualExpenses, percentage: puntualPercentage, color: "bg-red-500", label: "Puntuales" },
+    { type: "recurrente", amount: recurrentExpenses, percentage: recurrentPercentage, color: "bg-purple-500", label: "Recurrentes" },
+    { type: "prestamo", amount: totalLoans, percentage: loansPercentage, color: "bg-blue-500", label: "Préstamos" },
+  ].filter(item => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
@@ -702,7 +710,7 @@ const ExpensesPage = () => {
   };
 
   // Helper function to determine the predominant type of a category
-  const getCategoryPredominantType = (category: string) => {
+  const getCategoryPredominatedType = (category: string) => {
     let puntual = 0;
     let recurrente = 0;
     filteredExpenses
@@ -770,55 +778,29 @@ const ExpensesPage = () => {
             
             {totalWithLoans > 0 ? (
               <>
+                {/* 2. Reemplazar la barra de progreso usando expenseTypesSorted */}
                 <div className="space-y-4">
                   <div className="h-4 bg-zinc-800 rounded-full overflow-hidden flex">
-                    {puntualPercentage > 0 && (
+                    {expenseTypesSorted.map((item, index) => (
                       <div 
-                        className="h-full bg-red-500 transition-all duration-500"
-                        style={{ width: `${puntualPercentage}%` }}
+                        key={item.type}
+                        className={`h-full ${item.color} transition-all duration-500`}
+                        style={{ width: `${item.percentage}%` }}
                       />
-                    )}
-                    {recurrentPercentage > 0 && (
-                      <div 
-                        className="h-full bg-purple-500 transition-all duration-500"
-                        style={{ width: `${recurrentPercentage}%` }}
-                      />
-                    )}
-                    {loansPercentage > 0 && (
-                      <div 
-                        className="h-full bg-blue-500 transition-all duration-500"
-                        style={{ width: `${loansPercentage}%` }}
-                      />
-                    )}
+                    ))}
                   </div>
 
-                  <div className="flex justify-between items-start text-center">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-center gap-1.5 mb-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                        <span className="text-zinc-400 text-xs font-medium">Puntuales</span>
+                  <div className="flex justify-between items-start text-center flex-wrap gap-2">
+                    {expenseTypesSorted.map((item) => (
+                      <div key={item.type} className="flex-1 min-w-[80px]">
+                        <div className="flex items-center justify-center gap-1.5 mb-1">
+                          <div className={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
+                          <span className="text-zinc-400 text-xs font-medium">{item.label}</span>
+                        </div>
+                        <p className="text-white font-bold text-sm">{formatCurrency(item.amount)}</p>
+                        <p className="text-zinc-500 text-xs">{item.percentage.toFixed(0)}%</p>
                       </div>
-                      <p className="text-white font-bold text-sm">{formatCurrency(puntualExpenses)}</p>
-                      <p className="text-zinc-500 text-xs">{puntualPercentage.toFixed(0)}%</p>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center justify-center gap-1.5 mb-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-                        <span className="text-zinc-400 text-xs font-medium">Recurrentes</span>
-                      </div>
-                      <p className="text-white font-bold text-sm">{formatCurrency(recurrentExpenses)}</p>
-                      <p className="text-zinc-500 text-xs">{recurrentPercentage.toFixed(0)}%</p>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center justify-center gap-1.5 mb-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                        <span className="text-zinc-400 text-xs font-medium">Préstamos</span>
-                      </div>
-                      <p className="text-white font-bold text-sm">{formatCurrency(totalLoans)}</p>
-                      <p className="text-zinc-500 text-xs">{loansPercentage.toFixed(0)}%</p>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
@@ -837,7 +819,7 @@ const ExpensesPage = () => {
                         const catInfo = getCategoryInfo(cat.category);
                         const Icon = catInfo.icon;
                         const percentage = totalWithLoans > 0 ? (cat.amount / totalWithLoans) * 100 : 0;
-                        const categoryType = getCategoryPredominantType(cat.category);
+                        const categoryType = getCategoryPredominatedType(cat.category);
                         
                         return (
                           <div 
@@ -877,6 +859,62 @@ const ExpensesPage = () => {
                   </div>
                 )}
 
+                {/* 3. Mover botón "Nuevo Gasto" dentro del card, después de categorías */}
+                <div className="mt-6">
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Gasto
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+                      </DialogHeader>
+                      <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                        <X className="w-4 h-4" />
+                      </button>
+                      <ExpenseForm
+                        expense={newExpense}
+                        setExpense={setNewExpense}
+                        onSubmit={handleAddExpense}
+                        isSubmitting={isSubmitting}
+                        isNew={true}
+                        investments={investments}
+                        patrimony={patrimony}
+                        isNewInvestmentOpen={isNewInvestmentOpen}
+                        setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                        isNewPatrimonyOpen={isNewPatrimonyOpen}
+                        setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                        newInvestment={newInvestment}
+                        setNewInvestment={setNewInvestment}
+                        newPatrimonyAsset={newPatrimonyAsset}
+                        setNewPatrimonyAsset={setNewPatrimonyAsset}
+                        handleCreateInvestment={handleCreateInvestment}
+                        handleCreatePatrimony={handleCreatePatrimony}
+                        investmentTypes={investmentTypes}
+                        patrimonyCategories={patrimonyCategories}
+                        isCategoryDialogOpen={isCategoryDialogOpen}
+                        setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                        isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                        setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                        isInvestmentDialogOpen={isInvestmentDialogOpen}
+                        setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                        isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                        setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                        getSelectedCategoryInfo={getSelectedCategoryInfo}
+                        customCategories={customCategories}
+                        availableIcons={availableIcons}
+                        categoryColors={categoryColors}
+                        newCustomCategory={newCustomCategory}
+                        setNewCustomCategory={setNewCustomCategory}
+                        handleCreateCustomCategory={handleCreateCustomCategory}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
                 {totalTrimmedSavings > 0 && (
                   <div className="mt-4 pt-4 border-t border-zinc-700">
                     <div className="flex items-center justify-center gap-2 p-3 bg-green-500/10 rounded-lg">
@@ -891,64 +929,64 @@ const ExpensesPage = () => {
             ) : (
               <div className="text-center py-4">
                 <p className="text-zinc-500 text-sm">No hay gastos registrados</p>
+                <div className="mt-4">
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-red-500 hover:bg-red-600 text-white py-3 text-sm font-semibold">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Gasto
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+                      </DialogHeader>
+                      <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                        <X className="w-4 h-4" />
+                      </button>
+                      <ExpenseForm
+                        expense={newExpense}
+                        setExpense={setNewExpense}
+                        onSubmit={handleAddExpense}
+                        isSubmitting={isSubmitting}
+                        isNew={true}
+                        investments={investments}
+                        patrimony={patrimony}
+                        isNewInvestmentOpen={isNewInvestmentOpen}
+                        setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                        isNewPatrimonyOpen={isNewPatrimonyOpen}
+                        setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                        newInvestment={newInvestment}
+                        setNewInvestment={setNewInvestment}
+                        newPatrimonyAsset={newPatrimonyAsset}
+                        setNewPatrimonyAsset={setNewPatrimonyAsset}
+                        handleCreateInvestment={handleCreateInvestment}
+                        handleCreatePatrimony={handleCreatePatrimony}
+                        investmentTypes={investmentTypes}
+                        patrimonyCategories={patrimonyCategories}
+                        isCategoryDialogOpen={isCategoryDialogOpen}
+                        setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                        isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
+                        setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
+                        isInvestmentDialogOpen={isInvestmentDialogOpen}
+                        setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                        isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                        setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                        getSelectedCategoryInfo={getSelectedCategoryInfo}
+                        customCategories={customCategories}
+                        availableIcons={availableIcons}
+                        categoryColors={categoryColors}
+                        newCustomCategory={newCustomCategory}
+                        setNewCustomCategory={setNewCustomCategory}
+                        handleCreateCustomCategory={handleCreateCustomCategory}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
-
-        {/* Botón Nuevo Gasto */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-6 text-base font-semibold">
-              <Plus className="w-5 h-5 mr-2" />
-              Nuevo Gasto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
-            </DialogHeader>
-            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-              <X className="w-4 h-4" />
-            </button>
-            <ExpenseForm
-              expense={newExpense}
-              setExpense={setNewExpense}
-              onSubmit={handleAddExpense}
-              isSubmitting={isSubmitting}
-              isNew={true}
-              investments={investments}
-              patrimony={patrimony}
-              isNewInvestmentOpen={isNewInvestmentOpen}
-              setIsNewInvestmentOpen={setIsNewInvestmentOpen}
-              isNewPatrimonyOpen={isNewPatrimonyOpen}
-              setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
-              newInvestment={newInvestment}
-              setNewInvestment={setNewInvestment}
-              newPatrimonyAsset={newPatrimonyAsset}
-              setNewPatrimonyAsset={setNewPatrimonyAsset}
-              handleCreateInvestment={handleCreateInvestment}
-              handleCreatePatrimony={handleCreatePatrimony}
-              investmentTypes={investmentTypes}
-              patrimonyCategories={patrimonyCategories}
-              isCategoryDialogOpen={isCategoryDialogOpen}
-              setIsCategoryDialogOpen={setIsCategoryDialogOpen}
-              isCreateCategoryDialogOpen={isCreateCategoryDialogOpen}
-              setIsCreateCategoryDialogOpen={setIsCreateCategoryDialogOpen}
-              isInvestmentDialogOpen={isInvestmentDialogOpen}
-              setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
-              isPatrimonyDialogOpen={isPatrimonyDialogOpen}
-              setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
-              getSelectedCategoryInfo={getSelectedCategoryInfo}
-              customCategories={customCategories}
-              availableIcons={availableIcons}
-              categoryColors={categoryColors}
-              newCustomCategory={newCustomCategory}
-              setNewCustomCategory={setNewCustomCategory}
-              handleCreateCustomCategory={handleCreateCustomCategory}
-            />
-          </DialogContent>
-        </Dialog>
 
         {/* Suscripciones */}
         <Card className="bg-gradient-to-r from-pink-900 to-zinc-900 border-pink-800">
