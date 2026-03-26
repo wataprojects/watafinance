@@ -85,7 +85,6 @@ import CelebrateAnimation from "@/components/dashboard/CelebrateAnimation";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/currency";
 import { getVisualBarWidth } from "@/utils/helpers";
-import { isRecurringActiveInMonth, expandRecurringToMonths } from "@/lib/recurring";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -266,8 +265,6 @@ const ExpensesPage = () => {
     is_recurring: false,
     category: "groceries",
     date: new Date(),
-    start_date: null as Date | null,
-    end_date: null as Date | null,
     investment_id: "none",
     patrimony_id: "none",
     has_scheduled_change: false,
@@ -283,8 +280,6 @@ const ExpensesPage = () => {
     is_recurring: false,
     category: "groceries",
     date: new Date(),
-    start_date: null as Date | null,
-    end_date: null as Date | null,
     investment_id: "none",
     patrimony_id: "none",
     has_scheduled_change: false,
@@ -499,8 +494,6 @@ const ExpensesPage = () => {
       category: newExpense.category,
       date: formatDateToISO(newExpense.date),
       is_recurring: newExpense.is_recurring,
-      start_date: newExpense.start_date ? formatDateToISO(newExpense.start_date) : null,
-      end_date: newExpense.end_date ? formatDateToISO(newExpense.end_date) : null,
       investment_id: newExpense.investment_id === "none" ? null : newExpense.investment_id,
       patrimony_id: newExpense.patrimony_id === "none" ? null : newExpense.patrimony_id,
       has_scheduled_change: newExpense.has_scheduled_change,
@@ -516,8 +509,6 @@ const ExpensesPage = () => {
         is_recurring: false,
         category: "groceries",
         date: new Date(),
-        start_date: null,
-        end_date: null,
         investment_id: "none",
         patrimony_id: "none",
         has_scheduled_change: false,
@@ -544,8 +535,6 @@ const ExpensesPage = () => {
       category: editExpense.category,
       date: formatDateToISO(editExpense.date),
       is_recurring: editExpense.is_recurring,
-      start_date: editExpense.start_date ? formatDateToISO(editExpense.start_date) : null,
-      end_date: editExpense.end_date ? formatDateToISO(editExpense.end_date) : null,
       investment_id: editExpense.investment_id === "none" ? null : editExpense.investment_id,
       patrimony_id: editExpense.patrimony_id === "none" ? null : editExpense.patrimony_id,
       has_scheduled_change: editExpense.has_scheduled_change,
@@ -614,61 +603,32 @@ const ExpensesPage = () => {
     setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20", textColor: "text-green-400" });
   };
 
-  // Filter expenses with recurring expansion logic
   const filteredExpenses = expenses.filter((expense) => {
     if (!expense.date) return false;
-    
-    // If viewing all time, show all
-    if (filterYear === "all") return true;
-    
-    // If viewing a specific month
-    if (filterMonth !== "all") {
-      const viewYear = parseInt(filterYear);
-      const viewMonth = parseInt(filterMonth) - 1;
-      
-      return isRecurringActiveInMonth(expense, viewYear, viewMonth);
-    }
-    
-    // Viewing all months of a year
     const expenseDate = new Date(expense.date + "T00:00:00");
     if (isNaN(expenseDate.getTime())) return false;
-    const expenseYear = expenseDate.getFullYear();
-    
-    if (filterYear !== "all" && expenseYear !== parseInt(filterYear)) return false;
-    
+    const expenseYear = expenseDate.getFullYear().toString();
+    const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+    if (filterYear !== "all" && expenseYear !== filterYear) return false;
+    if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
     return true;
   });
 
-  // Calculate totals using the expanded view for specific months
-  const getDisplayExpenses = () => {
-    if (filterYear === "all") return filteredExpenses;
-    
-    if (filterMonth !== "all") {
-      const viewYear = parseInt(filterYear);
-      const viewMonth = parseInt(filterMonth) - 1;
-      return expandRecurringToMonths(filteredExpenses, viewYear, viewMonth);
-    }
-    
-    return filteredExpenses;
-  };
-
-  const displayExpenses = getDisplayExpenses();
-
-  const allSubscriptions = displayExpenses.filter((e: any) => e.category === "subscriptions");
-  const activeSubscriptions = allSubscriptions.filter((e: any) => !e.is_trimmed);
-  const trimmedSubscriptions = allSubscriptions.filter((e: any) => e.is_trimmed);
+  const allSubscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
+  const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
+  const trimmedSubscriptions = allSubscriptions.filter((e) => e.is_trimmed);
   
-  const totalActiveSubscriptions = activeSubscriptions.reduce((sum, e: any) => sum + parseFloat(e.amount), 0);
-  const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e: any) => sum + parseFloat(e.amount), 0);
+  const totalActiveSubscriptions = activeSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
   const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
 
-  const puntualExpenses = displayExpenses
-    .filter((e: any) => !e.is_recurring && !e.is_trimmed)
-    .reduce((sum, e: any) => sum + parseFloat(e.amount), 0);
+  const puntualExpenses = filteredExpenses
+    .filter(e => !e.is_recurring && !e.is_trimmed)
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  const recurrentExpenses = displayExpenses
-    .filter((e: any) => e.is_recurring && !e.is_trimmed)
-    .reduce((sum, e: any) => sum + parseFloat(e.amount), 0);
+  const recurrentExpenses = filteredExpenses
+    .filter(e => e.is_recurring && !e.is_trimmed)
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
 
@@ -692,7 +652,7 @@ const ExpensesPage = () => {
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
   const sortedTrimmedSubscriptions = [...trimmedSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
 
-  const expensesByCategory = displayExpenses.reduce((acc, e: any) => {
+  const expensesByCategory = filteredExpenses.reduce((acc, e) => {
     if (e.is_trimmed) return acc;
     if (!acc[e.category]) acc[e.category] = 0;
     acc[e.category] += parseFloat(e.amount);
@@ -783,9 +743,9 @@ const ExpensesPage = () => {
   const getCategoryPredominatedType = (category: string) => {
     let puntual = 0;
     let recurrente = 0;
-    displayExpenses
-      .filter((e: any) => e.category === category && !e.is_trimmed)
-      .forEach((e: any) => {
+    filteredExpenses
+      .filter((e) => e.category === category && !e.is_trimmed)
+      .forEach((e) => {
         if (e.is_recurring) {
           recurrente += parseFloat(e.amount);
         } else {
