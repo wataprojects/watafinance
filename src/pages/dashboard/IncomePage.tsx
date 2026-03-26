@@ -203,7 +203,7 @@ const IncomePage = () => {
       supabase.from("patrimony").select("id, name").eq("user_id", userId),
     ]);
     if (invResult.data) setInvestments(invResult.data);
-    if (patResult.data) setPatrimony(patrimony.data);
+    if (patResult.data) setPatrimony(patResult.data);
   };
 
   const checkAuth = async () => {
@@ -1024,7 +1024,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <span className="text-zinc-400 font-medium">Sin vincular</span>
               </button>
 
-              {investments.map((inv: any) => (
+              {(investments || []).map((inv: any) => (
                 <button
                   key={inv.id}
                   type="button"
@@ -1116,7 +1116,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <span className="text-zinc-400 font-medium">Sin vincular</span>
               </button>
 
-              {patrimony.map((pat: any) => (
+              {(patrimony || []).map((pat: any) => (
                 <button
                   key={pat.id}
                   type="button"
@@ -1183,7 +1183,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   {investmentTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value} className="text-white">{type.label}</SelectItem>
                   ))}
@@ -1237,7 +1237,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   {patrimonyCategories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>
                   ))}
