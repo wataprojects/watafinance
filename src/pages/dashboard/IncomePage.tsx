@@ -37,12 +37,14 @@ import {
   TrendingDown,
   Sparkles,
   BadgeCheck,
+  Calendar,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import { getVisualBarWidth } from "@/utils/helpers";
+import { isRecurringActiveInMonth, expandRecurringToMonths, calculateViewTotal } from "@/lib/recurring";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -148,6 +150,8 @@ const IncomePage = () => {
     income_type: "active" as "active" | "passive",
     category: "salary",
     date: new Date(),
+    start_date: null as Date | null,
+    end_date: null as Date | null,
     investment_id: "none",
     patrimony_id: "none",
   });
@@ -160,6 +164,8 @@ const IncomePage = () => {
     income_type: "active" as "active" | "passive",
     category: "salary",
     date: new Date(),
+    start_date: null as Date | null,
+    end_date: null as Date | null,
     investment_id: "none",
     patrimony_id: "none",
   });
@@ -233,27 +239,55 @@ const IncomePage = () => {
   const getSelectedCategoryInfo = (categoryValue: string) =>
     incomeCategories.find((c) => c.value === categoryValue) || incomeCategories[0];
 
+  // Filter incomes with recurring expansion logic
   const filteredIncomes = incomes.filter((income) => {
     if (!income.date) return false;
+    
+    // If viewing all time, show all
+    if (filterYear === "all") return true;
+    
+    // If viewing a specific month
+    if (filterMonth !== "all") {
+      const viewYear = parseInt(filterYear);
+      const viewMonth = parseInt(filterMonth) - 1;
+      
+      return isRecurringActiveInMonth(income, viewYear, viewMonth);
+    }
+    
+    // Viewing all months of a year
     const incomeDate = new Date(income.date + "T00:00:00");
     if (isNaN(incomeDate.getTime())) return false;
-    const incomeYear = incomeDate.getFullYear().toString();
-    const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, "0");
-    if (filterYear !== "all" && incomeYear !== filterYear) return false;
-    if (filterMonth !== "all" && incomeMonth !== filterMonth) return false;
-    if (filterIncomeType === "active") return !income.is_passive;
-    if (filterIncomeType === "passive") return income.is_passive;
+    const incomeYear = incomeDate.getFullYear();
+    
+    if (filterYear !== "all" && incomeYear !== parseInt(filterYear)) return false;
+    
     return true;
   });
 
-  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  // Calculate totals using the expanded view for specific months
+  const getDisplayIncomes = () => {
+    if (filterYear === "all") return filteredIncomes;
+    
+    if (filterMonth !== "all") {
+      const viewYear = parseInt(filterYear);
+      const viewMonth = parseInt(filterMonth) - 1;
+      return expandRecurringToMonths(filteredIncomes, viewYear, viewMonth);
+    }
+    
+    return filteredIncomes;
+  };
+
+  const displayIncomes = getDisplayIncomes();
+  
+  // Calculate totals with recurring expansion
+  const totalIncome = displayIncomes.reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
+  const activeIncome = displayIncomes.filter((i: any) => !i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
+  const passiveIncome = displayIncomes.filter((i: any) => i.is_passive).reduce((sum, i: any) => sum + parseFloat(i.amount || 0), 0);
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
   const incomeByCategory: Record<string, number> = {};
-  filteredIncomes.forEach((income) => {
+  displayIncomes.forEach((income: any) => {
     const cat = income.category || "other";
     incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount || 0);
   });
@@ -283,6 +317,8 @@ const IncomePage = () => {
       is_passive: newIncome.income_type === "passive",
       date: formatDateToISO(newIncome.date),
       is_recurring: newIncome.is_recurring,
+      start_date: newIncome.start_date ? formatDateToISO(newIncome.start_date) : null,
+      end_date: newIncome.end_date ? formatDateToISO(newIncome.end_date) : null,
       investment_id: newIncome.investment_id === "none" ? null : newIncome.investment_id,
       patrimony_id: newIncome.patrimony_id === "none" ? null : newIncome.patrimony_id,
     });
@@ -296,6 +332,8 @@ const IncomePage = () => {
         income_type: "active",
         category: "salary",
         date: new Date(),
+        start_date: null,
+        end_date: null,
         investment_id: "none",
         patrimony_id: "none",
       });
@@ -322,6 +360,8 @@ const IncomePage = () => {
       is_passive: editIncome.income_type === "passive",
       date: formatDateToISO(editIncome.date),
       is_recurring: editIncome.is_recurring,
+      start_date: editIncome.start_date ? formatDateToISO(editIncome.start_date) : null,
+      end_date: editIncome.end_date ? formatDateToISO(editIncome.end_date) : null,
       investment_id: editIncome.investment_id === "none" ? null : editIncome.investment_id,
       patrimony_id: editIncome.patrimony_id === "none" ? null : editIncome.patrimony_id,
     }).eq("id", selectedIncome.id);
@@ -357,6 +397,8 @@ const IncomePage = () => {
       income_type: income.is_passive ? "passive" : "active",
       category: income.category,
       date: safeDate(income.date),
+      start_date: income.start_date ? safeDate(income.start_date) : null,
+      end_date: income.end_date ? safeDate(income.end_date) : null,
       investment_id: income.investment_id || "none",
       patrimony_id: income.patrimony_id || "none",
     });
@@ -461,6 +503,11 @@ const IncomePage = () => {
           <CardContent className="p-6">
             <p className="text-zinc-400 text-sm mb-1 text-center">Total Ingresos</p>
             <p className="text-4xl font-bold text-green-500 mb-4 text-center">{formatCurrency(totalIncome)}</p>
+            {(filterMonth !== "all" && filterYear !== "all") && (
+              <p className="text-zinc-500 text-xs text-center mb-4">
+                {displayIncomes.some((i: any) => i.is_expanded) && "(Incluye ingresos recurrentes expandidos)"}
+              </p>
+            )}
 
             {totalIncome > 0 && (
               <>
@@ -643,27 +690,44 @@ const IncomePage = () => {
 
             {loading ? (
               <p className="text-zinc-500 text-center">Cargando...</p>
-            ) : filteredIncomes.length === 0 ? (
+            ) : displayIncomes.length === 0 ? (
               <p className="text-zinc-500 text-center">Sin ingresos</p>
             ) : (
               <div className="space-y-3">
-                {filteredIncomes.map((income) => {
+                {displayIncomes
+                  .filter((income: any) => {
+                    if (filterIncomeType === "active") return !income.is_passive;
+                    if (filterIncomeType === "passive") return income.is_passive;
+                    return true;
+                  })
+                  .map((income: any, index: number) => {
                   const cat = getCategoryInfo(income.category);
                   const Icon = cat.icon;
                   const isPassive = income.is_passive;
+                  const isExpanded = income.is_expanded;
+                  const displayDate = income.display_date || income.date;
 
                   return (
                     <div
-                      key={income.id}
-                      className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+                      key={`${income.id}-${index}`}
+                      className={`flex items-center justify-between p-3 rounded-xl ${
+                        isExpanded ? "bg-purple-500/10 border border-purple-500/30" : "bg-zinc-800/50"
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
                           <Icon className={`w-5 h-5 ${cat.textColor}`} />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{income.description || cat.label}</p>
-                          <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-white">{income.description || cat.label}</p>
+                            {isExpanded && (
+                              <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] rounded">
+                                Recurrente
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-500">{formatDateSafe(displayDate)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -986,6 +1050,36 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Recurring period fields */}
+      {income.is_recurring && (
+        <div className="space-y-3 p-3 bg-purple-500/10 rounded-xl border border-purple-500/20">
+          <div className="flex items-center gap-2 text-purple-400">
+            <Calendar className="w-4 h-4" />
+            <span className="text-xs font-medium">Periodo de recurrencia (opcional)</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Fecha inicio</label>
+              <DatePicker
+                date={income.start_date}
+                onDateChange={(date) => setIncome({ ...income, start_date: date || null })}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Fecha fin</label>
+              <DatePicker
+                date={income.end_date}
+                onDateChange={(date) => setIncome({ ...income, end_date: date || null })}
+              />
+            </div>
+          </div>
+          <p className="text-[10px] text-zinc-500">
+            Si no especificas fechas, el ingreso aparecerá en todos los meses desde la fecha indicada.
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversion</label>
