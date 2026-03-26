@@ -62,8 +62,8 @@ const DebtsPage = () => {
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYearStr = currentYear.toString();
-  const [filterMonth, setFilterMonth] = useState(currentMonth);
-  const [filterYear, setFilterYear] = useState(currentYearStr);
+  const [filterMonth, setFilterMonth] = useState("all");
+  const [filterYear, setFilterYear] = useState("all");
 
   useEffect(() => {
     checkAuth();
@@ -199,7 +199,7 @@ const DebtsPage = () => {
             <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
               <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
               <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">{filterYear}</span>
+                <span className="text-white font-semibold text-lg">{filterYear === "all" ? "Todos" : filterYear}</span>
               </div>
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800 max-h-[300px]">
