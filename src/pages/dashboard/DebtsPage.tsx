@@ -294,34 +294,34 @@ const DebtsPage = () => {
           </Select>
         </div>
 
-        {/* Totals */}
+        {/* Totals - Darker backgrounds with brighter text */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-green-800/60 to-green-900/80 border-green-700/50">
+          <Card className="bg-[#052e16] border-green-600/50">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 text-xs font-medium">Me deben</span>
+                <span className="text-green-300 text-xs font-medium">Me deben</span>
               </div>
               <p className="text-2xl font-bold text-green-400">{formatCurrency(totalTheyOwe)}</p>
-              <p className="text-zinc-500 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "they_owe").length} deudas</p>
+              <p className="text-green-500/60 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "they_owe").length} deudas</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-800/60 to-red-900/80 border-red-700/50">
+          <Card className="bg-[#450a0a] border-red-600/50">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <TrendingDownIcon className="w-4 h-4 text-red-400" />
-                <span className="text-red-400 text-xs font-medium">Debo yo</span>
+                <span className="text-red-300 text-xs font-medium">Debo yo</span>
               </div>
               <p className="text-2xl font-bold text-red-400">{formatCurrency(totalIOwe)}</p>
-              <p className="text-zinc-500 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "i_owe").length} deudas</p>
+              <p className="text-red-500/60 text-[10px] mt-1">{filteredDebts.filter(d => d.category === "i_owe").length} deudas</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Net balance */}
         {netBalance !== 0 && (
-          <Card className={`${netBalance >= 0 ? "bg-green-900/20 border-green-800/30" : "bg-red-900/20 border-red-800/30"}`}>
+          <Card className={`${netBalance >= 0 ? "bg-green-900/30 border-green-700/40" : "bg-red-900/30 border-red-700/40"}`}>
             <CardContent className="p-3 text-center">
               <p className={`text-sm font-medium ${netBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
                 Balance: {netBalance >= 0 ? "+" : ""}{formatCurrency(netBalance)}
