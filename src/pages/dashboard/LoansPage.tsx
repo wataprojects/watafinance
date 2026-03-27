@@ -164,25 +164,19 @@ const LoansPage = () => {
       <DashboardHeader title="FinPro" subtitle="Gestión de Préstamos" />
       
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Préstamos</h1>
-            <p className="text-cyan-400 text-sm">Gestiona tus préstamos y créditos</p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild><Button className="bg-cyan-500 hover:bg-cyan-600 text-black"><Plus className="w-4 h-4 mr-2" />Nuevo Préstamo</Button></DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle className="text-white">Nuevo Préstamo</DialogTitle></DialogHeader>
-              <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
-              <LoanForm loan={newLoan} setLoan={setNewLoan} errors={errors} isSaving={isSaving} onSubmit={handleAddLoan} isNew={true} loanTypes={loanTypes} collectionDays={collectionDays} />
-            </DialogContent>
-          </Dialog>
-        </div>
-
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="bg-gradient-to-r from-cyan-600 to-cyan-700"><CardContent className="p-6 text-center"><Landmark className="w-8 h-8 mx-auto mb-2 text-white/80" /><p className="text-3xl font-bold text-white">{formatCurrency(totalDebt)}</p><p className="text-white/80 text-sm">Deuda total</p></CardContent></Card>
           <Card className="bg-gradient-to-r from-orange-500 to-rose-500"><CardContent className="p-6 text-center"><TrendingDownIcon className="w-8 h-8 mx-auto mb-2 text-white/80" /><p className="text-3xl font-bold text-white">{formatCurrency(totalMonthly)}</p><p className="text-white/80 text-sm">Cuotas/mes</p></CardContent></Card>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild><Button className="w-full bg-cyan-500 hover:bg-cyan-600 text-black py-6 text-lg mb-6"><Plus className="w-5 h-5 mr-2" />Nuevo Préstamo</Button></DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle className="text-white">Nuevo Préstamo</DialogTitle></DialogHeader>
+            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
+            <LoanForm loan={newLoan} setLoan={setNewLoan} errors={errors} isSaving={isSaving} onSubmit={handleAddLoan} isNew={true} loanTypes={loanTypes} collectionDays={collectionDays} />
+          </DialogContent>
+        </Dialog>
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader><CardTitle className="text-white flex items-center gap-2"><Landmark className="w-5 h-5 text-cyan-400" />Préstamos Activos ({activeLoans.length})</CardTitle></CardHeader>
