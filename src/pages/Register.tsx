@@ -16,10 +16,12 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -35,7 +37,8 @@ const Register = () => {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    // Get full response (data + error)
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -43,10 +46,20 @@ const Register = () => {
     if (error) {
       setError(error.message);
       setLoading(false);
+      return;
+    }
+
+    // Check if there's a session in the response
+    if (data?.session) {
+      // User created and authenticated automatically - go to dashboard
+      navigate("/dashboard");
     } else {
-      // Show success message and redirect to login
-      setError("");
-      navigate("/login");
+      // Requires email confirmation
+      setSuccessMessage("Revisa tu correo electrónico para confirmar tu cuenta");
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        navigate("/login", { state: { message: "Revisa tu correo electrónico para confirmar tu cuenta" } });
+      }, 2000);
     }
   };
 
@@ -81,6 +94,13 @@ const Register = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
+              {/* Success message */}
+              {successMessage && (
+                <div className="p-3 bg-green-900/30 border border-green-800 rounded-lg">
+                  <p className="text-green-400 text-sm">{successMessage}</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-sm text-zinc-400">Correo electrónico</label>
                 <Input
