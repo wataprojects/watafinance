@@ -296,10 +296,10 @@ const DebtsPage = () => {
 
         {/* Totals */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-green-900/40 to-zinc-900 border-green-800/50">
+          <Card className="bg-gradient-to-br from-green-800/60 to-green-900/80 border-green-700/50">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-green-500" />
+                <TrendingUp className="w-4 h-4 text-green-400" />
                 <span className="text-green-400 text-xs font-medium">Me deben</span>
               </div>
               <p className="text-2xl font-bold text-green-400">{formatCurrency(totalTheyOwe)}</p>
@@ -307,10 +307,10 @@ const DebtsPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-900/40 to-zinc-900 border-red-800/50">
+          <Card className="bg-gradient-to-br from-red-800/60 to-red-900/80 border-red-700/50">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <TrendingDownIcon className="w-4 h-4 text-red-500" />
+                <TrendingDownIcon className="w-4 h-4 text-red-400" />
                 <span className="text-red-400 text-xs font-medium">Debo yo</span>
               </div>
               <p className="text-2xl font-bold text-red-400">{formatCurrency(totalIOwe)}</p>
