@@ -1,22 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/utils/currency";
+import DebtStatusBadge from "./DebtStatusBadge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { SUPABASE_URL } from "@/lib/supabase-env";
 
 interface DashboardHeaderProps {
   title?: string;
   subtitle?: string;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  title = "FinPro", 
-  subtitle = "Tu gestión financiera" 
+interface PendingDebt {
+  id: string;
+  name: string;
+  creditor: string;
+  current_amount: number;
+  initial_amount: number;
+  category: string;
+  status: string;
+  created_at: string;
+  original_creator_id: string;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  title = "FinPro",
+  subtitle = "Tu gestión financiera",
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [pendingDebts, setPendingDebts] = useState<PendingDebt[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  useEffect(() => {
+    // Load pending notifications on mount
+    fetchPendingDebts();
+  }, []);
+
+  const fetchPendingDebts = async () => {
+    setLoadingNotifications(true);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      setLoadingNotifications(false);
+      return;
+    }
+
+    // Fetch debts where user is the associated user and status is pending
+    const { data, error } = await supabase
+      .from("debts")
+      .select("*")
+      .eq("associated_user_id", session.user.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPendingDebts(data);
+    }
+    setLoadingNotifications(false);
+  };
+
+  const handleAcceptDebt = async (debtId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    await fetch(`${SUPABASE_URL}/functions/v1/confirm-debt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        debtId,
+        action: "accept",
+      }),
+    });
+
+    fetchPendingDebts();
+  };
+
+  const handleRejectDebt = async (debtId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    await fetch(`${SUPABASE_URL}/functions/v1/confirm-debt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        debtId,
+        action: "reject",
+      }),
+    });
+
+    fetchPendingDebts();
+  };
 
   const handleLogout = async () => {
     setLoading(true);
@@ -24,6 +113,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     navigate("/");
     setLoading(false);
   };
+
+  const pendingCount = pendingDebts.length;
 
   return (
     <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40">
@@ -38,18 +129,121 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <p className="text-xs text-green-400">{subtitle}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative text-zinc-400 hover:text-white hover:bg-zinc-800"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-            </Button>
-            <Button 
-              variant="ghost" 
+            {/* Notifications Popover */}
+            <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative text-zinc-400 hover:text-white hover:bg-zinc-800"
+                >
+                  <Bell className="w-5 h-5" />
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-80 bg-zinc-900 border-zinc-800 p-0"
+                align="end"
+                sideOffset={8}
+              >
+                <div className="p-4 border-b border-zinc-800">
+                  <h3 className="text-white font-semibold flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-orange-400" />
+                    Notificaciones
+                    {pendingCount > 0 && (
+                      <span className="ml-auto bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded-full">
+                        {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </h3>
+                </div>
+
+                <div className="max-h-96 overflow-y-auto">
+                  {loadingNotifications ? (
+                    <div className="p-8 flex justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
+                    </div>
+                  ) : pendingDebts.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Bell className="w-10 h-10 mx-auto mb-2 text-zinc-600" />
+                      <p className="text-zinc-500 text-sm">
+                        No hay notificaciones pendientes
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-2">
+                      {pendingDebts.map((debt) => (
+                        <div
+                          key={debt.id}
+                          className="p-3 bg-zinc-800/50 rounded-xl border border-orange-500/30"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-white text-sm truncate">
+                                {debt.name}
+                              </p>
+                              <p className="text-xs text-zinc-500 truncate">
+                                {debt.creditor || "Sin motivo"}
+                              </p>
+                            </div>
+                            <div className="text-right ml-2">
+                              <p className="font-bold text-orange-400 text-sm">
+                                {formatCurrency(
+                                  debt.current_amount || debt.initial_amount
+                                )}
+                              </p>
+                              <DebtStatusBadge status={debt.status} size="sm" />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              onClick={() => handleAcceptDebt(debt.id)}
+                              className="flex-1 bg-green-500 hover:bg-green-600 text-black text-xs py-1.5 h-auto"
+                              size="sm"
+                            >
+                              Aceptar
+                            </Button>
+                            <Button
+                              onClick={() => handleRejectDebt(debt.id)}
+                              variant="outline"
+                              className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/20 text-xs py-1.5 h-auto"
+                              size="sm"
+                            >
+                              Rechazar
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {pendingDebts.length > 0 && (
+                  <div className="p-3 border-t border-zinc-800">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs"
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        navigate("/dashboard/debts");
+                      }}
+                    >
+                      Ver todas las deudas
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleLogout}
               disabled={loading}

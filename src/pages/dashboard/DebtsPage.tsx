@@ -29,7 +29,6 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import DebtStatusBadge from "@/components/dashboard/DebtStatusBadge";
 import DebtDetailModal from "@/components/dashboard/DebtDetailModal";
-import DebtNotifications from "@/components/dashboard/DebtNotifications";
 
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe";
@@ -267,9 +266,9 @@ const DebtsPage = () => {
       <DashboardHeader title="FinPro" subtitle="Gestión de Deudas" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Tabs */}
+        {/* Tabs - Only "all" and "pending" now */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full bg-zinc-800 grid grid-cols-3">
+          <TabsList className="w-full bg-zinc-800 grid grid-cols-2">
             <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
             <TabsTrigger value="pending" className="text-xs flex items-center gap-1">
               Pendientes
@@ -278,10 +277,6 @@ const DebtsPage = () => {
                   {pendingCount}
                 </span>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs flex items-center gap-1">
-              <Bell className="w-3 h-3" />
-              Notificaciones
             </TabsTrigger>
           </TabsList>
 
@@ -619,20 +614,6 @@ const DebtsPage = () => {
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="mt-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-amber-500" />
-                  Notificaciones
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DebtNotifications onDebtClick={openDetailModal} />
               </CardContent>
             </Card>
           </TabsContent>
