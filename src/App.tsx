@@ -16,6 +16,7 @@ import PatrimonyPage from "./pages/dashboard/PatrimonyPage";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import { AdminDashboard, OffersPage, RulesPage, UsersPage, AnalyticsPage } from "./pages/admin";
+import { AdminDashboard, OffersPage, RulesPage, UsersPage, AnalyticsPage } from "./pages/admin";
 
 const queryClient = new QueryClient();
 

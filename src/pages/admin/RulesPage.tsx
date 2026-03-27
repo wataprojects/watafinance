@@ -18,15 +18,15 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
+import { 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Loader2, 
   Search,
+  Switch,
   Zap
 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { RuleBuilder } from '@/components/admin/RuleBuilder';
 import { supabase } from '@/integrations/supabase/client';
 

@@ -40,16 +40,21 @@ export function SmartAlerts() {
         
         // Show alerts as toasts
         data.forEach((alert, index) => {
-                  setTimeout(() => {
-                    toast({
-                      title: alert.title,
-                      description: alert.description,
-                      duration: 8000,
-                      variant: alert.potential_savings > 100 ? 'default' : 'default',
-                      className: 'border-l-4 border-l-emerald-500'
-                    });
-                  }, index * 1500);
-                });
+          setTimeout(() => {
+            toast({
+              title: (
+                <div className="flex items-center gap-2">
+                  <PiggyBank className="h-4 w-4 text-emerald-600" />
+                  {alert.title}
+                </div>
+              ),
+              description: alert.description,
+              duration: 8000,
+              variant: alert.potential_savings > 100 ? 'default' : 'default',
+              className: 'border-l-4 border-l-emerald-500'
+            });
+          }, index * 1500);
+        });
 
         setAlerts(data);
       }

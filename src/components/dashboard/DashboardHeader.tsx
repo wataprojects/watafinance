@@ -142,7 +142,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                           <Settings className="w-5 h-5" />
                         </Button>
             
-                        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                        <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => navigate("/admin")}
+                                      className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                      title="Admin"
+                                    >
+                                      <Settings className="w-5 h-5" />
+                                    </Button>
+                        
+                                    <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
