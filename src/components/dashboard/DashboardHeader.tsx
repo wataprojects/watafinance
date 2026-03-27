@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import DebtStatusBadge from "./DebtStatusBadge";
@@ -132,7 +132,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
           <div className="flex items-center gap-2">
             {/* Notifications Popover */}
-            <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+            <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate("/admin")}
+                          className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                          title="Admin"
+                        >
+                          <Settings className="w-5 h-5" />
+                        </Button>
+            
+                        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"

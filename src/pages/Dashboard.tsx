@@ -11,6 +11,7 @@ import TopExpenses from "@/components/dashboard/TopExpenses";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { SmartRecommendations, SmartAlerts } from "@/components/monetization";
 import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
@@ -51,8 +52,11 @@ const Dashboard = () => {
     <div className="min-h-screen bg-black pb-28">
       {/* Header con notificaciones - usando el componente DashboardHeader */}
       <DashboardHeader title="FinPro" subtitle="Tu gestión financiera" />
-
-      {/* Main Content */}
+      
+            {/* Smart Alerts - Notificaciones de oportunidades */}
+            <SmartAlerts />
+      
+            {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         <FinancialSummary
           selectedMonth={selectedMonth}
@@ -67,8 +71,11 @@ const Dashboard = () => {
         
         {/* FinancialHealth después de FinancialFreedom */}
         <FinancialHealth />
-        
-        {/* Gráficos de Gastos e Ingresos/Gastos */}
+                
+                {/* Smart Recommendations - Oportunidades de ahorro */}
+                <SmartRecommendations />
+                
+                {/* Gráficos de Gastos e Ingresos/Gastos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
