@@ -14,6 +14,7 @@ import LoansPage from "./pages/dashboard/LoansPage";
 import InvestmentsPage from "./pages/dashboard/InvestmentsPage";
 import PatrimonyPage from "./pages/dashboard/PatrimonyPage";
 import NotFound from "./pages/NotFound";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +35,8 @@ const App = () => (
           <Route path="/dashboard/loans" element={<LoansPage />} />
           <Route path="/dashboard/investments" element={<InvestmentsPage />} />
           <Route path="/dashboard/patrimony" element={<PatrimonyPage />} />
-          <Route path="*" element={<NotFound />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

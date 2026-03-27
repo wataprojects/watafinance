@@ -50,17 +50,27 @@ const Register = () => {
     }
 
     // Check if there's a session in the response
-    if (data?.session) {
-      // User created and authenticated automatically - go to dashboard
-      navigate("/dashboard");
-    } else {
-      // Requires email confirmation
-      setSuccessMessage("Revisa tu correo electrónico para confirmar tu cuenta");
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        navigate("/login", { state: { message: "Revisa tu correo electrónico para confirmar tu cuenta" } });
-      }, 2000);
-    }
+        if (data?.session) {
+          // User created and authenticated automatically - check onboarding status
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .eq("id", data.session.user.id)
+            .single();
+    
+          if (profile?.onboarding_completed === false) {
+            navigate("/onboarding");
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          // Requires email confirmation
+          setSuccessMessage("Revisa tu correo electrónico para confirmar tu cuenta");
+          // Redirect to login after a short delay
+          setTimeout(() => {
+            navigate("/login", { state: { message: "Revisa tu correo electrónico para confirmar tu cuenta" } });
+          }, 2000);
+        }
   };
 
   const isValidEmail = (email: string) => {

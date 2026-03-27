@@ -27,23 +27,43 @@ const Login = () => {
     }
   }, [location]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      navigate("/dashboard");
-    }
-  };
+  const checkOnboardingAndRedirect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", session.user.id)
+          .single();
+  
+        if (profile?.onboarding_completed === false) {
+          navigate("/onboarding");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        navigate("/dashboard");
+      }
+    };
+  
+    const handleLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError("");
+  
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+  
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        checkOnboardingAndRedirect();
+      }
+    };
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
