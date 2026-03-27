@@ -136,11 +136,12 @@ const DebtsPage = () => {
       category: newDebt.debt_type,
       status: 'pending',
       original_creator_id: session.user.id,
-      creditor_email: newDebt.debt_type === "they_owe" ? newDebt.creditor_email : null,
+      // Save email for both debt types
+      creditor_email: newDebt.creditor_email || null,
     }).select().single();
 
-    // Send invite email if email provided and it's "they owe"
-    if (!error && data && newDebt.debt_type === "they_owe" && newDebt.creditor_email) {
+    // Send invite email if email provided (works for both debt types now)
+    if (!error && data && newDebt.creditor_email) {
       try {
         await fetch(
           `${import.meta.env.VITE_SUPABASE_URL || 'https://eoupodozovwxbldzptlp.supabase.co'}/functions/v1/send-debt-invite`,
@@ -391,28 +392,28 @@ const DebtsPage = () => {
                 />
               </div>
 
-              {/* Email (only for "they owe") */}
-              {newDebt.debt_type === "they_owe" && (
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email de la persona (opcional)
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="email@ejemplo.com"
-                    value={newDebt.creditor_email}
-                    onChange={(e) => setNewDebt({ ...newDebt, creditor_email: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                  {newDebt.creditor_email && (
-                    <p className="text-xs text-amber-400 mt-2 flex items-start gap-1">
-                      <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                      Se enviará una invitación por email para confirmar la deuda
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Email - Now shows for BOTH debt types */}
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {newDebt.debt_type === "they_owe" 
+                    ? "Email de la persona (opcional)" 
+                    : "Email de la persona a quien debo (opcional)"}
+                </label>
+                <Input
+                  type="email"
+                  placeholder="email@ejemplo.com"
+                  value={newDebt.creditor_email}
+                  onChange={(e) => setNewDebt({ ...newDebt, creditor_email: e.target.value })}
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+                {newDebt.creditor_email && (
+                  <p className="text-xs text-amber-400 mt-2 flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                    Se enviará una invitación por email para confirmar la deuda
+                  </p>
+                )}
+              </div>
 
               {/* Amount */}
               <div>
