@@ -21,7 +21,7 @@ const BottomNav = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 z-50">
       <div
-        className="flex overflow-x-auto scrollbar-hide px-2 py-2 gap-1"
+        className="flex overflow-x-auto scrollbar-hide px-2 py-2 gap-1 md:justify-center"
         style={{ 
           scrollbarWidth: "none", 
           msOverflowStyle: "none", 
