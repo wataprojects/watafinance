@@ -148,7 +148,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-80 bg-zinc-900 border-zinc-800 p-0"
+                className="w-[calc(100vw-2rem)] max-w-md bg-zinc-900 border-zinc-800 p-0"
                 align="end"
                 sideOffset={8}
               >
