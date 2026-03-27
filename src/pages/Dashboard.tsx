@@ -10,7 +10,7 @@ import FinancialHealth from "@/components/dashboard/FinancialHealth";
 import TopExpenses from "@/components/dashboard/TopExpenses";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
 import BottomNav from "@/components/dashboard/BottomNav";
-import { LogOut, Bell } from "lucide-react";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
@@ -35,11 +35,6 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
-
   const handleNavigate = (path: string) => {
     navigate(path);
   };
@@ -54,39 +49,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      {/* Header */}
-      <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                <span className="text-black font-bold">F</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">FinPro</h1>
-                <p className="text-xs text-green-400">Tu gestión financiera</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative text-zinc-400">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleLogout}
-                className="text-zinc-400"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header con notificaciones - usando el componente DashboardHeader */}
+      <DashboardHeader title="FinPro" subtitle="Tu gestión financiera" />
 
-      {/* Main Content - Los selectores ahora están dentro de FinancialSummary */}
+      {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         <FinancialSummary
           selectedMonth={selectedMonth}
