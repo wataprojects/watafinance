@@ -21,6 +21,7 @@ interface HealthState {
   color: string;
   bgColor: string;
   icon: React.ReactNode;
+  warningMessage: string | null;
 }
 
 const DebtHealthIndicator: React.FC<DebtHealthIndicatorProps> = ({
@@ -76,40 +77,62 @@ const DebtHealthIndicator: React.FC<DebtHealthIndicatorProps> = ({
         message: "No podemos calcular tu carga financiera sin ingresos",
         color: "text-zinc-400",
         bgColor: "bg-zinc-800",
-        icon: <AlertTriangle className="w-5 h-5" />
+        icon: <AlertTriangle className="w-5 h-5" />,
+        warningMessage: null
       };
     }
 
     const percentage = (totalMonthly / incomeAverage) * 100;
 
+    // Nuevo rango: 0-20% saludable
     if (percentage < 20) {
+      // Sub-rango crítico: 18-20%
+      if (percentage >= 18) {
+        return {
+          status: "healthy",
+          percentage,
+          message: "Tu carga financiera es saludable, pero estás cerca del límite recomendado.",
+          color: "text-emerald-400",
+          bgColor: "bg-emerald-500/20",
+          icon: <CheckCircle className="w-5 h-5" />,
+          warningMessage: percentage > 15 ? "Si tus cuotas superan el 25%, podrías empezar a tener presión financiera." : null
+        };
+      }
+      // Normal saludable: <18%
       return {
         status: "healthy",
         percentage,
-        message: "Tu carga financiera es saludable. ¡Sigue así!",
+        message: "Tu carga financiera es saludable. Buen control de deuda.",
         color: "text-emerald-400",
         bgColor: "bg-emerald-500/20",
-        icon: <CheckCircle className="w-5 h-5" />
+        icon: <CheckCircle className="w-5 h-5" />,
+        warningMessage: null
       };
-    } else if (percentage <= 40) {
+    }
+    
+    // Nuevo rango: 20-35% moderado
+    if (percentage <= 35) {
       return {
         status: "moderate",
         percentage,
-        message: "Ten cuidado. Tus cuotas son moderadas.",
+        message: "Tu carga financiera empieza a ser elevada. Conviene vigilarla.",
         color: "text-amber-400",
         bgColor: "bg-amber-500/20",
-        icon: <AlertTriangle className="w-5 h-5" />
-      };
-    } else {
-      return {
-        status: "risk",
-        percentage,
-        message: "¡Cuidado! Tu carga financiera es alta.",
-        color: "text-red-400",
-        bgColor: "bg-red-500/20",
-        icon: <XCircle className="w-5 h-5" />
+        icon: <AlertTriangle className="w-5 h-5" />,
+        warningMessage: "Si tus cuotas superan el 25%, podrías empezar a tener presión financiera."
       };
     }
+    
+    // >35% riesgo
+    return {
+      status: "risk",
+      percentage,
+      message: "Tu carga financiera es alta. Existe riesgo financiero.",
+      color: "text-red-400",
+      bgColor: "bg-red-500/20",
+      icon: <XCircle className="w-5 h-5" />,
+      warningMessage: "Si tus cuotas superan el 25%, podrías empezar a tener presión financiera."
+    };
   };
 
   const healthState = getHealthState();
@@ -166,6 +189,11 @@ const DebtHealthIndicator: React.FC<DebtHealthIndicatorProps> = ({
                 )}
               </div>
               <p className="text-zinc-400 text-sm mt-1">{healthState.message}</p>
+              {healthState.warningMessage && (
+                <p className="text-zinc-500 text-xs mt-2 italic">
+                  {healthState.warningMessage}
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
