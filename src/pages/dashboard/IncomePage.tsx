@@ -602,7 +602,53 @@ const IncomePage = () => {
 
             {totalIncome === 0 && !loading && (
               <div className="text-center py-4">
-                <p className="text-zinc-500 text-sm">No hay ingresos registrados</p>
+                <p className="text-zinc-500 text-sm mb-4">No hay ingresos registrados</p>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-500 hover:bg-green-600 text-black py-3 text-sm font-semibold">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo Ingreso
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Nuevo Ingreso</DialogTitle>
+                    </DialogHeader>
+                    <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                    <IncomeForm
+                      income={newIncome}
+                      setIncome={setNewIncome}
+                      onSubmit={handleAddIncome}
+                      isSubmitting={isSubmitting}
+                      isNew={true}
+                      investments={investments}
+                      patrimony={patrimony}
+                      isCategoryDialogOpen={isCategoryDialogOpen}
+                      setIsCategoryDialogOpen={setIsCategoryDialogOpen}
+                      isInvestmentDialogOpen={isInvestmentDialogOpen}
+                      setIsInvestmentDialogOpen={setIsInvestmentDialogOpen}
+                      isPatrimonyDialogOpen={isPatrimonyDialogOpen}
+                      setIsPatrimonyDialogOpen={setIsPatrimonyDialogOpen}
+                      isNewInvestmentOpen={isNewInvestmentOpen}
+                      setIsNewInvestmentOpen={setIsNewInvestmentOpen}
+                      isNewPatrimonyOpen={isNewPatrimonyOpen}
+                      setIsNewPatrimonyOpen={setIsNewPatrimonyOpen}
+                      newInvestment={newInvestment}
+                      setNewInvestment={setNewInvestment}
+                      newPatrimonyAsset={newPatrimonyAsset}
+                      setNewPatrimonyAsset={setNewPatrimonyAsset}
+                      handleCreateInvestment={handleCreateInvestment}
+                      handleCreatePatrimony={handleCreatePatrimony}
+                      investmentTypes={investmentTypes}
+                      patrimonyCategories={patrimonyCategories}
+                      getSelectedCategoryInfo={getSelectedCategoryInfo}
+                      getInvestmentLabel={getInvestmentLabel}
+                      getPatrimonyLabel={getPatrimonyLabel}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
           </CardContent>
