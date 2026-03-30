@@ -34,11 +34,25 @@ const AmortizationCalculator: React.FC<AmortizationCalculatorProps> = ({
   const monthlyPayment = parseFloat(loan.monthly_payment || 0);
   const interestRate = parseFloat(loan.interest_rate || 0);
   
-  // Calcular meses restantes
-  const remainingMonths = monthlyPayment > 0 ? Math.ceil(currentAmount / monthlyPayment) : 0;
-  
   // Calcular tasa de interés mensual
   const monthlyInterestRate = interestRate / 100 / 12;
+  
+  // Calcular meses restantes usando la fórmula de amortización francesa correcta
+  // Despejamos n de: cuota = capital * (i * (1+i)^n) / ((1+i)^n - 1)
+  const remainingMonths = useMemo(() => {
+    if (monthlyPayment <= 0 || currentAmount <= 0) return 0;
+    
+    if (monthlyInterestRate > 0) {
+      // Fórmula: n = -ln(1 - (C * i / cuota)) / ln(1 + i)
+      const ratio = (currentAmount * monthlyInterestRate) / monthlyPayment;
+      if (ratio >= 1) return 0; // La cuota no cubre los intereses
+      const months = -Math.log(1 - ratio) / Math.log(1 + monthlyInterestRate);
+      return Math.ceil(months);
+    } else {
+      // Sin interés: meses = capital / cuota
+      return Math.ceil(currentAmount / monthlyPayment);
+    }
+  }, [currentAmount, monthlyPayment, monthlyInterestRate]);
 
   // Calcular la nueva cuota usando la fórmula de amortización francesa
   const calculationResult = useMemo(() => {
@@ -49,19 +63,19 @@ const AmortizationCalculator: React.FC<AmortizationCalculatorProps> = ({
     }
 
     const newCapital = currentAmount - amortization;
-    const newRemainingMonths = monthlyPayment > 0 ? Math.ceil(newCapital / monthlyPayment) : 0;
-    const monthsSaved = remainingMonths - newRemainingMonths;
+    // Mantenemos el mismo plazo restante y calculamos la nueva cuota
+    const monthsForCalculation = remainingMonths;
     
     // Calcular nueva cuota usando fórmula de amortización francesa
     // Cuota = Capital * (i * (1+i)^n) / ((1+i)^n - 1)
     let newMonthlyPayment = monthlyPayment;
     
-    if (monthlyInterestRate > 0 && newRemainingMonths > 0) {
-      const factor = Math.pow(1 + monthlyInterestRate, newRemainingMonths);
+    if (monthlyInterestRate > 0 && monthsForCalculation > 0) {
+      const factor = Math.pow(1 + monthlyInterestRate, monthsForCalculation);
       newMonthlyPayment = newCapital * (monthlyInterestRate * factor) / (factor - 1);
-    } else if (newRemainingMonths > 0) {
+    } else if (monthsForCalculation > 0) {
       // Si no hay interés, simplemente dividir el capital entre los meses
-      newMonthlyPayment = newCapital / newRemainingMonths;
+      newMonthlyPayment = newCapital / monthsForCalculation;
     }
 
     const paymentReduction = monthlyPayment - newMonthlyPayment;
@@ -69,8 +83,8 @@ const AmortizationCalculator: React.FC<AmortizationCalculatorProps> = ({
     return {
       newCapital,
       newMonthlyPayment,
-      newRemainingMonths,
-      monthsSaved,
+      newRemainingMonths: monthsForCalculation,
+      monthsSaved: 0,
       paymentReduction
     };
   }, [amortizationAmount, currentAmount, monthlyPayment, monthlyInterestRate, remainingMonths]);
