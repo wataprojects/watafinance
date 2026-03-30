@@ -281,46 +281,45 @@ const InvestmentsPage = () => {
           <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" /><p className={`text-2xl font-bold ${returnPercentage >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{returnPercentage >= 0 ? "+" : ""}{returnPercentage.toFixed(1)}%</p><p className="text-xs text-zinc-400">Porcentaje</p></CardContent></Card>
         </div>
 
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-base font-semibold rounded-xl mb-4">
+              <Plus className="w-5 h-5 mr-2" />Nueva Inversión
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Agregar Inversión</DialogTitle>
+            </DialogHeader>
+            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+              <X className="w-4 h-4" />
+            </button>
+
+            <InvestmentForm
+              mode="create"
+              data={newInvestment}
+              setData={setNewInvestment}
+              loans={loans}
+              patrimony={patrimony}
+              getLoanLabel={getLoanLabel}
+              getPatrimonyLabel={getPatrimonyLabel}
+            />
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600 mt-4" disabled={saving}>
+              {saving ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogContent>
+        </Dialog>
+
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <CardTitle className="text-white flex items-center gap-2"><TrendingUp className="w-5 h-5 text-purple-400" />Mi Portafolio</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-purple-500 hover:bg-purple-600">
-                    <Plus className="w-4 h-4 mr-2" />Nueva
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Agregar Inversión</DialogTitle>
-                  </DialogHeader>
-                  <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <InvestmentForm
-                    mode="create"
-                    data={newInvestment}
-                    setData={setNewInvestment}
-                    loans={loans}
-                    patrimony={patrimony}
-                    getLoanLabel={getLoanLabel}
-                    getPatrimonyLabel={getPatrimonyLabel}
-                  />
-
-                  {error && (
-                    <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
-                      <p className="text-red-400 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600 mt-4" disabled={saving}>
-                    {saving ? "Guardando..." : "Guardar"}
-                  </Button>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <CardTitle className="text-white flex items-center gap-2"><TrendingUp className="w-5 h-5 text-purple-400" />Mi Portafolio</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (<p className="text-zinc-400 text-center">Cargando...</p>) : investments.length === 0 ? (<p className="text-zinc-400 text-center">No hay inversiones</p>) : (
