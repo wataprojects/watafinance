@@ -62,6 +62,7 @@ import {
   RotateCcw,
   Check,
   BadgeCheck,
+  Search,
 } from "lucide-react";
 import {
   Carousel,
@@ -258,6 +259,7 @@ const ExpensesPage = () => {
   // Filter type for expenses history
   type ExpenseFilterType = "all" | "puntual" | "recurrente" | "prestamo";
   const [filterExpenseType, setFilterExpenseType] = useState<ExpenseFilterType>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [newExpense, setNewExpense] = useState({
     source: "",
@@ -603,6 +605,8 @@ const ExpensesPage = () => {
     setNewCustomCategory({ name: "", icon: "ShoppingCart", color: "bg-green-500/20", textColor: "text-green-400" });
   };
 
+  const allCategories = [...expenseCategories, ...customCategories];
+
   const filteredExpenses = expenses.filter((expense) => {
     if (!expense.date) return false;
     const expenseDate = new Date(expense.date + "T00:00:00");
@@ -611,6 +615,16 @@ const ExpensesPage = () => {
     const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
     if (filterYear !== "all" && expenseYear !== filterYear) return false;
     if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
+    
+    // Filtro de búsqueda por descripción o categoría
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesDescription = expense.description?.toLowerCase().includes(query);
+      const categoryInfo = allCategories.find((c) => c.value === expense.category);
+      const matchesCategory = categoryInfo?.label?.toLowerCase().includes(query);
+      if (!matchesDescription && !matchesCategory) return false;
+    }
+    
     return true;
   });
 
@@ -662,8 +676,6 @@ const ExpensesPage = () => {
   const sortedCategories: { category: string; amount: number }[] = Object.entries(expensesByCategory)
     .sort(([, a], [, b]) => (b as number) - (a as number))
     .map(([category, amount]) => ({ category, amount: amount as number }));
-
-  const allCategories = [...expenseCategories, ...customCategories];
 
   const getCategoryInfo = (categoryValue: string) =>
     allCategories.find((c) => c.value === categoryValue) || expenseCategories[expenseCategories.length - 1];
@@ -1185,6 +1197,23 @@ const ExpensesPage = () => {
                   <TrendingDown className="w-5 h-5 text-red-500" />
                   Historial
                 </CardTitle>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                  <Input
+                    placeholder="Buscar gasto..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-40 bg-zinc-800 border-zinc-700 text-white text-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-700 rounded"
+                    >
+                      <X className="w-3 h-3 text-zinc-400" />
+                    </button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
