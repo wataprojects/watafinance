@@ -143,7 +143,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan);
@@ -155,7 +155,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan);
@@ -167,7 +167,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan);

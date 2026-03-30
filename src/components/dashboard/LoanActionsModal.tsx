@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  X, 
-  CreditCard, 
-  Zap, 
-  Eye, 
+import {
+  X,
+  CreditCard,
+  Zap,
+  Eye,
   Calendar,
   Banknote,
   TrendingDown,
@@ -20,8 +20,10 @@ import {
   Car,
   Wallet,
   Briefcase,
-  MoreHorizontal
+  MoreHorizontal,
+  Calculator
 } from "lucide-react";
+import AmortizationCalculator from "./AmortizationCalculator";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 
@@ -60,6 +62,7 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
   const [paymentNote, setPaymentNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showCalculator, setShowCalculator] = useState(false);
 
   if (!loan) return null;
 
@@ -150,7 +153,8 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
   const quickExtraAmounts = [50, 100, 150, 200];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-3">
@@ -187,6 +191,10 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             <TabsTrigger value="extra" className="flex-1 text-xs">
               <Zap className="w-3 h-3 mr-1" />
               Amortizar
+            </TabsTrigger>
+            <TabsTrigger value="simulate" className="flex-1 text-xs">
+              <Calculator className="w-3 h-3 mr-1" />
+              Simular
             </TabsTrigger>
             <TabsTrigger value="detail" className="flex-1 text-xs">
               <Eye className="w-3 h-3 mr-1" />
@@ -329,6 +337,25 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             </Button>
           </TabsContent>
 
+          {/* Simulate Tab */}
+          <TabsContent value="simulate" className="mt-4 space-y-4">
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/30">
+              <p className="text-sm text-purple-400 font-medium mb-1">Calculadora de Amortización</p>
+              <p className="text-xs text-zinc-400">
+                Simula cómo afectaría una amortización extra a tu préstamo.
+                Los cálculos son informativos y no se guardan en la base de datos.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setShowCalculator(true)}
+              className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              Abrir calculadora
+            </Button>
+          </TabsContent>
+
           {/* Detail Tab */}
           <TabsContent value="detail" className="mt-4 space-y-4">
             <div className="text-center p-6">
@@ -393,6 +420,16 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* Amortization Calculator Modal */}
+    {loan && (
+      <AmortizationCalculator
+        loan={loan}
+        isOpen={showCalculator}
+        onOpenChange={setShowCalculator}
+      />
+    )}
+    </>
   );
 };
 
