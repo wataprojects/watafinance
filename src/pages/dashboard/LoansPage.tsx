@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Plus, Landmark, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -19,6 +18,7 @@ import AttackPlan from "@/components/dashboard/AttackPlan";
 import { formatCurrency } from "@/utils/currency";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
+type LoanActionTab = "payment" | "extra" | "detail";
 
 interface LoanTypeOption {
   value: LoanType; label: string; color: string; textColor: string; bgColor: string; icon: any;
@@ -42,6 +42,7 @@ const LoansPage = () => {
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   const [actionsLoan, setActionsLoan] = useState<any>(null);
+  const [actionsDefaultTab, setActionsDefaultTab] = useState<LoanActionTab>("payment");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string>("");
@@ -163,16 +164,20 @@ const LoansPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  const openActionsModal = (loan: any) => {
+  const openActionsModal = (loan: any, defaultTab: LoanActionTab = "payment") => {
     setActionsLoan(loan);
+    setActionsDefaultTab(defaultTab);
     setIsActionsModalOpen(true);
+  };
+
+  const openLoanDetail = (loan: any) => {
+    openActionsModal(loan, "detail");
   };
 
   const activeLoans = loans.filter(l => l.status === "active");
   const totalDebt = activeLoans.reduce((sum, l) => sum + parseFloat(l.current_amount), 0);
   const totalMonthly = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
 
-  // Sort loans by priority
   const sortedLoans = useMemo(() => {
     const totalMonthlyLoans = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_payment || 0), 0);
     
@@ -185,7 +190,6 @@ const LoansPage = () => {
         const progress = initialAmount > 0 ? ((initialAmount - currentAmount) / initialAmount) * 100 : 0;
         const impact = totalMonthlyLoans > 0 ? monthlyPayment / totalMonthlyLoans : 0;
         
-        // Higher score = higher priority
         return (monthlyPayment * 0.4) + ((100 - progress) * 0.4) + (impact * 0.2);
       };
       
@@ -200,14 +204,12 @@ const LoansPage = () => {
       <DashboardHeader title="FinPro" subtitle="Gestión de Préstamos" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Block 1: Financial Summary with Health Indicator */}
         <DebtHealthIndicator 
           totalDebt={totalDebt} 
           totalMonthly={totalMonthly}
           userId={userId}
         />
 
-        {/* New Loan Button */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full bg-cyan-500 hover:bg-cyan-600 text-black py-6 text-lg">
@@ -221,7 +223,6 @@ const LoansPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Block 2: Loans List (sorted by priority) */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -249,19 +250,17 @@ const LoansPage = () => {
           </CardContent>
         </Card>
 
-        {/* Block 3: Attack Plan */}
         <AttackPlan loans={loans} />
       </div>
 
-      {/* Actions Modal */}
       <LoanActionsModal
         loan={actionsLoan}
         isOpen={isActionsModalOpen}
         onOpenChange={setIsActionsModalOpen}
         onUpdate={() => fetchLoans(userId)}
+        defaultTab={actionsDefaultTab}
       />
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="text-white">Editar Préstamo</DialogTitle></DialogHeader>
@@ -270,7 +269,6 @@ const LoansPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader><DialogTitle className="text-white">Eliminar Préstamo</DialogTitle></DialogHeader>

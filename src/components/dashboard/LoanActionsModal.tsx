@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   X,
@@ -26,6 +26,7 @@ import {
 import AmortizationCalculator from "./AmortizationCalculator";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
+type LoanActionTab = "payment" | "extra" | "detail";
 
 interface LoanTypeOption {
   value: LoanType;
@@ -49,13 +50,15 @@ interface LoanActionsModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
+  defaultTab?: LoanActionTab;
 }
 
 const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
   loan,
   isOpen,
   onOpenChange,
-  onUpdate
+  onUpdate,
+  defaultTab = "payment"
 }) => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [extraAmount, setExtraAmount] = useState("");
@@ -63,6 +66,13 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showCalculator, setShowCalculator] = useState(false);
+  const [activeTab, setActiveTab] = useState<LoanActionTab>(defaultTab);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(defaultTab);
+    }
+  }, [isOpen, defaultTab]);
 
   if (!loan) return null;
 
@@ -182,7 +192,7 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
           </div>
         )}
 
-        <Tabs defaultValue="payment" className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LoanActionTab)} className="w-full">
           <TabsList className="w-full bg-zinc-800">
             <TabsTrigger value="payment" className="flex-1 text-xs">
               <CreditCard className="w-3 h-3 mr-1" />
@@ -202,7 +212,6 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          {/* Payment Tab */}
           <TabsContent value="payment" className="mt-4 space-y-4">
             <div className="p-4 bg-zinc-800/50 rounded-xl">
               <div className="flex justify-between text-sm mb-2">
@@ -269,7 +278,6 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             </Button>
           </TabsContent>
 
-          {/* Extra Amortization Tab */}
           <TabsContent value="extra" className="mt-4 space-y-4">
             <div className="p-4 bg-purple-500/10 rounded-xl border border-purple-500/30">
               <p className="text-sm text-purple-400 font-medium mb-1">Amortización anticipada</p>
@@ -337,7 +345,6 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             </Button>
           </TabsContent>
 
-          {/* Simulate Tab */}
           <TabsContent value="simulate" className="mt-4 space-y-4">
             <div className="p-4 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/30">
               <p className="text-sm text-purple-400 font-medium mb-1">Calculadora de Amortización</p>
@@ -356,7 +363,6 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
             </Button>
           </TabsContent>
 
-          {/* Detail Tab */}
           <TabsContent value="detail" className="mt-4 space-y-4">
             <div className="text-center p-6">
               <p className="text-4xl font-bold text-cyan-400 mb-1">{formatCurrency(currentAmount)}</p>
@@ -421,7 +427,6 @@ const LoanActionsModal: React.FC<LoanActionsModalProps> = ({
       </DialogContent>
     </Dialog>
 
-    {/* Amortization Calculator Modal */}
     {loan && (
       <AmortizationCalculator
         loan={loan}

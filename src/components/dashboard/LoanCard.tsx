@@ -6,6 +6,7 @@ import { formatCurrency } from "@/utils/currency";
 import { Home, Car, Wallet, Briefcase, MoreHorizontal, Flame, AlertCircle, CheckCircle2, CreditCard, Zap, Eye } from "lucide-react";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
+type LoanActionTab = "payment" | "extra" | "detail";
 
 interface LoanTypeOption {
   value: LoanType;
@@ -27,7 +28,7 @@ const loanTypes: LoanTypeOption[] = [
 interface LoanCardProps {
   loan: any;
   totalMonthlyLoans: number;
-  onOpenActions: (loan: any) => void;
+  onOpenActions: (loan: any, defaultTab?: LoanActionTab) => void;
 }
 
 type PriorityBadge = "high" | "attention" | "controlled";
@@ -41,10 +42,8 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
   const remainingMonths = monthlyPayment > 0 ? Math.ceil(currentAmount / monthlyPayment) : 0;
   const impact = totalMonthlyLoans > 0 ? monthlyPayment / totalMonthlyLoans : 0;
   
-  // Calculate priority score
   const priorityScore = (monthlyPayment * 0.4) + ((1 - progress / 100) * 0.4) + (impact * 0.2);
   
-  // Determine badge
   const getPriorityBadge = (): PriorityBadge => {
     if (progress >= 70) return "controlled";
     if (progress >= 40 || priorityScore < 0.3) return "attention";
@@ -85,10 +84,9 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
   return (
     <Card 
       className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer"
-      onClick={() => onOpenActions(loan)}
+      onClick={() => onOpenActions(loan, "payment")}
     >
       <CardContent className="p-4">
-        {/* Header with badge */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeInfo.color}`}>
@@ -105,13 +103,11 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           </div>
         </div>
         
-        {/* Main amount - highlighted */}
         <div className="mb-3">
           <p className="text-xs text-zinc-500">Te quedan por pagar</p>
           <p className="text-2xl font-bold text-cyan-400">{formatCurrency(currentAmount)}</p>
         </div>
         
-        {/* Progress and time remaining */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex-1">
             <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
@@ -126,7 +122,6 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           </div>
         </div>
         
-        {/* Monthly payment */}
         <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg mb-3">
           <div>
             <p className="text-xs text-zinc-500">Cuota mensual</p>
@@ -138,7 +133,6 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           </div>
         </div>
         
-        {/* Action buttons */}
         <div className="grid grid-cols-3 gap-2">
           <Button
             size="sm"
@@ -146,7 +140,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
             className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
-              onOpenActions(loan);
+              onOpenActions(loan, "payment");
             }}
           >
             <CreditCard className="w-3 h-3 mr-1" />
@@ -158,7 +152,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
             className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
-              onOpenActions(loan);
+              onOpenActions(loan, "extra");
             }}
           >
             <Zap className="w-3 h-3 mr-1" />
@@ -170,7 +164,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
             className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
-              onOpenActions(loan);
+              onOpenActions(loan, "detail");
             }}
           >
             <Eye className="w-3 h-3 mr-1" />
