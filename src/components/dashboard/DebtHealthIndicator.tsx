@@ -151,17 +151,21 @@ const DebtHealthIndicator: React.FC<DebtHealthIndicatorProps> = ({
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-r from-cyan-600 to-cyan-700 border-0">
-          <CardContent className="p-6 text-center">
+          <CardContent className="p-4 sm:p-6 text-center">
             <Landmark className="w-8 h-8 mx-auto mb-2 text-white/80" />
-            <p className="text-3xl font-bold text-white">{formatCurrency(totalDebt)}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white truncate" title={formatCurrency(totalDebt)}>
+              {formatCurrency(totalDebt)}
+            </p>
             <p className="text-white/80 text-sm">Deuda total</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-r from-orange-500 to-rose-500 border-0">
-          <CardContent className="p-6 text-center">
+          <CardContent className="p-4 sm:p-6 text-center">
             <TrendingDown className="w-8 h-8 mx-auto mb-2 text-white/80" />
-            <p className="text-3xl font-bold text-white">{formatCurrency(totalMonthly)}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white truncate" title={formatCurrency(totalMonthly)}>
+              {formatCurrency(totalMonthly)}
+            </p>
             <p className="text-white/80 text-sm">Cuotas/mes</p>
           </CardContent>
         </Card>
