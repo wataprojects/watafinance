@@ -37,6 +37,7 @@ import {
   TrendingDown,
   Sparkles,
   BadgeCheck,
+  Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -135,6 +136,7 @@ const IncomePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [filterIncomeType, setFilterIncomeType] = useState<IncomeFilterType>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
   const currentYear = new Date().getFullYear().toString();
@@ -243,6 +245,14 @@ const IncomePage = () => {
     if (filterMonth !== "all" && incomeMonth !== filterMonth) return false;
     if (filterIncomeType === "active") return !income.is_passive;
     if (filterIncomeType === "passive") return income.is_passive;
+    
+    // Filtro de búsqueda por nombre
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesDescription = income.description?.toLowerCase().includes(query);
+      if (!matchesDescription) return false;
+    }
+    
     return true;
   });
 
@@ -656,7 +666,26 @@ const IncomePage = () => {
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
-            <p className="text-white font-semibold mb-4">Ingresos</p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white font-semibold">Ingresos</p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Input
+                  placeholder="Buscar por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-40 bg-zinc-800 border-zinc-700 text-white text-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-700 rounded"
+                  >
+                    <X className="w-3 h-3 text-zinc-400" />
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="flex gap-2 mb-4 flex-wrap">
               <button
