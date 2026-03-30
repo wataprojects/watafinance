@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/utils/currency";
-import DebtStatusBadge from "./DebtStatusBadge";
+import NotificationPanel from "./NotificationPanel";
 import {
   Popover,
   PopoverContent,
@@ -38,6 +37,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [pendingDebts, setPendingDebts] = useState<PendingDebt[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
@@ -114,7 +114,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setLoading(false);
   };
 
-  const pendingCount = pendingDebts.length;
+  const pendingDebtCount = pendingDebts.length;
+
+  // Combined notification count
+  const totalNotificationCount = pendingDebtCount + notificationCount;
 
   return (
     <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40">
@@ -131,7 +134,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications Popover */}
+            {/* Notification Panel - Financial notifications */}
+            <NotificationPanel 
+              onNotificationsChange={setNotificationCount} 
+            />
+
+            {/* Debts Notifications Popover - Existing functionality */}
             <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -139,10 +147,39 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   size="icon"
                   className="relative text-zinc-400 hover:text-white hover:bg-zinc-800"
                 >
-                  <Bell className="w-5 h-5" />
-                  {pendingCount > 0 && (
+                  {/* Icon changes based on if there are debt notifications */}
+                  {pendingDebtCount > 0 ? (
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      className="w-5 h-5 text-orange-400"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  ) : (
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      className="w-5 h-5"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
+                  {pendingDebtCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
-                      {pendingCount > 9 ? "9+" : pendingCount}
+                      {pendingDebtCount > 9 ? "9+" : pendingDebtCount}
                     </span>
                   )}
                 </Button>
@@ -154,11 +191,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               >
                 <div className="p-4 border-b border-zinc-800">
                   <h3 className="text-white font-semibold flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-orange-400" />
-                    Notificaciones
-                    {pendingCount > 0 && (
+                    Deudas pendientes
+                    {pendingDebtCount > 0 && (
                       <span className="ml-auto bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded-full">
-                        {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+                        {pendingDebtCount} pendiente{pendingDebtCount !== 1 ? "s" : ""}
                       </span>
                     )}
                   </h3>
@@ -171,9 +207,21 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     </div>
                   ) : pendingDebts.length === 0 ? (
                     <div className="p-8 text-center">
-                      <Bell className="w-10 h-10 mx-auto mb-2 text-zinc-600" />
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                        className="w-10 h-10 mx-auto mb-2 text-zinc-600"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                       <p className="text-zinc-500 text-sm">
-                        No hay notificaciones pendientes
+                        No hay deudas pendientes
                       </p>
                     </div>
                   ) : (
@@ -194,11 +242,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                             </div>
                             <div className="text-right ml-2">
                               <p className="font-bold text-orange-400 text-sm">
-                                {formatCurrency(
+                                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(
                                   debt.current_amount || debt.initial_amount
                                 )}
                               </p>
-                              <DebtStatusBadge status={debt.status} size="sm" />
+                              <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">Pendiente</span>
                             </div>
                           </div>
 
