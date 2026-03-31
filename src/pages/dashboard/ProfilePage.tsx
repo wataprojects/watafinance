@@ -16,6 +16,7 @@ type ProfileData = {
   first_name: string;
   last_name: string;
   avatar_url: string | null;
+  created_at: string | null;
 };
 
 type SettingsData = {
@@ -30,10 +31,11 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    first_name: "",
-    last_name: "",
-    avatar_url: null,
-  });
+      first_name: "",
+      last_name: "",
+      avatar_url: null,
+      created_at: null,
+    });
   const [settings, setSettings] = useState<SettingsData>({
     recommendations_enabled: true,
     notifications_enabled: true,
@@ -55,11 +57,11 @@ const ProfilePage = () => {
     setUserId(session.user.id);
 
     const [profileResult, settingsResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("first_name, last_name, avatar_url")
-        .eq("id", session.user.id)
-        .single(),
+          supabase
+            .from("profiles")
+            .select("first_name, last_name, avatar_url, created_at")
+            .eq("id", session.user.id)
+            .single(),
       supabase
         .from("user_monetization_settings")
         .select("recommendations_enabled, notifications_enabled")
@@ -68,12 +70,13 @@ const ProfilePage = () => {
     ]);
 
     if (profileResult.data) {
-      setProfile({
-        first_name: profileResult.data.first_name || "",
-        last_name: profileResult.data.last_name || "",
-        avatar_url: profileResult.data.avatar_url || null,
-      });
-    }
+          setProfile({
+            first_name: profileResult.data.first_name || "",
+            last_name: profileResult.data.last_name || "",
+            avatar_url: profileResult.data.avatar_url || null,
+            created_at: profileResult.data.created_at || null,
+          });
+        }
 
     if (settingsResult.data) {
       setSettings({
@@ -129,13 +132,31 @@ const ProfilePage = () => {
   };
 
   const handleLogout = async () => {
-    setLogoutLoading(true);
-    await supabase.auth.signOut();
-    toast.success("Sesión cerrada");
-    navigate("/");
-  };
-
-  if (loading) {
+      setLogoutLoading(true);
+      await supabase.auth.signOut();
+      toast.success("Sesión cerrada");
+      navigate("/");
+    };
+  
+    const calculateTrialDays = (createdAt: string | null) => {
+      if (!createdAt) return { daysRemaining: 0, isInTrial: false };
+      
+      const trialDays = 60; // 2 meses
+      const registrationDate = new Date(createdAt);
+      const now = new Date();
+      const trialEndDate = new Date(registrationDate);
+      trialEndDate.setDate(trialEndDate.getDate() + trialDays);
+      
+      const diffTime = trialEndDate.getTime() - now.getTime();
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return {
+        daysRemaining: Math.max(0, daysRemaining),
+        isInTrial: daysRemaining > 0
+      };
+    };
+  
+    if (loading) {
     return (
       <div className="min-h-screen bg-black">
         <DashboardHeader title="FinPro" subtitle="Perfil" />
@@ -258,14 +279,37 @@ const ProfilePage = () => {
               />
             </div>
 
-            <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
-              <p className="text-sm text-green-300">
-                Estado de suscripción: <span className="font-semibold">Activa</span>
-              </p>
-              <p className="mt-1 text-xs text-green-200/80">
-                Una única suscripción activa controla el acceso a las funciones premium.
-              </p>
-            </div>
+            {/* Calcular estado de suscripción */}
+                        {(() => {
+                          const trialInfo = calculateTrialDays(profile.created_at);
+                          return (
+                            <div className={`rounded-2xl border p-4 ${
+                              trialInfo.isInTrial
+                                ? "border-green-500/20 bg-green-500/10"
+                                : "border-red-500/20 bg-red-500/10"
+                            }`}>
+                              {trialInfo.isInTrial ? (
+                                <>
+                                  <p className="text-sm text-green-300">
+                                    Te quedan <span className="font-semibold">{trialInfo.daysRemaining} días</span> de prueba gratuita
+                                  </p>
+                                  <p className="mt-1 text-xs text-green-200/80">
+                                    Después, 2.8€/mes
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm text-red-300">
+                                    Período de prueba terminado
+                                  </p>
+                                  <p className="mt-1 text-xs text-red-200/80">
+                                    2.8€/mes para continuar usando Premium
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
           </CardContent>
         </Card>
       </main>
