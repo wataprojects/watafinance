@@ -82,7 +82,7 @@ const MiCuenta: React.FC = () => {
       icon: CreditCard,
       title: "Suscripción",
       description: "Gestiona tu plan y métodos de pago",
-      action: () => navigate("/dashboard/suscripcion"),
+      action: () => console.log("Navigate to subscription"),
       badge: subscription?.plan || "Free",
     },
     {
@@ -188,7 +188,7 @@ const MiCuenta: React.FC = () => {
           <CardContent>
             <Button
               className="w-full bg-green-500 hover:bg-green-600 text-black font-semibold"
-              onClick={() => navigate("/dashboard/suscripcion")}
+              onClick={() => console.log("Manage subscription")}
             >
               Gestionar Suscripción
             </Button>
