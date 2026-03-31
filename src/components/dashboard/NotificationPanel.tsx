@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, TrendingDown, Calendar, ChevronRight } from "lucide-react";
+import { Bell, TrendingDown, TrendingUp, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTodayNotifications, NotificationItem } from "@/hooks/useTodayNotifications";
 import { formatCurrency } from "@/utils/currency";
@@ -18,48 +18,45 @@ interface NotificationPanelProps {
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsChange }) => {
   const navigate = useNavigate();
-  const { expensesToday, loading, expenseTodayTotal } = useTodayNotifications();
+  const { 
+    expensesToday, 
+    expensesTomorrow, 
+    incomesToday, 
+    incomesTomorrow, 
+    loading, 
+    totals 
+  } = useTodayNotifications();
   const [open, setOpen] = useState(false);
 
-  // Calculate total notifications (only today's expenses)
-  const totalNotifications = expensesToday.length;
+  // Calculate total notifications (expenses + incomes for today and tomorrow)
+  const totalNotifications = expensesToday.length + expensesTomorrow.length + incomesToday.length + incomesTomorrow.length;
 
   // Notify parent of count change
   useEffect(() => {
     onNotificationsChange?.(totalNotifications);
   }, [totalNotifications, onNotificationsChange]);
 
-  const handleItemClick = (item: NotificationItem) => {
+  const handleExpenseClick = () => {
     setOpen(false);
     navigate("/dashboard/expenses");
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "expense":
-        return <TrendingDown className="w-4 h-4 text-red-400" />;
-      default:
-        return <Bell className="w-4 h-4 text-zinc-400" />;
-    }
+  const handleIncomeClick = () => {
+    setOpen(false);
+    navigate("/dashboard/incomes");
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "expense":
-        return "bg-red-500/10 border-red-500/30";
-      default:
-        return "bg-zinc-800 border-zinc-700";
-    }
-  };
+  const getExpenseTypeColor = () => "bg-red-500/10 border-red-500/30";
+  const getIncomeTypeColor = () => "bg-green-500/10 border-green-500/30";
 
   const renderExpenseItem = (item: NotificationItem) => (
     <button
       key={`expense-${item.id}`}
-      onClick={() => handleItemClick(item)}
-      className={`w-full p-3 rounded-xl border ${getTypeColor(item.type)} hover:opacity-80 transition-opacity flex items-center gap-3 text-left`}
+      onClick={handleExpenseClick}
+      className={`w-full p-3 rounded-xl border ${getExpenseTypeColor()} hover:opacity-80 transition-opacity flex items-center gap-3 text-left`}
     >
       <div className="flex-shrink-0">
-        {getTypeIcon(item.type)}
+        <TrendingDown className="w-4 h-4 text-red-400" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-white font-medium text-sm truncate">{item.title}</p>
@@ -73,6 +70,100 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
       <ChevronRight className="w-4 h-4 text-zinc-500 flex-shrink-0" />
     </button>
   );
+
+  const renderIncomeItem = (item: NotificationItem) => (
+    <button
+      key={`income-${item.id}`}
+      onClick={handleIncomeClick}
+      className={`w-full p-3 rounded-xl border ${getIncomeTypeColor()} hover:opacity-80 transition-opacity flex items-center gap-3 text-left`}
+    >
+      <div className="flex-shrink-0">
+        <TrendingUp className="w-4 h-4 text-green-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-white font-medium text-sm truncate">{item.title}</p>
+        <p className="text-xs text-zinc-400 truncate">{item.description}</p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className="font-bold text-sm text-green-400">
+          +{formatCurrency(item.amount)}
+        </p>
+      </div>
+      <ChevronRight className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+    </button>
+  );
+
+  const renderDaySection = (
+    dayLabel: string,
+    dayName: string,
+    dayExpenses: NotificationItem[],
+    dayIncomes: NotificationItem[],
+    dayTotals: { income: number; expense: number }
+  ) => {
+    const hasMovements = dayExpenses.length > 0 || dayIncomes.length > 0;
+
+    return (
+      <div className="space-y-3">
+        {/* Day Header */}
+        <div className="flex items-center gap-2 px-1 py-2">
+          <Calendar className="w-4 h-4 text-zinc-500" />
+          <span className="text-sm font-medium text-zinc-400">{dayName}</span>
+          {dayExpenses.length > 0 && (
+            <span className="bg-red-500/20 text-red-400 text-xs px-1.5 py-0.5 rounded-full">
+              {dayExpenses.length}
+            </span>
+          )}
+          {dayIncomes.length > 0 && (
+            <span className="bg-green-500/20 text-green-400 text-xs px-1.5 py-0.5 rounded-full">
+              {dayIncomes.length}
+            </span>
+          )}
+        </div>
+
+        {/* Day Totals Summary */}
+        {hasMovements && (
+          <div className="flex gap-2">
+            {dayTotals.income > 0 && (
+              <div className="flex-1 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp className="w-3 h-3 text-green-400" />
+                  <span className="text-xs text-zinc-400">Ingresos</span>
+                </div>
+                <p className="text-sm font-bold text-green-400">
+                  +{formatCurrency(dayTotals.income)}
+                </p>
+              </div>
+            )}
+            {dayTotals.expense > 0 && (
+              <div className="flex-1 p-2 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <div className="flex items-center gap-1.5">
+                  <TrendingDown className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-zinc-400">Gastos</span>
+                </div>
+                <p className="text-sm font-bold text-red-400">
+                  -{formatCurrency(dayTotals.expense)}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Expenses List */}
+        {dayExpenses.length > 0 && (
+          <div className="space-y-2">
+            {dayExpenses.map(renderExpenseItem)}
+          </div>
+        )}
+
+        {/* Incomes List */}
+        {dayIncomes.length > 0 && (
+          <div className="space-y-2">
+            {dayIncomes.map(renderIncomeItem)}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -99,7 +190,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-orange-400" />
-            <h3 className="text-white font-semibold">Gastos de Hoy</h3>
+            <h3 className="text-white font-semibold">Movimientos</h3>
             {totalNotifications > 0 && (
               <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded-full">
                 {totalNotifications}
@@ -119,54 +210,63 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
               <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bell className="w-8 h-8 text-zinc-600" />
               </div>
-              <p className="text-white font-medium mb-1">¡Sin gastos hoy!</p>
+              <p className="text-white font-medium mb-1">Sin movimientos</p>
               <p className="text-zinc-500 text-sm">
-                No hay gastos programados para el día de hoy
+                No hay gastos o ingresos programados para hoy o mañana
               </p>
             </div>
           ) : (
-            <div className="p-4 space-y-4">
-              {/* Summary */}
-              {expenseTodayTotal > 0 && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-zinc-300">Total gastos hoy</span>
-                    </div>
-                    <span className="text-lg font-bold text-red-400">
-                      -{formatCurrency(expenseTodayTotal)}
-                    </span>
-                  </div>
-                </div>
+            <div className="p-4 space-y-5">
+              {/* Today Section */}
+              {renderDaySection(
+                "today",
+                "Hoy",
+                expensesToday,
+                incomesToday,
+                totals.today
               )}
 
-              {/* Today Section */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 px-1 py-2">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span className="text-sm font-medium text-zinc-400">Hoy</span>
-                </div>
-                <div className="space-y-2">
-                  {expensesToday.map(renderExpenseItem)}
-                </div>
-              </div>
+              {/* Divider */}
+              {(expensesToday.length > 0 || incomesToday.length > 0) &&
+               (expensesTomorrow.length > 0 || incomesTomorrow.length > 0) && (
+                <div className="border-t border-zinc-800" />
+              )}
+
+              {/* Tomorrow Section */}
+              {renderDaySection(
+                "tomorrow",
+                "Mañana",
+                expensesTomorrow,
+                incomesTomorrow,
+                totals.tomorrow
+              )}
             </div>
           )}
         </div>
 
         {/* Footer */}
         {totalNotifications > 0 && (
-          <div className="p-3 border-t border-zinc-800">
+          <div className="p-3 border-t border-zinc-800 flex gap-2">
             <Button
               variant="ghost"
-              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm"
+              className="flex-1 text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm"
               onClick={() => {
                 setOpen(false);
                 navigate("/dashboard/expenses");
               }}
             >
-              Ver todos los gastos
+              Ver gastos
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1 text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm"
+              onClick={() => {
+                setOpen(false);
+                navigate("/dashboard/incomes");
+              }}
+            >
+              Ver ingresos
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
