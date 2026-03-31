@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/utils/currency";
 
 export interface NotificationItem {
   id: string;
@@ -10,213 +9,156 @@ export interface NotificationItem {
   title: string;
   description: string;
   amount: number;
-  date: string;
-  dayOfMonth: number;
+  date: Date;
 }
 
-export interface TodayNotifications {
+interface UseTodayNotificationsReturn {
   today: NotificationItem[];
   tomorrow: NotificationItem[];
   loading: boolean;
   totalToday: number;
   totalTomorrow: number;
+  // New separate totals
+  incomeToday: number;
+  expenseToday: number;
+  incomeTomorrow: number;
+  expenseTomorrow: number;
 }
 
-export const useTodayNotifications = (): TodayNotifications => {
-  const [notifications, setNotifications] = useState<TodayNotifications>({
-    today: [],
-    tomorrow: [],
-    loading: true,
-    totalToday: 0,
-    totalTomorrow: 0,
-  });
+export const useTodayNotifications = (): UseTodayNotificationsReturn => {
+  const [today, setToday] = useState<NotificationItem[]>([]);
+  const [tomorrow, setTomorrow] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    const fetchNotifications = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-  const fetchNotifications = async () => {
-    setNotifications(prev => ({ ...prev, loading: true }));
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const tomorrowDate = new Date(todayDate);
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const dayAfterTomorrow = new Date(tomorrowDate);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      setNotifications(prev => ({ ...prev, loading: false }));
-      return;
-    }
-
-    // Get today's date and tomorrow's date
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todayDay = today.getDate();
-    const tomorrowDay = tomorrow.getDate();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-
-    try {
-      // Fetch recurring expenses that match today or tomorrow
-      const expensesResult = await supabase
-        .from("expenses")
-        .select("id, description, amount, date, category, is_recurring, is_trimmed, collection_day")
-        .eq("user_id", session.user.id)
-        .eq("is_recurring", true)
-        .eq("is_trimmed", false);
-
-      // Fetch recurring incomes that match today or tomorrow
-      const incomesResult = await supabase
+      // Fetch incomes
+      const { data: incomes } = await supabase
         .from("incomes")
-        .select("id, description, amount, date, category, is_recurring, is_passive")
-        .eq("user_id", session.user.id)
-        .eq("is_recurring", true);
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", todayDate.toISOString().split("T")[0])
+        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
 
-      // Fetch active loans with collection_day matching today or tomorrow
-      const loansResult = await supabase
+      // Fetch expenses
+      const { data: expenses } = await supabase
+        .from("expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", todayDate.toISOString().split("T")[0])
+        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
+
+      // Fetch loans (debts)
+      const { data: loans } = await supabase
         .from("loans")
-        .select("id, borrower_name, monthly_payment, collection_day, bank, status")
-        .eq("user_id", session.user.id)
-        .eq("status", "active");
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .lte("collection_day", tomorrowDate.getDate());
 
       const todayNotifications: NotificationItem[] = [];
       const tomorrowNotifications: NotificationItem[] = [];
 
-      // Process recurring expenses
-      if (expensesResult.data) {
-        for (const expense of expensesResult.data) {
-          // Use collection_day if available, otherwise extract from date
-          const expenseDay = expense.collection_day 
-            ? parseInt(expense.collection_day) 
-            : expense.date 
-              ? new Date(expense.date + "T00:00:00").getDate() 
-              : 0;
-
-          // Check if the expense is valid for the current month
-          const expenseDate = expense.date ? new Date(expense.date + "T00:00:00") : null;
-          const isValidForMonth = expenseDate && 
-            expenseDate.getMonth() === currentMonth - 1 && 
-            expenseDate.getFullYear() === currentYear;
-
-          if (!isValidForMonth && expenseDay !== todayDay && expenseDay !== tomorrowDay) {
-            // If not valid for this month, check if it should apply
-            // For recurring, we just use the day of month
-            if (expenseDay !== todayDay && expenseDay !== tomorrowDay) {
-              continue;
-            }
-          }
-
-          const notification: NotificationItem = {
-            id: expense.id,
-            type: "expense",
-            title: expense.description || "Gasto recurrente",
-            description: getExpenseCategoryLabel(expense.category),
-            amount: parseFloat(expense.amount),
-            date: expense.date,
-            dayOfMonth: expenseDay,
-          };
-
-          if (expenseDay === todayDay) {
-            todayNotifications.push(notification);
-          } else if (expenseDay === tomorrowDay) {
-            tomorrowNotifications.push(notification);
-          }
+      // Process incomes
+      incomes?.forEach((income: any) => {
+        const incomeDate = new Date(income.date);
+        const item: NotificationItem = {
+          id: income.id,
+          type: "income",
+          title: income.description || "Ingreso",
+          description: `Ingreso ${income.is_passive ? "pasivo" : "regular"}`,
+          amount: Number(income.amount),
+          date: incomeDate,
+        };
+        if (incomeDate.toDateString() === todayDate.toDateString()) {
+          todayNotifications.push(item);
+        } else {
+          tomorrowNotifications.push(item);
         }
-      }
-
-      // Process recurring incomes
-      if (incomesResult.data) {
-        for (const income of incomesResult.data) {
-          const incomeDay = income.date 
-            ? new Date(income.date + "T00:00:00").getDate() 
-            : 0;
-
-          const notification: NotificationItem = {
-            id: income.id,
-            type: "income",
-            title: income.description || "Ingreso recurrente",
-            description: income.is_passive ? "Ingreso pasivo" : "Ingreso activo",
-            amount: parseFloat(income.amount),
-            date: income.date,
-            dayOfMonth: incomeDay,
-          };
-
-          if (incomeDay === todayDay) {
-            todayNotifications.push(notification);
-          } else if (incomeDay === tomorrowDay) {
-            tomorrowNotifications.push(notification);
-          }
-        }
-      }
-
-      // Process loans
-      if (loansResult.data) {
-        for (const loan of loansResult.data) {
-          const collectionDay = loan.collection_day || 1;
-          
-          const notification: NotificationItem = {
-            id: loan.id,
-            type: "loan",
-            title: loan.borrower_name,
-            description: loan.bank || "Préstamo",
-            amount: parseFloat(loan.monthly_payment),
-            date: `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${collectionDay.toString().padStart(2, '0')}`,
-            dayOfMonth: collectionDay,
-          };
-
-          if (collectionDay === todayDay) {
-            todayNotifications.push(notification);
-          } else if (collectionDay === tomorrowDay) {
-            tomorrowNotifications.push(notification);
-          }
-        }
-      }
-
-      // Calculate totals
-      const totalToday = todayNotifications.reduce((sum, n) => sum + n.amount, 0);
-      const totalTomorrow = tomorrowNotifications.reduce((sum, n) => sum + n.amount, 0);
-
-      setNotifications({
-        today: todayNotifications,
-        tomorrow: tomorrowNotifications,
-        loading: false,
-        totalToday,
-        totalTomorrow,
       });
 
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      setNotifications(prev => ({ ...prev, loading: false }));
-    }
+      // Process expenses
+      expenses?.forEach((expense: any) => {
+        const expenseDate = new Date(expense.date);
+        const item: NotificationItem = {
+          id: expense.id,
+          type: "expense",
+          title: expense.description || expense.category,
+          description: `Gasto ${expense.is_recurring ? "recurrente" : "único"}`,
+          amount: Number(expense.amount),
+          date: expenseDate,
+        };
+        if (expenseDate.toDateString() === todayDate.toDateString()) {
+          todayNotifications.push(item);
+        } else {
+          tomorrowNotifications.push(item);
+        }
+      });
+
+      // Process loans
+      loans?.forEach((loan: any) => {
+        const item: NotificationItem = {
+          id: loan.id,
+          type: "loan",
+          title: loan.borrower_name,
+          description: `Cuota: ${loan.bank || "Préstamo"}`,
+          amount: Number(loan.monthly_payment),
+          date: new Date(),
+        };
+        tomorrowNotifications.push(item);
+      });
+
+      setToday(todayNotifications);
+      setTomorrow(tomorrowNotifications);
+      setLoading(false);
+    };
+
+    fetchNotifications();
+  }, []);
+
+  // Calculate totals
+  const totalToday = today.reduce((sum, item) => sum + item.amount, 0);
+  const totalTomorrow = tomorrow.reduce((sum, item) => sum + item.amount, 0);
+
+  // Calculate separate totals for income and expenses
+  const incomeToday = today
+    .filter(item => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const expenseToday = today
+    .filter(item => item.type === "expense" || item.type === "loan")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const incomeTomorrow = tomorrow
+    .filter(item => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const expenseTomorrow = tomorrow
+    .filter(item => item.type === "expense" || item.type === "loan")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  return {
+    today,
+    tomorrow,
+    loading,
+    totalToday,
+    totalTomorrow,
+    incomeToday,
+    expenseToday,
+    incomeTomorrow,
+    expenseTomorrow,
   };
-
-  return notifications;
 };
-
-// Helper function to get expense category labels
-const getExpenseCategoryLabel = (category: string): string => {
-  const labels: Record<string, string> = {
-    housing: "Casa",
-    electricity: "Luz",
-    water: "Agua",
-    health: "Salud",
-    security: "Alarmas",
-    insurance: "Seguros",
-    internet: "Internet",
-    subscriptions: "Suscripciones",
-    gas: "Gas",
-    cleaning: "Limpieza",
-    fuel: "Gasolina",
-    groceries: "Supermercado",
-    entertainment: "Ocio",
-    business_investment: "Inversión",
-    advertising: "Publicidad",
-    transport: "Transporte",
-    restaurants: "Restaurantes",
-    shopping: "Compras",
-    loans: "Préstamos",
-    other: "Otros",
-  };
-  return labels[category] || category;
-};
-
-export default useTodayNotifications;

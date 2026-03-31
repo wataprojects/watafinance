@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, TrendingDown, TrendingUp, Landmark, Calendar, ChevronRight, X } from "lucide-react";
+import { Bell, TrendingDown, TrendingUp, Landmark, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTodayNotifications, NotificationItem } from "@/hooks/useTodayNotifications";
 import { formatCurrency } from "@/utils/currency";
@@ -18,7 +18,7 @@ interface NotificationPanelProps {
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsChange }) => {
   const navigate = useNavigate();
-  const { today, tomorrow, loading, totalToday, totalTomorrow } = useTodayNotifications();
+  const { today, tomorrow, loading, incomeToday, expenseToday, incomeTomorrow, expenseTomorrow } = useTodayNotifications();
   const [open, setOpen] = useState(false);
 
   // Calculate total notifications
@@ -79,9 +79,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
         <div className="flex items-center gap-2 px-1 py-2">
           <Calendar className="w-4 h-4 text-zinc-500" />
           <span className="text-sm font-medium text-zinc-400">{title}</span>
-          <span className="ml-auto text-xs text-zinc-500">
-            {formatCurrency(items.reduce((sum, i) => sum + i.amount, 0))}
-          </span>
         </div>
         <div className="space-y-2">
           {items.map((item) => (
@@ -165,20 +162,77 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
             </div>
           ) : (
             <div className="p-4 space-y-4">
-              {/* Resumen */}
-              {(totalToday > 0 || totalTomorrow > 0) && (
-                <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-800/50 rounded-xl">
-                  <div className="text-center">
-                    <p className="text-xs text-zinc-400 mb-1">Hoy</p>
-                    <p className={`font-bold ${totalToday > 0 ? "text-red-400" : "text-zinc-500"}`}>
-                      {totalToday > 0 ? `-${formatCurrency(totalToday)}` : "Sin cobros"}
-                    </p>
+              {/* Resumen mejorado con分开显示收入和支出 */}
+              {(expenseToday > 0 || incomeToday > 0 || expenseTomorrow > 0 || incomeTomorrow > 0) && (
+                <div className="space-y-3 p-3 bg-zinc-800/50 rounded-xl">
+                  {/* Hoy */}
+                  <div className="space-y-1">
+                    <p className="text-xs text-zinc-500 font-medium">Hoy</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Ingresos */}
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3 text-green-400" />
+                          <span className="text-xs text-zinc-400">Ingresos:</span>
+                          <span className="text-xs font-bold text-green-400">
+                            {incomeToday > 0 ? `+${formatCurrency(incomeToday)}` : "—"}
+                          </span>
+                        </div>
+                        {/* Gastos */}
+                        <div className="flex items-center gap-1">
+                          <TrendingDown className="w-3 h-3 text-red-400" />
+                          <span className="text-xs text-zinc-400">Gastos:</span>
+                          <span className="text-xs font-bold text-red-400">
+                            {expenseToday > 0 ? `-${formatCurrency(expenseToday)}` : "—"}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Balance del día */}
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-500">Balance: </span>
+                        <span className={`text-xs font-bold ${
+                          incomeToday - expenseToday >= 0 ? "text-green-400" : "text-red-400"
+                        }`}>
+                          {incomeToday - expenseToday >= 0 ? "+" : ""}{formatCurrency(incomeToday - expenseToday)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center border-l border-zinc-700">
-                    <p className="text-xs text-zinc-400 mb-1">Mañana</p>
-                    <p className={`font-bold ${totalTomorrow > 0 ? "text-orange-400" : "text-zinc-500"}`}>
-                      {totalTomorrow > 0 ? `-${formatCurrency(totalTomorrow)}` : "Sin cobros"}
-                    </p>
+
+                  <div className="border-t border-zinc-700" />
+
+                  {/* Mañana */}
+                  <div className="space-y-1">
+                    <p className="text-xs text-zinc-500 font-medium">Mañana</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Ingresos */}
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3 text-green-400" />
+                          <span className="text-xs text-zinc-400">Ingresos:</span>
+                          <span className="text-xs font-bold text-green-400">
+                            {incomeTomorrow > 0 ? `+${formatCurrency(incomeTomorrow)}` : "—"}
+                          </span>
+                        </div>
+                        {/* Gastos */}
+                        <div className="flex items-center gap-1">
+                          <TrendingDown className="w-3 h-3 text-red-400" />
+                          <span className="text-xs text-zinc-400">Gastos:</span>
+                          <span className="text-xs font-bold text-red-400">
+                            {expenseTomorrow > 0 ? `-${formatCurrency(expenseTomorrow)}` : "—"}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Balance del día */}
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-500">Balance: </span>
+                        <span className={`text-xs font-bold ${
+                          incomeTomorrow - expenseTomorrow >= 0 ? "text-green-400" : "text-red-400"
+                        }`}>
+                          {incomeTomorrow - expenseTomorrow >= 0 ? "+" : ""}{formatCurrency(incomeTomorrow - expenseTomorrow)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
