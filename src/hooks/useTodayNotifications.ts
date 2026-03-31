@@ -18,7 +18,6 @@ interface UseTodayNotificationsReturn {
   loading: boolean;
   totalToday: number;
   totalTomorrow: number;
-  // New separate totals
   incomeToday: number;
   expenseToday: number;
   incomeTomorrow: number;
@@ -40,26 +39,42 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
 
       const todayDate = new Date();
       todayDate.setHours(0, 0, 0, 0);
+      
       const tomorrowDate = new Date(todayDate);
       tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      
       const dayAfterTomorrow = new Date(tomorrowDate);
       dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
 
-      // Fetch incomes
-      const { data: incomes } = await supabase
+      // Get date strings for comparisons
+      const todayStr = todayDate.toISOString().split("T")[0];
+      const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+      const dayAfterTomorrowStr = dayAfterTomorrow.toISOString().split("T")[0];
+
+      // Fetch recurring incomes for today and tomorrow
+      const { data: recurringIncomes } = await supabase
         .from("incomes")
         .select("*")
         .eq("user_id", user.id)
-        .gte("date", todayDate.toISOString().split("T")[0])
-        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
+        .eq("is_recurring", true)
+        .or(`date.eq.${todayStr},date.eq.${tomorrowStr},and(date.lte.${todayStr},is_recurring.eq.true)`);
+
+      // Fetch non-recurring incomes only for today
+      const { data: nonRecurringIncomes } = await supabase
+        .from("incomes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_recurring", false)
+        .gte("date", todayStr)
+        .lt("date", dayAfterTomorrowStr);
 
       // Fetch expenses
       const { data: expenses } = await supabase
         .from("expenses")
         .select("*")
         .eq("user_id", user.id)
-        .gte("date", todayDate.toISOString().split("T")[0])
-        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
+        .gte("date", todayStr)
+        .lt("date", dayAfterTomorrowStr);
 
       // Fetch loans (debts)
       const { data: loans } = await supabase
@@ -72,8 +87,37 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
       const todayNotifications: NotificationItem[] = [];
       const tomorrowNotifications: NotificationItem[] = [];
 
-      // Process incomes
-      incomes?.forEach((income: any) => {
+      // Get current day of week (0 = Sunday, 1 = Monday, etc.)
+      const todayDayOfWeek = todayDate.getDay();
+      const tomorrowDayOfWeek = tomorrowDate.getDay();
+
+      // Process recurring incomes
+      recurringIncomes?.forEach((income: any) => {
+        const incomeDate = new Date(income.date);
+        const incomeDayOfWeek = incomeDate.getDay();
+        
+        // For recurring incomes, check if the day matches
+        const matchesToday = incomeDayOfWeek === todayDayOfWeek;
+        const matchesTomorrow = incomeDayOfWeek === tomorrowDayOfWeek;
+        
+        const item: NotificationItem = {
+          id: income.id,
+          type: "income",
+          title: income.description || "Ingreso recurrente",
+          description: `Ingreso ${income.is_passive ? "pasivo" : "recurrente"}`,
+          amount: Number(income.amount),
+          date: incomeDate,
+        };
+
+        if (matchesToday && incomeDayOfWeek === todayDayOfWeek) {
+          todayNotifications.push(item);
+        } else if (matchesTomorrow && incomeDayOfWeek === tomorrowDayOfWeek) {
+          tomorrowNotifications.push(item);
+        }
+      });
+
+      // Process non-recurring incomes
+      nonRecurringIncomes?.forEach((income: any) => {
         const incomeDate = new Date(income.date);
         const item: NotificationItem = {
           id: income.id,
@@ -83,9 +127,10 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
           amount: Number(income.amount),
           date: incomeDate,
         };
+        
         if (incomeDate.toDateString() === todayDate.toDateString()) {
           todayNotifications.push(item);
-        } else {
+        } else if (incomeDate.toDateString() === tomorrowDate.toDateString()) {
           tomorrowNotifications.push(item);
         }
       });
