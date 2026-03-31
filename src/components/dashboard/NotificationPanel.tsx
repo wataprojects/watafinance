@@ -18,7 +18,7 @@ interface NotificationPanelProps {
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsChange }) => {
   const navigate = useNavigate();
-  const { today, tomorrow, loading, incomeToday, expenseToday, incomeTomorrow, expenseTomorrow } = useTodayNotifications();
+  const { today, tomorrow, loading } = useTodayNotifications();
   const [open, setOpen] = useState(false);
 
   // Calculate total notifications
@@ -71,7 +71,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
     }
   };
 
-  const renderNotificationSection = (title: string, items: NotificationItem[], isToday: boolean) => {
+  const renderNotificationSection = (title: string, items: NotificationItem[]) => {
     if (items.length === 0) return null;
 
     return (
@@ -162,86 +162,11 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
             </div>
           ) : (
             <div className="p-4 space-y-4">
-              {/* Resumen mejorado con分开显示收入和支出 */}
-              {(expenseToday > 0 || incomeToday > 0 || expenseTomorrow > 0 || incomeTomorrow > 0) && (
-                <div className="space-y-3 p-3 bg-zinc-800/50 rounded-xl">
-                  {/* Hoy */}
-                  <div className="space-y-1">
-                    <p className="text-xs text-zinc-500 font-medium">Hoy</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Ingresos */}
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3 text-green-400" />
-                          <span className="text-xs text-zinc-400">Ingresos:</span>
-                          <span className="text-xs font-bold text-green-400">
-                            {incomeToday > 0 ? `+${formatCurrency(incomeToday)}` : "—"}
-                          </span>
-                        </div>
-                        {/* Gastos */}
-                        <div className="flex items-center gap-1">
-                          <TrendingDown className="w-3 h-3 text-red-400" />
-                          <span className="text-xs text-zinc-400">Gastos:</span>
-                          <span className="text-xs font-bold text-red-400">
-                            {expenseToday > 0 ? `-${formatCurrency(expenseToday)}` : "—"}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Balance del día */}
-                      <div className="text-right">
-                        <span className="text-xs text-zinc-500">Balance: </span>
-                        <span className={`text-xs font-bold ${
-                          incomeToday - expenseToday >= 0 ? "text-green-400" : "text-red-400"
-                        }`}>
-                          {incomeToday - expenseToday >= 0 ? "+" : ""}{formatCurrency(incomeToday - expenseToday)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-zinc-700" />
-
-                  {/* Mañana */}
-                  <div className="space-y-1">
-                    <p className="text-xs text-zinc-500 font-medium">Mañana</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Ingresos */}
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3 text-green-400" />
-                          <span className="text-xs text-zinc-400">Ingresos:</span>
-                          <span className="text-xs font-bold text-green-400">
-                            {incomeTomorrow > 0 ? `+${formatCurrency(incomeTomorrow)}` : "—"}
-                          </span>
-                        </div>
-                        {/* Gastos */}
-                        <div className="flex items-center gap-1">
-                          <TrendingDown className="w-3 h-3 text-red-400" />
-                          <span className="text-xs text-zinc-400">Gastos:</span>
-                          <span className="text-xs font-bold text-red-400">
-                            {expenseTomorrow > 0 ? `-${formatCurrency(expenseTomorrow)}` : "—"}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Balance del día */}
-                      <div className="text-right">
-                        <span className="text-xs text-zinc-500">Balance: </span>
-                        <span className={`text-xs font-bold ${
-                          incomeTomorrow - expenseTomorrow >= 0 ? "text-green-400" : "text-red-400"
-                        }`}>
-                          {incomeTomorrow - expenseTomorrow >= 0 ? "+" : ""}{formatCurrency(incomeTomorrow - expenseTomorrow)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Today */}
-              {renderNotificationSection("Hoy", today, true)}
+              {renderNotificationSection("Hoy", today)}
 
               {/* Tomorrow */}
-              {renderNotificationSection("Mañana", tomorrow, false)}
+              {renderNotificationSection("Mañana", tomorrow)}
             </div>
           )}
         </div>
