@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationPanel from "./NotificationPanel";
 import {
@@ -134,6 +134,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Profile Button - Mi Cuenta */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard/mi-cuenta")}
+              className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            >
+              <User className="w-5 h-5" />
+            </Button>
+
             {/* Notification Panel - Financial notifications */}
             <NotificationPanel 
               onNotificationsChange={setNotificationCount} 
