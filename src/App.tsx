@@ -13,6 +13,7 @@ import DebtsPage from "./pages/dashboard/DebtsPage";
 import LoansPage from "./pages/dashboard/LoansPage";
 import InvestmentsPage from "./pages/dashboard/InvestmentsPage";
 import PatrimonyPage from "./pages/dashboard/PatrimonyPage";
+import ProfilePage from "./pages/dashboard/ProfilePage";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 
@@ -35,8 +36,9 @@ const App = () => (
           <Route path="/dashboard/loans" element={<LoansPage />} />
           <Route path="/dashboard/investments" element={<InvestmentsPage />} />
           <Route path="/dashboard/patrimony" element={<PatrimonyPage />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="*" element={<NotFound />} />
+          <Route path="/dashboard/profile" element={<ProfilePage />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
