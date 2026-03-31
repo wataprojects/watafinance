@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, TrendingDown, Calendar, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useTodayNotifications, NotificationItem } from "@/hooks/useTodayNotifications";
 import { formatCurrency } from "@/utils/currency";
 import {
@@ -182,23 +181,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onNotificationsCh
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        {totalNotifications > 0 && (
-          <div className="p-3 border-t border-zinc-800 flex gap-2">
-            <Button
-              variant="ghost"
-              className="flex-1 text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm"
-              onClick={() => {
-                setOpen(false);
-                navigate("/dashboard/expenses");
-              }}
-            >
-              Ver gastos
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        )}
       </PopoverContent>
     </Popover>
   );
