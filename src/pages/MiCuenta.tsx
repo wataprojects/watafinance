@@ -170,7 +170,7 @@ const MiCuenta: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-green-400" />
-                <CardTitle className="text-white text-lg">Plan {subscription?.plan || "Free"}</CardTitle>
+                <CardTitle className="text-black text-lg">Plan {subscription?.plan || "Free"}</CardTitle>
               </div>
               {subscription?.status === "active" && (
                 <div className="flex items-center gap-1 text-green-400 text-xs">
