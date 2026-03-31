@@ -36,26 +36,21 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [pendingDebts, setPendingDebts] = useState<PendingDebt[]>([]);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   useEffect(() => {
-    // Load pending notifications on mount
     fetchPendingDebts();
   }, []);
 
   const fetchPendingDebts = async () => {
-    setLoadingNotifications(true);
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
-      setLoadingNotifications(false);
       return;
     }
 
-    // Fetch debts where user is the associated user and status is pending
     const { data, error } = await supabase
       .from("debts")
       .select("*")
@@ -66,7 +61,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     if (!error && data) {
       setPendingDebts(data);
     }
-    setLoadingNotifications(false);
   };
 
   const handleAcceptDebt = async (debtId: string) => {
@@ -115,8 +109,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   const pendingDebtCount = pendingDebts.length;
-
-  // Combined notification count
   const totalNotificationCount = pendingDebtCount + notificationCount;
 
   return (
@@ -149,7 +141,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               onNotificationsChange={setNotificationCount} 
             />
 
-            {/* Debts Notifications Popover - Existing functionality */}
+            {/* Combined Notifications Popover */}
             <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -157,36 +149,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   size="icon"
                   className="relative text-zinc-400 hover:text-white hover:bg-zinc-800"
                 >
-                  {/* Icon changes based on if there are debt notifications */}
-                  {pendingDebtCount > 0 ? (
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      className="w-5 h-5 text-orange-400"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  ) : (
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      className="w-5 h-5"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  )}
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="w-5 h-5"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
                   {pendingDebtCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
                       {pendingDebtCount > 9 ? "9+" : pendingDebtCount}
@@ -211,11 +186,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </div>
 
                 <div className="max-h-96 overflow-y-auto">
-                  {loadingNotifications ? (
-                    <div className="p-8 flex justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
-                    </div>
-                  ) : pendingDebts.length === 0 ? (
+                  {pendingDebts.length === 0 ? (
                     <div className="p-8 text-center">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
