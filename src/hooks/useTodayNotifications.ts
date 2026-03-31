@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface NotificationItem {
   id: string;
-  type: "expense" | "income" | "loan";
+  type: "expense" | "income" | "debt" | "loan";
   title: string;
   description: string;
   amount: number;
@@ -16,13 +16,13 @@ export interface NotificationItem {
 interface Totals {
   income: number;
   expense: number;
+  debt: number;
+  loan: number;
 }
 
 interface UseTodayNotificationsReturn {
-  expensesToday: NotificationItem[];
-  expensesTomorrow: NotificationItem[];
-  incomesToday: NotificationItem[];
-  incomesTomorrow: NotificationItem[];
+  movementsToday: NotificationItem[];
+  movementsTomorrow: NotificationItem[];
   loading: boolean;
   totals: {
     today: Totals;
@@ -31,10 +31,8 @@ interface UseTodayNotificationsReturn {
 }
 
 export const useTodayNotifications = (): UseTodayNotificationsReturn => {
-  const [expensesToday, setExpensesToday] = useState<NotificationItem[]>([]);
-  const [expensesTomorrow, setExpensesTomorrow] = useState<NotificationItem[]>([]);
-  const [incomesToday, setIncomesToday] = useState<NotificationItem[]>([]);
-  const [incomesTomorrow, setIncomesTomorrow] = useState<NotificationItem[]>([]);
+  const [movementsToday, setMovementsToday] = useState<NotificationItem[]>([]);
+  const [movementsTomorrow, setMovementsTomorrow] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,40 +43,53 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
         return;
       }
 
-      const todayDate = new Date();
-      todayDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      const tomorrowDate = new Date(todayDate);
-      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const dayAfterTomorrowDate = new Date(todayDate);
-      dayAfterTomorrowDate.setDate(dayAfterTomorrowDate.getDate() + 2);
+      const dayAfterTomorrow = new Date(today);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
 
-      // Get date strings for comparisons
-      const todayStr = todayDate.toISOString().split("T")[0];
-      const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
-      const dayAfterTomorrowStr = dayAfterTomorrowDate.toISOString().split("T")[0];
+      // Get day of month for today and tomorrow
+      const todayDay = today.getDate();
+      const tomorrowDay = tomorrow.getDate();
 
       // Fetch expenses for today and tomorrow
       const { data: expenses } = await supabase
         .from("expenses")
         .select("*")
         .eq("user_id", user.id)
-        .gte("date", todayStr)
-        .lt("date", dayAfterTomorrowStr);
+        .gte("date", today.toISOString().split("T")[0])
+        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
 
       // Fetch incomes for today and tomorrow
       const { data: incomes } = await supabase
         .from("incomes")
         .select("*")
         .eq("user_id", user.id)
-        .gte("date", todayStr)
-        .lt("date", dayAfterTomorrowStr);
+        .gte("date", today.toISOString().split("T")[0])
+        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
 
-      const todayExpenseNotifications: NotificationItem[] = [];
-      const tomorrowExpenseNotifications: NotificationItem[] = [];
-      const todayIncomeNotifications: NotificationItem[] = [];
-      const tomorrowIncomeNotifications: NotificationItem[] = [];
+      // Fetch active debts with collection_day for today and tomorrow
+      const { data: debts } = await supabase
+        .from("debts")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .in("collection_day", [todayDay, tomorrowDay]);
+
+      // Fetch active loans with collection_day for today and tomorrow
+      const { data: loans } = await supabase
+        .from("loans")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .in("collection_day", [todayDay, tomorrowDay]);
+
+      const todayMovements: NotificationItem[] = [];
+      const tomorrowMovements: NotificationItem[] = [];
 
       // Process expenses
       expenses?.forEach((expense: any) => {
@@ -93,12 +104,13 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
         };
 
         const itemDateStr = expense.date;
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
         if (itemDateStr < tomorrowStr) {
           item.dayLabel = "today";
-          todayExpenseNotifications.push(item);
+          todayMovements.push(item);
         } else {
           item.dayLabel = "tomorrow";
-          tomorrowExpenseNotifications.push(item);
+          tomorrowMovements.push(item);
         }
       });
 
@@ -115,19 +127,62 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
         };
 
         const itemDateStr = income.date;
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
         if (itemDateStr < tomorrowStr) {
           item.dayLabel = "today";
-          todayIncomeNotifications.push(item);
+          todayMovements.push(item);
         } else {
           item.dayLabel = "tomorrow";
-          tomorrowIncomeNotifications.push(item);
+          tomorrowMovements.push(item);
         }
       });
 
-      setExpensesToday(todayExpenseNotifications);
-      setExpensesTomorrow(tomorrowExpenseNotifications);
-      setIncomesToday(todayIncomeNotifications);
-      setIncomesTomorrow(tomorrowIncomeNotifications);
+      // Process debts
+      debts?.forEach((debt: any) => {
+        const item: NotificationItem = {
+          id: debt.id,
+          type: "debt",
+          title: debt.name,
+          description: debt.creditor ? `Deuda con ${debt.creditor}` : "Deuda",
+          amount: Number(debt.monthly_payment || 0),
+          date: new Date(),
+        };
+
+        if (debt.collection_day === todayDay) {
+          item.dayLabel = "today";
+          todayMovements.push(item);
+        } else if (debt.collection_day === tomorrowDay) {
+          item.dayLabel = "tomorrow";
+          tomorrowMovements.push(item);
+        }
+      });
+
+      // Process loans
+      loans?.forEach((loan: any) => {
+        const item: NotificationItem = {
+          id: loan.id,
+          type: "loan",
+          title: loan.borrower_name,
+          description: loan.bank ? `Préstamo con ${loan.bank}` : "Préstamo",
+          amount: Number(loan.monthly_payment || 0),
+          date: new Date(),
+        };
+
+        if (loan.collection_day === todayDay) {
+          item.dayLabel = "today";
+          todayMovements.push(item);
+        } else if (loan.collection_day === tomorrowDay) {
+          item.dayLabel = "tomorrow";
+          tomorrowMovements.push(item);
+        }
+      });
+
+      // Sort by amount (largest first)
+      const sortByAmount = (a: NotificationItem, b: NotificationItem) => 
+        Math.abs(b.amount) - Math.abs(a.amount);
+
+      setMovementsToday(todayMovements.sort(sortByAmount));
+      setMovementsTomorrow(tomorrowMovements.sort(sortByAmount));
       setLoading(false);
     };
 
@@ -135,22 +190,30 @@ export const useTodayNotifications = (): UseTodayNotificationsReturn => {
   }, []);
 
   // Calculate totals
+  const calculateTotals = (movements: NotificationItem[]) => {
+    return movements.reduce(
+      (acc, item) => {
+        if (item.type === "income" || item.type === "loan") {
+          acc.income += item.amount;
+        } else if (item.type === "expense" || item.type === "debt") {
+          acc.expense += item.amount;
+        }
+        if (item.type === "debt") acc.debt += item.amount;
+        if (item.type === "loan") acc.loan += item.amount;
+        return acc;
+      },
+      { income: 0, expense: 0, debt: 0, loan: 0 }
+    );
+  };
+
   const totals = {
-    today: {
-      income: incomesToday.reduce((sum, item) => sum + item.amount, 0),
-      expense: expensesToday.reduce((sum, item) => sum + item.amount, 0),
-    },
-    tomorrow: {
-      income: incomesTomorrow.reduce((sum, item) => sum + item.amount, 0),
-      expense: expensesTomorrow.reduce((sum, item) => sum + item.amount, 0),
-    },
+    today: calculateTotals(movementsToday),
+    tomorrow: calculateTotals(movementsTomorrow),
   };
 
   return {
-    expensesToday,
-    expensesTomorrow,
-    incomesToday,
-    incomesTomorrow,
+    movementsToday,
+    movementsTomorrow,
     loading,
     totals,
   };
