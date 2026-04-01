@@ -17,6 +17,7 @@ import LoanActionsModal from "@/components/dashboard/LoanActionsModal";
 import AttackPlan from "@/components/dashboard/AttackPlan";
 import { formatCurrency } from "@/utils/currency";
 import { processLoansMonthly } from "@/utils/automation";
+import { toast } from "sonner";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 type LoanActionTab = "payment" | "extra" | "detail";
@@ -100,7 +101,7 @@ const LoansPage = () => {
     if (!loan.name?.trim()) newErrors.name = "El nombre es obligatorio";
     if (!loan.bank?.trim()) newErrors.bank = "El banco es obligatorio";
     if (!loan.total_amount || parseFloat(loan.total_amount) <= 0) newErrors.total_amount = "El importe total es obligatorio";
-    if (!loan.pending_amount || parseFloat(loan.pending_amount) <= 0) newErrors.pending_amount = "El capital pendiente es obligatorio";
+    if (!loan.pending_amount || parseFloat(loan.pending_amount) < 0) newErrors.pending_amount = "El capital pendiente no puede ser negativo";
     if (!loan.monthly_payment || parseFloat(loan.monthly_payment) <= 0) newErrors.monthly_payment = "La cuota mensual es obligatoria";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -117,7 +118,7 @@ const LoansPage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setIsSaving(false); return; }
 
-    await supabase.from("loans").insert({
+    const { error } = await supabase.from("loans").insert({
       user_id: session.user.id, borrower_name: newLoan.name.trim(), bank: newLoan.bank.trim(),
       initial_amount: parseFloat(newLoan.total_amount), current_amount: parseFloat(newLoan.pending_amount),
       interest_rate: newLoan.tin ? parseFloat(newLoan.tin) : null,
@@ -128,10 +129,15 @@ const LoansPage = () => {
       notes: newLoan.notes || null, loan_type: newLoan.loan_type,
     });
 
-    setIsDialogOpen(false);
-    setNewLoan({ loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1", start_date: new Date(), end_date: null, tin: "", notes: "" });
-    setErrors({});
-    fetchLoans(session.user.id);
+    if (error) {
+      toast.error("Error al crear el préstamo: " + error.message);
+    } else {
+      toast.success("Préstamo registrado correctamente");
+      setIsDialogOpen(false);
+      setNewLoan({ loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1", start_date: new Date(), end_date: null, tin: "", notes: "" });
+      setErrors({});
+      fetchLoans(session.user.id);
+    }
     setIsSaving(false);
   };
 
@@ -141,7 +147,7 @@ const LoansPage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setIsSaving(false); return; }
 
-    await supabase.from("loans").update({
+    const { error } = await supabase.from("loans").update({
       borrower_name: editLoan.name.trim(), bank: editLoan.bank.trim(),
       initial_amount: parseFloat(editLoan.total_amount), current_amount: parseFloat(editLoan.pending_amount),
       interest_rate: editLoan.tin ? parseFloat(editLoan.tin) : null,
@@ -150,19 +156,35 @@ const LoansPage = () => {
       start_date: formatDateToISO(editLoan.start_date),
       end_date: formatDateToISO(editLoan.end_date),
       notes: editLoan.notes || null, loan_type: editLoan.loan_type,
+      updated_at: new Date().toISOString()
     }).eq("id", selectedLoan.id);
 
-    setIsEditDialogOpen(false); setSelectedLoan(null);
-    fetchLoans(session.user.id);
+    if (error) {
+      toast.error("Error al actualizar: " + error.message);
+    } else {
+      toast.success("Préstamo actualizado correctamente");
+      setIsEditDialogOpen(false); 
+      setSelectedLoan(null);
+      fetchLoans(session.user.id);
+    }
     setIsSaving(false);
   };
 
   const handleDeleteLoan = async () => {
     if (!selectedLoan) return;
-    await supabase.from("loans").delete().eq("id", selectedLoan.id);
-    setIsDeleteDialogOpen(false); setSelectedLoan(null);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) fetchLoans(session.user.id);
+    setIsSaving(true);
+    const { error } = await supabase.from("loans").delete().eq("id", selectedLoan.id);
+    
+    if (error) {
+      toast.error("Error al eliminar: " + error.message);
+    } else {
+      toast.success("Préstamo eliminado");
+      setIsDeleteDialogOpen(false); 
+      setSelectedLoan(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) fetchLoans(session.user.id);
+    }
+    setIsSaving(false);
   };
 
   const openEditDialog = (loan: any) => {
@@ -177,6 +199,11 @@ const LoansPage = () => {
       tin: loan.interest_rate?.toString() || "", notes: loan.notes || "",
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (loan: any) => {
+    setSelectedLoan(loan);
+    setIsDeleteDialogOpen(true);
   };
 
   const openActionsModal = (loan: any, defaultTab: LoanActionTab = "payment") => {
@@ -259,6 +286,8 @@ const LoansPage = () => {
                     loan={loan}
                     totalMonthlyLoans={totalMonthly}
                     onOpenActions={openActionsModal}
+                    onEdit={openEditDialog}
+                    onDelete={openDeleteDialog}
                   />
                 ))}
               </div>
@@ -299,7 +328,9 @@ const LoansPage = () => {
             )}
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">Cancelar</Button>
-              <Button onClick={handleDeleteLoan} className="flex-1 bg-red-500 hover:bg-red-600">Eliminar</Button>
+              <Button onClick={handleDeleteLoan} className="flex-1 bg-red-500 hover:bg-red-600" disabled={isSaving}>
+                {isSaving ? "Eliminando..." : "Eliminar"}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -318,10 +349,26 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
     <div className="space-y-4 mt-4">
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">Tipo de préstamo</label>
-        <button type="button" className="w-full p-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedLoanType.color}`}><SelectedIcon className={`w-6 h-6 ${selectedLoanType.textColor}`} /></div>
-          <span className="text-white font-medium">{selectedLoanType.label}</span>
-        </button>
+        <Select value={loan.loan_type} onValueChange={(v) => setLoan({ ...loan, loan_type: v })}>
+          <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedLoanType.color}`}>
+                <SelectedIcon className={`w-5 h-5 ${selectedLoanType.textColor}`} />
+              </div>
+              <span className="text-white font-medium">{selectedLoanType.label}</span>
+            </div>
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            {loanTypes.map((type: LoanTypeOption) => (
+              <SelectItem key={type.value} value={type.value} className="text-white">
+                <div className="flex items-center gap-2">
+                  <type.icon className="w-4 h-4" />
+                  {type.label}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -357,7 +404,7 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
           <label className="text-sm text-zinc-400 mb-1 block">Día de cobro *</label>
           <Select value={loan.collection_day} onValueChange={(v) => setLoan({ ...loan, collection_day: v })}>
             <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Selecciona" /></SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">{collectionDays.map((day: number) => (<SelectItem key={day} value={day.toString()} className="text-white">{day}</SelectItem>))}</SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-800">{collectionDays.map((day: number) => (<SelectItem key={day} value={day.toString()} className="text-white">{day}</SelectItem>))}</SelectContent>
           </Select>
         </div>
       </div>

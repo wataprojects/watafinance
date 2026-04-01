@@ -3,7 +3,21 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
-import { Home, Car, Wallet, Briefcase, MoreHorizontal, Flame, AlertCircle, CheckCircle2, CreditCard, Zap, Eye } from "lucide-react";
+import { 
+  Home, 
+  Car, 
+  Wallet, 
+  Briefcase, 
+  MoreHorizontal, 
+  Flame, 
+  AlertCircle, 
+  CheckCircle2, 
+  CreditCard, 
+  Zap, 
+  Eye,
+  Pencil,
+  Trash2
+} from "lucide-react";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 type LoanActionTab = "payment" | "extra" | "detail";
@@ -29,11 +43,13 @@ interface LoanCardProps {
   loan: any;
   totalMonthlyLoans: number;
   onOpenActions: (loan: any, defaultTab?: LoanActionTab) => void;
+  onEdit: (loan: any) => void;
+  onDelete: (loan: any) => void;
 }
 
 type PriorityBadge = "high" | "attention" | "controlled";
 
-const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActions }) => {
+const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActions, onEdit, onDelete }) => {
   const initialAmount = parseFloat(loan.initial_amount);
   const currentAmount = parseFloat(loan.current_amount);
   const monthlyPayment = parseFloat(loan.monthly_payment || 0);
@@ -83,11 +99,10 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
 
   return (
     <Card 
-      className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer"
-      onClick={() => onOpenActions(loan, "payment")}
+      className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all group"
     >
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeInfo.color}`}>
               <Icon className={`w-6 h-6 ${typeInfo.textColor}`} />
@@ -97,18 +112,36 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
               <p className="text-xs text-zinc-500">{loan.bank} • {typeInfo.label}</p>
             </div>
           </div>
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${badgeInfo.color}`}>
-            {badgeInfo.icon}
-            <span>{badgeInfo.label}</span>
+          <div className="flex flex-col items-end gap-2">
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border ${badgeInfo.color}`}>
+              {badgeInfo.icon}
+              <span>{badgeInfo.label}</span>
+            </div>
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={(e) => { e.stopPropagation(); onEdit(loan); }}
+                className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                title="Editar préstamo"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(loan); }}
+                className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                title="Eliminar préstamo"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
         
-        <div className="mb-3">
+        <div className="mb-3" onClick={() => onOpenActions(loan, "payment")}>
           <p className="text-xs text-zinc-500">Te quedan por pagar</p>
           <p className="text-2xl font-bold text-cyan-400">{formatCurrency(currentAmount)}</p>
         </div>
         
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3" onClick={() => onOpenActions(loan, "payment")}>
           <div className="flex-1">
             <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
               <div 
@@ -122,7 +155,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           </div>
         </div>
         
-        <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg mb-3">
+        <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg mb-3" onClick={() => onOpenActions(loan, "payment")}>
           <div>
             <p className="text-xs text-zinc-500">Cuota mensual</p>
             <p className="font-medium text-white">{formatCurrency(monthlyPayment)}/mes</p>
@@ -137,7 +170,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan, "payment");
@@ -149,7 +182,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan, "extra");
@@ -161,7 +194,7 @@ const LoanCard: React.FC<LoanCardProps> = ({ loan, totalMonthlyLoans, onOpenActi
           <Button
             size="sm"
             variant="outline"
-            className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onOpenActions(loan, "detail");
