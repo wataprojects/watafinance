@@ -44,7 +44,10 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
 
     const year = selectedYear;
     const startDate = `${year}-${selectedMonth}-01`;
-    const endDate = `${year}-${selectedMonth}-31`;
+    
+    // Calculate the actual last day of the month
+    const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0).getDate();
+    const endDate = `${year}-${selectedMonth}-${lastDay}`;
 
     // Fetch incomes for the selected month and year
     const incomesResult = await supabase
