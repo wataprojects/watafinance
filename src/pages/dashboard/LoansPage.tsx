@@ -73,99 +73,17 @@ const LoansPage = () => {
     if (!session) navigate("/login");
     else {
       setUserId(session.user.id);
-      // Ejecutar automatización al entrar
       handleRunAutomation(session.user.id);
     }
   };
 
   const handleRunAutomation = async (uid: string) => {
     setIsProcessing(true);
-    await processLoansMonthly();
-    await fetchLoans(uid);
-    setIsProcessing(false);
-  };<dyad-write path="src/pages/dashboard/LoansPage.tsx" description="Continuación de la implementación de LoansPage con disparador de automatización">
-"use client";
-
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Landmark, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import BottomNav from "@/components/dashboard/BottomNav";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DebtHealthIndicator from "@/components/dashboard/DebtHealthIndicator";
-import LoanCard from "@/components/dashboard/LoanCard";
-import LoanActionsModal from "@/components/dashboard/LoanActionsModal";
-import AttackPlan from "@/components/dashboard/AttackPlan";
-import { formatCurrency } from "@/utils/currency";
-import { processLoansMonthly } from "@/utils/automation";
-
-type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
-type LoanActionTab = "payment" | "extra" | "detail";
-
-interface LoanTypeOption {
-  value: LoanType; label: string; color: string; textColor: string; bgColor: string; icon: any;
-}
-
-const loanTypes: LoanTypeOption[] = [
-  { value: "mortgage", label: "Hipoteca", color: "bg-blue-500/20", textColor: "text-blue-400", bgColor: "border-blue-500", icon: Home },
-  { value: "car", label: "Coche", color: "bg-purple-500/20", textColor: "text-purple-400", bgColor: "border-purple-500", icon: Car },
-  { value: "personal", label: "Personal", color: "bg-cyan-500/20", textColor: "text-cyan-400", bgColor: "border-cyan-500", icon: Wallet },
-  { value: "business", label: "Negocio", color: "bg-amber-500/20", textColor: "text-amber-400", bgColor: "border-amber-500", icon: Briefcase },
-  { value: "other", label: "Otro", color: "bg-slate-500/20", textColor: "text-slate-400", bgColor: "border-slate-500", icon: MoreHorizontal },
-];
-
-const LoansPage = () => {
-  const navigate = useNavigate();
-  const [loans, setLoans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState<any>(null);
-  const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
-  const [actionsLoan, setActionsLoan] = useState<any>(null);
-  const [actionsDefaultTab, setActionsDefaultTab] = useState<LoanActionTab>("payment");
-  const [isSaving, setIsSaving] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [userId, setUserId] = useState<string>("");
-  
-  const defaultDate = new Date();
-  const [newLoan, setNewLoan] = useState({
-    loan_type: "personal" as LoanType, name: "", bank: "", total_amount: "", pending_amount: "",
-    monthly_payment: "", collection_day: "1", start_date: defaultDate, end_date: null as Date | null,
-    tin: "", notes: "",
-  });
-
-  const [editLoan, setEditLoan] = useState({
-    id: "", loan_type: "personal" as LoanType, name: "", bank: "", total_amount: "", pending_amount: "",
-    monthly_payment: "", collection_day: "1", start_date: defaultDate, end_date: null as Date | null,
-    tin: "", notes: "",
-  });
-
-  const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
-
-  useEffect(() => { 
-    checkAuth(); 
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) navigate("/login");
-    else {
-      setUserId(session.user.id);
-      handleRunAutomation(session.user.id);
+    try {
+      await processLoansMonthly();
+    } catch (e) {
+      console.error("Error en automatización:", e);
     }
-  };
-
-  const handleRunAutomation = async (uid: string) => {
-    setIsProcessing(true);
-    await processLoansMonthly();
     await fetchLoans(uid);
     setIsProcessing(false);
   };
