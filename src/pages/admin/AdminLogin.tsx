@@ -20,15 +20,19 @@ export default function AdminLogin() {
     setError('');
     setIsLoading(true);
 
-    const result = await login(email, password);
-    
-    if (result.success) {
-      navigate('/admin/dashboard');
-    } else {
-      setError(result.error || 'Error desconocido');
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        navigate('/admin/dashboard');
+      } else {
+        setError(result.error || 'Error desconocido');
+      }
+    } catch (err: any) {
+      setError(`Error de conexión: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -56,9 +60,9 @@ export default function AdminLogin() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
+                <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span className="break-words">{error}</span>
                 </div>
               )}
               
@@ -69,7 +73,7 @@ export default function AdminLogin() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="ntlv.webnode@gmail.com"
+                    placeholder="admin@finpro.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
