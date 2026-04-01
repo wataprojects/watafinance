@@ -32,14 +32,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      // Limpiamos el email y lo pasamos a minúsculas para evitar errores de escritura
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+
       const { data, error } = await supabaseAdmin
         .from('admins')
         .select('*')
-        .eq('email', email)
-        .eq('password_hash', password)
+        .eq('email', cleanEmail)
+        .eq('password_hash', cleanPassword)
         .single();
 
       if (error || !data) {
+        console.error('Error de login admin:', error);
         return { success: false, error: 'Credenciales inválidas' };
       }
 
@@ -51,7 +56,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
       setAdmin(data as Admin);
       return { success: true };
-    } catch {
+    } catch (err) {
+      console.error('Excepción en login admin:', err);
       return { success: false, error: 'Error al iniciar sesión' };
     }
   };
