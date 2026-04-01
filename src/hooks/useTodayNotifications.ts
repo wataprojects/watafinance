@@ -1,7 +1,6 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 export interface NotificationItem {
   id: string;
@@ -9,206 +8,216 @@ export interface NotificationItem {
   title: string;
   description: string;
   amount: number;
-  date: Date;
-  dayLabel?: "today" | "tomorrow";
+  date: string;
 }
 
-interface Totals {
-  income: number;
-  expense: number;
-  debt: number;
-  loan: number;
-}
-
-interface UseTodayNotificationsReturn {
+interface UseTodayNotificationsResult {
   movementsToday: NotificationItem[];
   movementsTomorrow: NotificationItem[];
   loading: boolean;
   totals: {
-    today: Totals;
-    tomorrow: Totals;
+    income: number;
+    expense: number;
+    debt: number;
+    loan: number;
   };
 }
 
-export const useTodayNotifications = (): UseTodayNotificationsReturn => {
+export const useTodayNotifications = (): UseTodayNotificationsResult => {
   const [movementsToday, setMovementsToday] = useState<NotificationItem[]>([]);
   const [movementsTomorrow, setMovementsTomorrow] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totals, setTotals] = useState({
+    income: 0,
+    expense: 0,
+    debt: 0,
+    loan: 0,
+  });
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    fetchMovements();
+  }, []);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+  const fetchMovements = async () => {
+    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      setLoading(false);
+      return;
+    }
 
-      const dayAfterTomorrow = new Date(today);
-      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    // Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Format dates as YYYY-MM-DD
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-      // Get day of month for today and tomorrow
-      const todayDay = today.getDate();
-      const tomorrowDay = tomorrow.getDate();
+    // Fetch today's expenses (recurring expenses scheduled for today)
+    const todayExpenseResult = await supabase
+      .from("expenses")
+      .select("id, amount, description, category, date, is_recurring, collection_day")
+      .eq("user_id", session.user.id)
+      .eq("is_recurring", true)
+      .lte("start_date", todayStr)
+      .or(`end_date.is.null,end_date.gte.${todayStr}`);
 
-      // Fetch expenses for today and tomorrow
-      const { data: expenses } = await supabase
-        .from("expenses")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("date", today.toISOString().split("T")[0])
-        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
+    // Fetch today's incomes (recurring incomes scheduled for today)
+    const todayIncomeResult = await supabase
+      .from("incomes")
+      .select("id, amount, description, category, date, is_recurring")
+      .eq("user_id", session.user.id)
+      .eq("is_recurring", true)
+      .lte("start_date", todayStr)
+      .or(`end_date.is.null,end_date.gte.${todayStr}`);
 
-      // Fetch incomes for today and tomorrow
-      const { data: incomes } = await supabase
-        .from("incomes")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("date", today.toISOString().split("T")[0])
-        .lt("date", dayAfterTomorrow.toISOString().split("T")[0]);
+    // Fetch today's debts (debts with collection_day matching today)
+    const todayDebtsResult = await supabase
+      .from("debts")
+      .select("id, name, current_amount, category, collection_day, status")
+      .eq("user_id", session.user.id)
+      .eq("status", "active")
+      .eq("collection_day", today.getDate());
 
-      // Fetch active debts with collection_day for today and tomorrow
-      const { data: debts } = await supabase
-        .from("debts")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .in("collection_day", [todayDay, tomorrowDay]);
+    // Fetch tomorrow's debts
+    const tomorrowDebtsResult = await supabase
+      .from("debts")
+      .select("id, name, current_amount, category, collection_day, status")
+      .eq("user_id", session.user.id)
+      .eq("status", "active")
+      .eq("collection_day", tomorrow.getDate());
 
-      // Fetch active loans with collection_day for today and tomorrow
-      const { data: loans } = await supabase
-        .from("loans")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .in("collection_day", [todayDay, tomorrowDay]);
+    // Fetch tomorrow's expenses (recurring expenses scheduled for tomorrow)
+    const tomorrowExpenseResult = await supabase
+      .from("expenses")
+      .select("id, amount, description, category, date, is_recurring, collection_day")
+      .eq("user_id", session.user.id)
+      .eq("is_recurring", true)
+      .lte("start_date", tomorrowStr)
+      .or(`end_date.is.null,end_date.gte.${tomorrowStr}`);
 
-      const todayMovements: NotificationItem[] = [];
-      const tomorrowMovements: NotificationItem[] = [];
+    // Fetch tomorrow's incomes (recurring incomes scheduled for tomorrow)
+    const tomorrowIncomeResult = await supabase
+      .from("incomes")
+      .select("id, amount, description, category, date, is_recurring")
+      .eq("user_id", session.user.id)
+      .eq("is_recurring", true)
+      .lte("start_date", tomorrowStr)
+      .or(`end_date.is.null,end_date.gte.${tomorrowStr}`);
 
-      // Process expenses
-      expenses?.forEach((expense: any) => {
-        const expenseDate = new Date(expense.date);
-        const item: NotificationItem = {
+    // Process and format today's movements
+    const todayMovements: NotificationItem[] = [];
+    
+    // Add today's expenses that are recurring
+    if (todayExpenseResult.data) {
+      todayExpenseResult.data.forEach((expense) => {
+        todayMovements.push({
           id: expense.id,
           type: "expense",
           title: expense.description || expense.category,
-          description: `Gasto ${expense.is_recurring ? "recurrente" : "único"}`,
-          amount: Number(expense.amount),
-          date: expenseDate,
-        };
-
-        const itemDateStr = expense.date;
-        const tomorrowStr = tomorrow.toISOString().split("T")[0];
-        if (itemDateStr < tomorrowStr) {
-          item.dayLabel = "today";
-          todayMovements.push(item);
-        } else {
-          item.dayLabel = "tomorrow";
-          tomorrowMovements.push(item);
-        }
+          description: `${expense.category}`,
+          amount: parseFloat(expense.amount),
+          date: todayStr,
+        });
       });
+    }
 
-      // Process incomes
-      incomes?.forEach((income: any) => {
-        const incomeDate = new Date(income.date);
-        const item: NotificationItem = {
+    // Add today's incomes that are recurring
+    if (todayIncomeResult.data) {
+      todayIncomeResult.data.forEach((income) => {
+        todayMovements.push({
           id: income.id,
           type: "income",
-          title: income.description || income.source || "Ingreso",
-          description: `Ingreso ${income.is_recurring ? "recurrente" : "único"}`,
-          amount: Number(income.amount),
-          date: incomeDate,
-        };
-
-        const itemDateStr = income.date;
-        const tomorrowStr = tomorrow.toISOString().split("T")[0];
-        if (itemDateStr < tomorrowStr) {
-          item.dayLabel = "today";
-          todayMovements.push(item);
-        } else {
-          item.dayLabel = "tomorrow";
-          tomorrowMovements.push(item);
-        }
+          title: income.description || income.category,
+          description: `${income.category}`,
+          amount: parseFloat(income.amount),
+          date: todayStr,
+        });
       });
+    }
 
-      // Process debts
-      debts?.forEach((debt: any) => {
-        const item: NotificationItem = {
+    // Add today's debts
+    if (todayDebtsResult.data) {
+      todayDebtsResult.data.forEach((debt) => {
+        todayMovements.push({
           id: debt.id,
           type: "debt",
           title: debt.name,
-          description: debt.creditor ? `Deuda con ${debt.creditor}` : "Deuda",
-          amount: Number(debt.monthly_payment || 0),
-          date: new Date(),
-        };
-
-        if (debt.collection_day === todayDay) {
-          item.dayLabel = "today";
-          todayMovements.push(item);
-        } else if (debt.collection_day === tomorrowDay) {
-          item.dayLabel = "tomorrow";
-          tomorrowMovements.push(item);
-        }
+          description: `${debt.category || "Deuda"}`,
+          amount: parseFloat(debt.current_amount),
+          date: todayStr,
+        });
       });
+    }
 
-      // Process loans
-      loans?.forEach((loan: any) => {
-        const item: NotificationItem = {
-          id: loan.id,
-          type: "loan",
-          title: loan.borrower_name,
-          description: loan.bank ? `Préstamo con ${loan.bank}` : "Préstamo",
-          amount: Number(loan.monthly_payment || 0),
-          date: new Date(),
-        };
+    // Process and format tomorrow's movements
+    const tomorrowMovements: NotificationItem[] = [];
 
-        if (loan.collection_day === todayDay) {
-          item.dayLabel = "today";
-          todayMovements.push(item);
-        } else if (loan.collection_day === tomorrowDay) {
-          item.dayLabel = "tomorrow";
-          tomorrowMovements.push(item);
-        }
+    // Add tomorrow's expenses that are recurring
+    if (tomorrowExpenseResult.data) {
+      tomorrowExpenseResult.data.forEach((expense) => {
+        tomorrowMovements.push({
+          id: `tomorrow-${expense.id}`,
+          type: "expense",
+          title: expense.description || expense.category,
+          description: `${expense.category}`,
+          amount: parseFloat(expense.amount),
+          date: tomorrowStr,
+        });
       });
+    }
 
-      // Sort by amount (largest first)
-      const sortByAmount = (a: NotificationItem, b: NotificationItem) => 
-        Math.abs(b.amount) - Math.abs(a.amount);
+    // Add tomorrow's incomes that are recurring
+    if (tomorrowIncomeResult.data) {
+      tomorrowIncomeResult.data.forEach((income) => {
+        tomorrowMovements.push({
+          id: `tomorrow-${income.id}`,
+          type: "income",
+          title: income.description || income.category,
+          description: `${income.category}`,
+          amount: parseFloat(income.amount),
+          date: tomorrowStr,
+        });
+      });
+    }
 
-      setMovementsToday(todayMovements.sort(sortByAmount));
-      setMovementsTomorrow(tomorrowMovements.sort(sortByAmount));
-      setLoading(false);
-    };
+    // Add tomorrow's debts
+    if (tomorrowDebtsResult.data) {
+      tomorrowDebtsResult.data.forEach((debt) => {
+        tomorrowMovements.push({
+          id: `tomorrow-${debt.id}`,
+          type: "debt",
+          title: debt.name,
+          description: `${debt.category || "Deuda"}`,
+          amount: parseFloat(debt.current_amount),
+          date: tomorrowStr,
+        });
+      });
+    }
 
-    fetchNotifications();
-  }, []);
+    setMovementsToday(todayMovements);
+    setMovementsTomorrow(tomorrowMovements);
 
-  // Calculate totals
-  const calculateTotals = (movements: NotificationItem[]) => {
-    return movements.reduce(
-      (acc, item) => {
-        if (item.type === "income" || item.type === "loan") {
-          acc.income += item.amount;
-        } else if (item.type === "expense" || item.type === "debt") {
-          acc.expense += item.amount;
-        }
-        if (item.type === "debt") acc.debt += item.amount;
-        if (item.type === "loan") acc.loan += item.amount;
-        return acc;
-      },
-      { income: 0, expense: 0, debt: 0, loan: 0 }
-    );
-  };
+    // Calculate totals
+    const totalIncome = todayMovements.filter((m) => m.type === "income").reduce((sum, m) => sum + m.amount, 0);
+    const totalExpense = todayMovements.filter((m) => m.type === "expense").reduce((sum, m) => sum + m.amount, 0);
+    const totalDebt = todayMovements.filter((m) => m.type === "debt").reduce((sum, m) => sum + m.amount, 0);
+    const totalLoan = todayMovements.filter((m) => m.type === "loan").reduce((sum, m) => sum + m.amount, 0);
 
-  const totals = {
-    today: calculateTotals(movementsToday),
-    tomorrow: calculateTotals(movementsTomorrow),
+    setTotals({
+      income: totalIncome,
+      expense: totalExpense,
+      debt: totalDebt,
+      loan: totalLoan,
+    });
+
+    setLoading(false);
   };
 
   return {
