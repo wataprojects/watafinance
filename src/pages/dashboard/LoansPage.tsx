@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Landmark, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X } from "lucide-react";
+import { Plus, Landmark, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -16,6 +16,7 @@ import LoanCard from "@/components/dashboard/LoanCard";
 import LoanActionsModal from "@/components/dashboard/LoanActionsModal";
 import AttackPlan from "@/components/dashboard/AttackPlan";
 import { formatCurrency } from "@/utils/currency";
+import { toast } from "react-hot-toast";
 
 type LoanType = "mortgage" | "car" | "personal" | "business" | "other";
 type LoanActionTab = "payment" | "extra" | "detail";
@@ -44,6 +45,7 @@ const LoansPage = () => {
   const [actionsLoan, setActionsLoan] = useState<any>(null);
   const [actionsDefaultTab, setActionsDefaultTab] = useState<LoanActionTab>("payment");
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string>("");
   
@@ -78,6 +80,36 @@ const LoansPage = () => {
     const { data } = await supabase.from("loans").select("*").eq("user_id", userId).order("created_at", { ascending: false });
     if (data) setLoans(data);
     setLoading(false);
+  };
+
+  const processMonthlyPayments = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    try {
+      // Call the edge function to process monthly payments
+      const response = await fetch('https://eoupodozovwxbldzptlp.supabase.co/functions/v1/process-monthly-loans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Procesados ${result.total_loans_processed} préstamos`);
+        // Refresh the loans list
+        if (userId) fetchLoans(userId);
+      } else {
+        toast.error('Error al procesar los pagos mensuales');
+      }
+    } catch (error) {
+      console.error('Error processing monthly payments:', error);
+      toast.error('Error al procesar los pagos mensuales');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const validateForm = (loan: any) => {
@@ -210,18 +242,29 @@ const LoansPage = () => {
           userId={userId}
         />
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-cyan-500 hover:bg-cyan-600 text-black py-6 text-lg">
-              <Plus className="w-5 h-5 mr-2" />Nuevo Préstamo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="text-white">Nuevo Préstamo</DialogTitle></DialogHeader>
-            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
-            <LoanForm loan={newLoan} setLoan={setNewLoan} errors={errors} isSaving={isSaving} onSubmit={handleAddLoan} isNew={true} loanTypes={loanTypes} collectionDays={collectionDays} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-3">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-black py-6 text-lg">
+                <Plus className="w-5 h-5 mr-2" />Nuevo Préstamo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle className="text-white">Nuevo Préstamo</DialogTitle></DialogHeader>
+              <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
+              <LoanForm loan={newLoan} setLoan={setNewLoan} errors={errors} isSaving={isSaving} onSubmit={handleAddLoan} isNew={true} loanTypes={loanTypes} collectionDays={collectionDays} />
+            </DialogContent>
+          </Dialog>
+
+          <Button 
+            onClick={processMonthlyPayments}
+            disabled={isProcessing || activeLoans.length === 0}
+            className="bg-amber-500 hover:bg-amber-600 text-black py-6"
+          >
+            <RefreshCw className={`w-5 h-5 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
+            Descontar Mes
+          </Button>
+        </div>
 
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
