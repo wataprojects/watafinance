@@ -7,7 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Landmark, TrendingDown as TrendingDownIcon, Pencil, Trash2, Home, Car, Wallet, Briefcase, MoreHorizontal, X, RefreshCw } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { 
+  Plus, 
+  Landmark, 
+  TrendingDown as TrendingDownIcon, 
+  Pencil, 
+  Trash2, 
+  Home, 
+  Car, 
+  Wallet, 
+  Briefcase, 
+  MoreHorizontal, 
+  X, 
+  RefreshCw,
+  Link2,
+  Calendar,
+  TrendingUp
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -37,6 +54,8 @@ const loanTypes: LoanTypeOption[] = [
 const LoansPage = () => {
   const navigate = useNavigate();
   const [loans, setLoans] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [patrimony, setPatrimony] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -54,13 +73,13 @@ const LoansPage = () => {
   const [newLoan, setNewLoan] = useState({
     loan_type: "personal" as LoanType, name: "", bank: "", total_amount: "", pending_amount: "",
     monthly_payment: "", collection_day: "1", start_date: defaultDate, end_date: null as Date | null,
-    tin: "", notes: "",
+    tin: "", notes: "", investment_id: "none", patrimony_id: "none"
   });
 
   const [editLoan, setEditLoan] = useState({
     id: "", loan_type: "personal" as LoanType, name: "", bank: "", total_amount: "", pending_amount: "",
     monthly_payment: "", collection_day: "1", start_date: defaultDate, end_date: null as Date | null,
-    tin: "", notes: "",
+    tin: "", notes: "", investment_id: "none", patrimony_id: "none"
   });
 
   const collectionDays = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -74,8 +93,18 @@ const LoansPage = () => {
     if (!session) navigate("/login");
     else {
       setUserId(session.user.id);
+      fetchOptions(session.user.id);
       handleRunAutomation(session.user.id);
     }
+  };
+
+  const fetchOptions = async (uid: string) => {
+    const [invResult, patResult] = await Promise.all([
+      supabase.from("investments").select("id, name").eq("user_id", uid),
+      supabase.from("patrimony").select("id, name").eq("user_id", uid),
+    ]);
+    if (invResult.data) setInvestments(invResult.data);
+    if (patResult.data) setPatrimony(patResult.data);
   };
 
   const handleRunAutomation = async (uid: string) => {
@@ -127,6 +156,8 @@ const LoansPage = () => {
       start_date: formatDateToISO(newLoan.start_date),
       end_date: formatDateToISO(newLoan.end_date),
       notes: newLoan.notes || null, loan_type: newLoan.loan_type,
+      investment_id: newLoan.investment_id === "none" ? null : newLoan.investment_id,
+      patrimony_id: newLoan.patrimony_id === "none" ? null : newLoan.patrimony_id,
     });
 
     if (error) {
@@ -134,7 +165,11 @@ const LoansPage = () => {
     } else {
       toast.success("Préstamo registrado correctamente");
       setIsDialogOpen(false);
-      setNewLoan({ loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", monthly_payment: "", collection_day: "1", start_date: new Date(), end_date: null, tin: "", notes: "" });
+      setNewLoan({ 
+        loan_type: "personal", name: "", bank: "", total_amount: "", pending_amount: "", 
+        monthly_payment: "", collection_day: "1", start_date: new Date(), end_date: null, 
+        tin: "", notes: "", investment_id: "none", patrimony_id: "none" 
+      });
       setErrors({});
       fetchLoans(session.user.id);
     }
@@ -156,6 +191,8 @@ const LoansPage = () => {
       start_date: formatDateToISO(editLoan.start_date),
       end_date: formatDateToISO(editLoan.end_date),
       notes: editLoan.notes || null, loan_type: editLoan.loan_type,
+      investment_id: editLoan.investment_id === "none" ? null : editLoan.investment_id,
+      patrimony_id: editLoan.patrimony_id === "none" ? null : editLoan.patrimony_id,
       updated_at: new Date().toISOString()
     }).eq("id", selectedLoan.id);
 
@@ -197,6 +234,8 @@ const LoansPage = () => {
       start_date: loan.start_date ? new Date(loan.start_date) : new Date(),
       end_date: loan.end_date ? new Date(loan.end_date) : null,
       tin: loan.interest_rate?.toString() || "", notes: loan.notes || "",
+      investment_id: loan.investment_id || "none",
+      patrimony_id: loan.patrimony_id || "none",
     });
     setIsEditDialogOpen(true);
   };
@@ -262,7 +301,18 @@ const LoansPage = () => {
           <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle className="text-white">Nuevo Préstamo</DialogTitle></DialogHeader>
             <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
-            <LoanForm loan={newLoan} setLoan={setNewLoan} errors={errors} isSaving={isSaving} onSubmit={handleAddLoan} isNew={true} loanTypes={loanTypes} collectionDays={collectionDays} />
+            <LoanForm 
+              loan={newLoan} 
+              setLoan={setNewLoan} 
+              errors={errors} 
+              isSaving={isSaving} 
+              onSubmit={handleAddLoan} 
+              isNew={true} 
+              loanTypes={loanTypes} 
+              collectionDays={collectionDays}
+              investments={investments}
+              patrimony={patrimony}
+            />
           </DialogContent>
         </Dialog>
 
@@ -310,7 +360,18 @@ const LoansPage = () => {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="text-white">Editar Préstamo</DialogTitle></DialogHeader>
           <button onClick={() => setIsEditDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
-          <LoanForm loan={editLoan} setLoan={setEditLoan} errors={errors} isSaving={isSaving} onSubmit={handleEditLoan} isNew={false} loanTypes={loanTypes} collectionDays={collectionDays} />
+          <LoanForm 
+            loan={editLoan} 
+            setLoan={setEditLoan} 
+            errors={errors} 
+            isSaving={isSaving} 
+            onSubmit={handleEditLoan} 
+            isNew={false} 
+            loanTypes={loanTypes} 
+            collectionDays={collectionDays}
+            investments={investments}
+            patrimony={patrimony}
+          />
         </DialogContent>
       </Dialog>
 
@@ -341,7 +402,7 @@ const LoansPage = () => {
   );
 };
 
-const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes, collectionDays }: any) => {
+const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes, collectionDays, investments, patrimony }: any) => {
   const selectedLoanType = loanTypes.find((t: LoanTypeOption) => t.value === loan.loan_type) || loanTypes[0];
   const SelectedIcon = selectedLoanType.icon;
 
@@ -370,6 +431,7 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
           </SelectContent>
         </Select>
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
@@ -382,6 +444,7 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
           {errors.bank && <p className="text-red-400 text-xs mt-1">{errors.bank}</p>}
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Importe total (€) *</label>
@@ -394,6 +457,7 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
           {errors.pending_amount && <p className="text-red-400 text-xs mt-1">{errors.pending_amount}</p>}
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Cuota mensual (€) *</label>
@@ -408,6 +472,61 @@ const LoanForm = ({ loan, setLoan, errors, isSaving, onSubmit, isNew, loanTypes,
           </Select>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha inicio</label>
+          <DatePicker
+            date={loan.start_date}
+            onDateChange={(d) => setLoan({ ...loan, start_date: d || new Date() })}
+          />
+        </div>
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha fin (est.)</label>
+          <DatePicker
+            date={loan.end_date}
+            onDateChange={(d) => setLoan({ ...loan, end_date: d })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Vincular Inversión</label>
+          <Select value={loan.investment_id} onValueChange={(v) => setLoan({ ...loan, investment_id: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+              <div className="flex items-center gap-2 truncate">
+                <TrendingUp className="w-3 h-3 text-emerald-400" />
+                <SelectValue placeholder="Ninguna" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="none" className="text-white">Ninguna</SelectItem>
+              {investments.map((inv: any) => (
+                <SelectItem key={inv.id} value={inv.id} className="text-white">{inv.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Vincular Patrimonio</label>
+          <Select value={loan.patrimony_id} onValueChange={(v) => setLoan({ ...loan, patrimony_id: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+              <div className="flex items-center gap-2 truncate">
+                <Briefcase className="w-3 h-3 text-blue-400" />
+                <SelectValue placeholder="Ninguno" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+              {patrimony.map((pat: any) => (
+                <SelectItem key={pat.id} value={pat.id} className="text-white">{pat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div>
         <label className="text-sm text-zinc-400 mb-1 block">TIN (%)</label>
         <Input type="number" step="0.01" placeholder="3.5" value={loan.tin} onChange={(e) => setLoan({ ...loan, tin: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
