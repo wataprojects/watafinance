@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, TrendingUpIcon } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, TrendingUpIcon, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -61,6 +62,7 @@ const InvestmentsPage = () => {
     loan_id: "none",
     patrimony_id: "none",
     capital_breakdown: "",
+    start_date: new Date(),
   });
 
   const [editInvestment, setEditInvestment] = useState({
@@ -74,6 +76,7 @@ const InvestmentsPage = () => {
     loan_id: "none",
     patrimony_id: "none",
     capital_breakdown: "",
+    start_date: new Date(),
   });
 
   useEffect(() => {
@@ -128,24 +131,22 @@ const InvestmentsPage = () => {
     return Number.isFinite(parsed) ? parsed : null;
   };
 
-  const getLoanLabel = (id: string) => {
-    if (id === "none") return "Sin vincular";
-    return loans.find((loan) => loan.id === id)?.borrower_name || "Sin vincular";
+  const formatDateToISO = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
-  const getPatrimonyLabel = (id: string) => {
-    if (id === "none") return "Sin vincular";
-    return patrimony.find((asset) => asset.id === id)?.name || "Sin vincular";
+  const safeDate = (dateStr: string | null | undefined): Date => {
+    if (!dateStr) return new Date();
+    const date = new Date(dateStr + "T00:00:00");
+    return isNaN(date.getTime()) ? new Date() : date;
   };
 
   const handleAddInvestment = async () => {
     if (!newInvestment.name || !newInvestment.initial_value) {
       setError("Completa los campos obligatorios");
-      return;
-    }
-
-    if (newInvestment.investment_type === "revalorization" && !newInvestment.current_value) {
-      setError("El valor actual es obligatorio para inversiones de revalorización");
       return;
     }
 
@@ -159,16 +160,10 @@ const InvestmentsPage = () => {
     }
 
     const initial = normalizeNumber(newInvestment.initial_value);
-    // Si es generadora de ingresos, el valor actual es igual al inicial para evitar error de base de datos
     const current = newInvestment.investment_type === "revalorization" 
-      ? normalizeNumber(newInvestment.current_value) 
+      ? normalizeNumber(newInvestment.current_value || newInvestment.initial_value) 
       : initial;
     
-    // Calcular retorno inicial
-    const initialReturn = newInvestment.investment_type === "revalorization"
-      ? current - initial
-      : 0;
-
     const { error } = await supabase.from("investments").insert({
       user_id: session.user.id,
       name: newInvestment.name,
@@ -176,8 +171,7 @@ const InvestmentsPage = () => {
       investment_type: newInvestment.investment_type,
       initial_value: initial,
       current_value: current,
-      return_amount: initialReturn,
-      return_percentage: initial > 0 ? (initialReturn / initial) * 100 : 0,
+      start_date: formatDateToISO(newInvestment.start_date),
       monthly_contribution: toNullableNumber(newInvestment.monthly_contribution),
       loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
       patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
@@ -201,6 +195,7 @@ const InvestmentsPage = () => {
       loan_id: "none",
       patrimony_id: "none",
       capital_breakdown: "",
+      start_date: new Date(),
     });
 
     await fetchInvestments(session.user.id);
@@ -221,15 +216,9 @@ const InvestmentsPage = () => {
     }
 
     const initial = normalizeNumber(editInvestment.initial_value);
-    // Si es generadora de ingresos, el valor actual es igual al inicial para evitar error de base de datos
     const current = editInvestment.investment_type === "revalorization"
-      ? normalizeNumber(editInvestment.current_value)
+      ? normalizeNumber(editInvestment.current_value || editInvestment.initial_value)
       : initial;
-
-    // Recalcular retorno basado en tipo
-    const calculatedReturn = editInvestment.investment_type === "revalorization"
-      ? current - initial
-      : getLinkedIncomeTotal(selectedInvestment.id);
 
     const { error } = await supabase.from("investments").update({
       name: editInvestment.name,
@@ -237,8 +226,7 @@ const InvestmentsPage = () => {
       investment_type: editInvestment.investment_type,
       initial_value: initial,
       current_value: current,
-      return_amount: calculatedReturn,
-      return_percentage: initial > 0 ? (calculatedReturn / initial) * 100 : 0,
+      start_date: formatDateToISO(editInvestment.start_date),
       monthly_contribution: toNullableNumber(editInvestment.monthly_contribution),
       loan_id: editInvestment.loan_id === "none" ? null : editInvestment.loan_id,
       patrimony_id: editInvestment.patrimony_id === "none" ? null : editInvestment.patrimony_id,
@@ -285,57 +273,62 @@ const InvestmentsPage = () => {
       capital_breakdown: typeof inv.capital_breakdown === "string"
         ? inv.capital_breakdown
         : inv.capital_breakdown?.notes || "",
+      start_date: safeDate(inv.start_date),
     });
     setIsEditDialogOpen(true);
   };
 
-  // Obtener ingresos asociados a una inversión
-  const getLinkedIncomeTotal = (investmentId: string) => {
-    return incomes
-      .filter(inc => inc.investment_id === investmentId)
-      .reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
-  };
+  // Lógica de cálculo centralizada
+  const investmentStats = useMemo(() => {
+    let totalPortfolioValue = 0;
+    let totalInitialCapital = 0;
+    let totalAccumulatedIncome = 0;
+    let totalRevaluation = 0;
 
-  // Calcular retorno de una inversión según su tipo
-  const getInvestmentReturn = (inv: any) => {
-    if (inv.investment_type === "income") {
-      // Para inversiones generadoras de ingresos, sumar todos los ingresos asociados
-      return getLinkedIncomeTotal(inv.id);
-    }
-    // Para inversiones de revalorización
-    const current = parseFloat(inv.current_value || 0);
-    const initial = parseFloat(inv.initial_value || 0);
-    return current - initial;
-  };
+    const processedInvestments = investments.map(inv => {
+      const initial = parseFloat(inv.initial_value || 0);
+      const current = parseFloat(inv.current_value || 0);
+      const linkedIncome = incomes
+        .filter(inc => inc.investment_id === inv.id)
+        .reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
 
-  // Calcular ROI de una inversión según su tipo
-  const getInvestmentROI = (inv: any) => {
-    const initial = parseFloat(inv.initial_value || 0);
-    if (initial <= 0) return 0;
-    
-    const returnAmount = getInvestmentReturn(inv);
-    return (returnAmount / initial) * 100;
-  };
+      // El valor del activo es su valor de mercado actual (o inicial si no hay cambios)
+      const assetValue = inv.investment_type === "revalorization" ? current : initial;
+      
+      // El retorno es la suma de revalorización + ingresos
+      const revaluation = current - initial;
+      const totalReturn = revaluation + linkedIncome;
+      const roi = initial > 0 ? (totalReturn / initial) * 100 : 0;
 
-  // Calculos para las tarjetas de resumen
-  const totalValue = investments.reduce((sum, inv) => {
-    if (inv.investment_type === "revalorization") {
-      return sum + parseFloat(inv.current_value || 0);
-    }
-    // Para inversiones de ingresos, mostrar inversión inicial + ingresos acumulados
-    return sum + parseFloat(inv.initial_value || 0) + getLinkedIncomeTotal(inv.id);
-  }, 0);
+      totalPortfolioValue += assetValue;
+      totalInitialCapital += initial;
+      totalAccumulatedIncome += linkedIncome;
+      totalRevaluation += revaluation;
 
-  const totalInitial = investments.reduce((sum, i) => sum + parseFloat(i.initial_value || 0), 0);
-  
-  // Retorno total: suma de todos los retornos individuales
-  const totalReturn = investments.reduce((sum, inv) => sum + getInvestmentReturn(inv), 0);
-  
-  // ROI total: retorno total / inversión inicial total
-  const roi = totalInitial > 0 ? (totalReturn / totalInitial) * 100 : 0;
+      return {
+        ...inv,
+        assetValue,
+        linkedIncome,
+        revaluation,
+        totalReturn,
+        roi
+      };
+    });
+
+    const totalReturn = totalRevaluation + totalAccumulatedIncome;
+    const totalROI = totalInitialCapital > 0 ? (totalReturn / totalInitialCapital) * 100 : 0;
+
+    return {
+      processedInvestments,
+      totalPortfolioValue,
+      totalReturn,
+      totalROI,
+      totalAccumulatedIncome,
+      totalRevaluation
+    };
+  }, [investments, incomes]);
 
   const getCategoryInfo = (categoryValue: string) => investmentCategories.find((c) => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
-
   const getTypeInfo = (typeValue: string) => INVESTMENT_TYPES.find(t => t.value === typeValue) || INVESTMENT_TYPES[0];
 
   return (
@@ -345,73 +338,56 @@ const InvestmentsPage = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Inversiones</h1>
-          <p className="text-purple-400 text-sm">Gestiona tu portafolio</p>
+          <p className="text-purple-400 text-sm">Patrimonio y Beneficios</p>
         </div>
 
+        {/* Resumen del Portfolio */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><BarChart3 className="w-6 h-6 mx-auto mb-2 text-purple-400" /><p className="text-2xl font-bold text-white">{formatCurrency(totalValue)}</p><p className="text-xs text-zinc-400">Valor Total</p></CardContent></Card>
-          <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center">{totalReturn >= 0 ? <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-6 h-6 mx-auto mb-2 text-rose-400" />}<p className={`text-2xl font-bold ${totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{totalReturn >= 0 ? "+" : ""}{formatCurrency(totalReturn)}</p><p className="text-xs text-zinc-400">Retorno Total</p></CardContent></Card>
-          <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" /><p className={`text-2xl font-bold ${roi >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{roi >= 0 ? "+" : ""}{roi.toFixed(1)}%</p><p className="text-xs text-zinc-400">ROI</p></CardContent></Card>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                <TrendingUpIcon className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-xs text-zinc-400">Revalorización</p>
-                <p className="text-lg font-bold text-white">
-                  {investments.filter(i => i.investment_type === "revalorization").length}
-                </p>
-              </div>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-4 text-center">
+              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-purple-400" />
+              <p className="text-2xl font-bold text-white">{formatCurrency(investmentStats.totalPortfolioValue)}</p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Valor Activos</p>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-xs text-zinc-400">Generadoras</p>
-                <p className="text-lg font-bold text-white">
-                  {investments.filter(i => i.investment_type === "income").length}
-                </p>
-              </div>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-4 text-center">
+              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-6 h-6 mx-auto mb-2 text-rose-400" />}
+              <p className={`text-2xl font-bold ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {investmentStats.totalReturn >= 0 ? "+" : ""}{formatCurrency(investmentStats.totalReturn)}
+              </p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Retorno Total</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-4 text-center">
+              <PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+              <p className={`text-2xl font-bold ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {investmentStats.totalROI >= 0 ? "+" : ""}{investmentStats.totalROI.toFixed(1)}%
+              </p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">ROI Global</p>
             </CardContent>
           </Card>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-base font-semibold rounded-xl mb-4">
+            <Button className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-base font-semibold rounded-xl mb-6">
               <Plus className="w-5 h-5 mr-2" />Nueva Inversión
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Agregar Inversión</DialogTitle>
-            </DialogHeader>
-            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-              <X className="w-4 h-4" />
-            </button>
+            <DialogHeader><DialogTitle className="text-white">Agregar Inversión</DialogTitle></DialogHeader>
+            <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
 
             <InvestmentForm
-              mode="create"
               data={newInvestment}
               setData={setNewInvestment}
               loans={loans}
               patrimony={patrimony}
-              getLoanLabel={getLoanLabel}
-              getPatrimonyLabel={getPatrimonyLabel}
             />
 
-            {error && (
-              <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
+            {error && <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg"><p className="text-red-400 text-sm">{error}</p></div>}
 
             <Button onClick={handleAddInvestment} className="w-full bg-purple-500 hover:bg-purple-600 mt-4" disabled={saving}>
               {saving ? "Guardando..." : "Guardar"}
@@ -419,104 +395,83 @@ const InvestmentsPage = () => {
           </DialogContent>
         </Dialog>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2"><TrendingUp className="w-5 h-5 text-purple-400" />Mi Portafolio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (<p className="text-zinc-400 text-center">Cargando...</p>) : investments.length === 0 ? (<p className="text-zinc-400 text-center">No hay inversiones</p>) : (
-              <div className="space-y-3">
-                {investments.map((inv) => {
-                  const cat = getCategoryInfo(inv.type);
-                  const typeInfo = getTypeInfo(inv.investment_type);
-                  const Icon = cat.icon;
-                  const returnVal = getInvestmentReturn(inv);
-                  const returnPct = getInvestmentROI(inv);
-                  const linkedIncomeTotal = getLinkedIncomeTotal(inv.id);
-                  const relatedLoan = inv.loan_id ? loans.find((loan) => loan.id === inv.loan_id) : null;
-                  const relatedPatrimony = inv.patrimony_id ? patrimony.find((asset) => asset.id === inv.patrimony_id) : null;
+        {/* Lista de Inversiones */}
+        <div className="space-y-4">
+          {loading ? (
+            <p className="text-zinc-400 text-center py-8">Cargando inversiones...</p>
+          ) : investmentStats.processedInvestments.length === 0 ? (
+            <p className="text-zinc-400 text-center py-8">No hay inversiones registradas</p>
+          ) : (
+            investmentStats.processedInvestments.map((inv) => {
+              const cat = getCategoryInfo(inv.type);
+              const typeInfo = getTypeInfo(inv.investment_type);
+              const Icon = cat.icon;
 
-                  return (
-                    <div key={inv.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
+              return (
+                <Card key={inv.id} className="bg-zinc-900 border-zinc-800 overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="p-4 flex items-center justify-between border-b border-zinc-800/50">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${cat.color}`}><Icon className="w-6 h-6" /></div>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
                         <div>
-                          <p className="font-medium text-white">{inv.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
-                              {typeInfo.label}
-                            </span>
-                            <span className="text-xs text-zinc-500">{cat.label}</span>
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {relatedLoan && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400">
-                                Préstamo: {relatedLoan.borrower_name}
-                              </span>
-                            )}
-                            {relatedPatrimony && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400">
-                                Patrimonio: {relatedPatrimony.name}
-                              </span>
-                            )}
-                            {inv.investment_type === "income" && linkedIncomeTotal > 0 && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
-                                Ingresos: {formatCurrency(linkedIncomeTotal)}
-                              </span>
-                            )}
-                          </div>
+                          <p className="font-bold text-white">{inv.name}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
+                            {typeInfo.label}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-bold text-white">
-                            {inv.investment_type === "income" 
-                              ? formatCurrency(parseFloat(inv.initial_value || 0) + linkedIncomeTotal)
-                              : formatCurrency(inv.current_value)
-                            }
-                          </p>
-                          <p className={`text-xs ${returnVal >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                            {returnVal >= 0 ? "+" : ""}{returnPct.toFixed(1)}%
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <button onClick={() => openEditDialog(inv)} className="p-2 rounded-lg hover:bg-zinc-700"><Pencil className="w-4 h-4 text-zinc-400" /></button>
-                          <button onClick={() => { setSelectedInvestment(inv); setIsDeleteDialogOpen(true); }} className="p-2 rounded-lg hover:bg-red-500/20"><Trash2 className="w-4 h-4 text-red-400" /></button>
-                        </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => openEditDialog(inv)} className="p-2 rounded-lg hover:bg-zinc-800"><Pencil className="w-4 h-4 text-zinc-500" /></button>
+                        <button onClick={() => { setSelectedInvestment(inv); setIsDeleteDialogOpen(true); }} className="p-2 rounded-lg hover:bg-red-500/10"><Trash2 className="w-4 h-4 text-red-400" /></button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                    <div className="p-4 grid grid-cols-2 gap-4 bg-zinc-900/50">
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Valor Activo</p>
+                        <p className="text-lg font-bold text-white">{formatCurrency(inv.assetValue)}</p>
+                        <p className="text-[10px] text-zinc-500">Invertido: {formatCurrency(inv.initial_value)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Beneficio Total</p>
+                        <p className={`text-lg font-bold ${inv.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          {inv.totalReturn >= 0 ? "+" : ""}{formatCurrency(inv.totalReturn)}
+                        </p>
+                        <p className={`text-[10px] font-medium ${inv.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                          ROI: {inv.roi.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Desglose de beneficios */}
+                    <div className="px-4 py-2 flex items-center gap-4 border-t border-zinc-800/30 text-[10px]">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                        <span className="text-zinc-400">Revalorización: {formatCurrency(inv.revaluation)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                        <span className="text-zinc-400">Ingresos: {formatCurrency(inv.linkedIncome)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
 
+      {/* Modales de Edición y Eliminación */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="text-white">Editar Inversión</DialogTitle></DialogHeader>
           <button onClick={() => setIsEditDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
-
-          <InvestmentForm
-            mode="edit"
-            data={editInvestment}
-            setData={setEditInvestment}
-            loans={loans}
-            patrimony={patrimony}
-            getLoanLabel={getLoanLabel}
-            getPatrimonyLabel={getPatrimonyLabel}
-          />
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          <Button onClick={handleEditInvestment} className="w-full bg-purple-500 hover:bg-purple-600 mt-4" disabled={saving}>
-            {saving ? "Guardando..." : "Guardar cambios"}
-          </Button>
+          <InvestmentForm data={editInvestment} setData={setEditInvestment} loans={loans} patrimony={patrimony} />
+          {error && <div className="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg"><p className="text-red-400 text-sm">{error}</p></div>}
+          <Button onClick={handleEditInvestment} className="w-full bg-purple-500 hover:bg-purple-600 mt-4" disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
         </DialogContent>
       </Dialog>
 
@@ -525,8 +480,8 @@ const InvestmentsPage = () => {
           <DialogHeader><DialogTitle className="text-white">Eliminar Inversión</DialogTitle></DialogHeader>
           <button onClick={() => setIsDeleteDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
           <div className="space-y-4 mt-4">
-            <p className="text-zinc-300">¿Eliminar esta inversión?</p>
-            {selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.current_value || selectedInvestment.initial_value)}</p></div>)}
+            <p className="text-zinc-300">¿Eliminar esta inversión? Se perderán los vínculos con ingresos y préstamos.</p>
+            {selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.assetValue)}</p></div>)}
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">Cancelar</Button>
               <Button onClick={handleDeleteInvestment} className="flex-1 bg-red-500 hover:bg-red-600">Eliminar</Button>
@@ -540,36 +495,14 @@ const InvestmentsPage = () => {
   );
 };
 
-type InvestmentFormProps = {
-  mode: "create" | "edit";
-  data: any;
-  setData: (data: any) => void;
-  loans: any[];
-  patrimony: any[];
-  getLoanLabel: (id: string) => string;
-  getPatrimonyLabel: (id: string) => string;
-};
-
-const InvestmentForm = ({
-  data,
-  setData,
-  loans,
-  patrimony,
-  getLoanLabel,
-  getPatrimonyLabel,
-}: InvestmentFormProps) => {
+const InvestmentForm = ({ data, setData, loans, patrimony }: any) => {
   const isRevalorization = data.investment_type === "revalorization";
 
   return (
     <div className="space-y-4 mt-4">
       <div>
         <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
-        <Input
-          placeholder="Nombre de la inversión"
-          value={data.name}
-          onChange={(e) => setData({ ...data, name: e.target.value })}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
+        <Input placeholder="Ej: Apartamento Playa, Cartera Bolsa..." value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
       </div>
 
       <div>
@@ -579,135 +512,86 @@ const InvestmentForm = ({
             <button
               key={type.value}
               type="button"
-              onClick={() => setData({ ...data, investment_type: type.value, current_value: type.value === "income" ? "" : data.current_value })}
-              className={`p-3 rounded-xl border transition-all ${
-                data.investment_type === type.value
-                  ? type.value === "income"
-                    ? "border-amber-500 bg-amber-500/10"
-                    : "border-emerald-500 bg-emerald-500/10"
-                  : "border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800"
-              }`}
+              onClick={() => setData({ ...data, investment_type: type.value })}
+              className={`p-3 rounded-xl border text-left transition-all ${data.investment_type === type.value ? "border-purple-500 bg-purple-500/10" : "border-zinc-700 bg-zinc-800/50"}`}
             >
-              <p className={`text-sm font-medium ${data.investment_type === type.value ? "text-white" : "text-zinc-400"}`}>
-                {type.label}
-              </p>
+              <p className={`text-sm font-medium ${data.investment_type === type.value ? "text-white" : "text-zinc-400"}`}>{type.label}</p>
               <p className="text-[10px] text-zinc-500 mt-0.5">{type.description}</p>
             </button>
           ))}
         </div>
       </div>
 
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
-        <Select value={data.category} onValueChange={(v) => setData({ ...data, category: v })}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            {investmentCategories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value} className="text-white">
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Valor inicial (€) *</label>
-        <Input
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={data.initial_value}
-          onChange={(e) => setData({ ...data, initial_value: e.target.value })}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      </div>
-
-      {isRevalorization && (
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm text-zinc-400 mb-1 block">Valor actual (€) *</label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={data.current_value}
-            onChange={(e) => setData({ ...data, current_value: e.target.value })}
-            className="bg-zinc-800 border-zinc-700 text-white"
-          />
+          <label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+          <Select value={data.category} onValueChange={(v) => setData({ ...data, category: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {investmentCategories.map((cat) => (<SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha Inicio</label>
+          <DatePicker date={data.start_date} onDateChange={(d) => setData({ ...data, start_date: d || new Date() })} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Inversión Inicial (€) *</label>
+          <Input type="number" step="0.01" placeholder="0.00" value={data.initial_value} onChange={(e) => setData({ ...data, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+        </div>
+        {isRevalorization ? (
+          <div>
+            <label className="text-sm text-zinc-400 mb-1 block">Valor Actual (€) *</label>
+            <Input type="number" step="0.01" placeholder="0.00" value={data.current_value} onChange={(e) => setData({ ...data, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+          </div>
+        ) : (
+          <div>
+            <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual</label>
+            <Input type="number" step="0.01" placeholder="0.00" value={data.monthly_contribution} onChange={(e) => setData({ ...data, monthly_contribution: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+          </div>
+        )}
+      </div>
 
       {!isRevalorization && (
         <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
-          <p className="text-sm text-amber-400">💡 Los ingresos se registran desde la sección de Ingresos y se vinculan automáticamente a esta inversión.</p>
+          <p className="text-xs text-amber-400 flex items-start gap-2">
+            <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            Los beneficios se calculan sumando los ingresos vinculados a esta inversión.
+          </p>
         </div>
       )}
 
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Aportación mensual</label>
-        <Input
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={data.monthly_contribution}
-          onChange={(e) => setData({ ...data, monthly_contribution: e.target.value })}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Vincular a préstamo</label>
-        <Select value={data.loan_id} onValueChange={(v) => setData({ ...data, loan_id: v })}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-            <SelectValue placeholder="Sin vincular" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            <SelectItem value="none" className="text-white">Sin vincular</SelectItem>
-            {loans.map((loan) => (
-              <SelectItem key={loan.id} value={loan.id} className="text-white">
-                {loan.borrower_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Vincular a patrimonio</label>
-        <Select value={data.patrimony_id} onValueChange={(v) => setData({ ...data, patrimony_id: v })}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-            <SelectValue placeholder="Sin vincular" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            <SelectItem value="none" className="text-white">Sin vincular</SelectItem>
-            {patrimony.map((asset) => (
-              <SelectItem key={asset.id} value={asset.id} className="text-white">
-                {asset.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <label className="text-sm text-zinc-400 mb-1 block">Detalle adicional</label>
-        <Input
-          placeholder="Notas opcionales"
-          value={data.capital_breakdown}
-          onChange={(e) => setData({ ...data, capital_breakdown: e.target.value })}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      </div>
-
-      {(data.loan_id !== "none" || data.patrimony_id !== "none") && (
-        <div className="grid grid-cols-1 gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
-          <p className="text-xs text-zinc-500">Relaciones actuales</p>
-          <p className="text-sm text-zinc-200">Préstamo: {getLoanLabel(data.loan_id)}</p>
-          <p className="text-sm text-zinc-200">Patrimonio: {getPatrimonyLabel(data.patrimony_id)}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Vincular Préstamo</label>
+          <Select value={data.loan_id} onValueChange={(v) => setData({ ...data, loan_id: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+              {loans.map((l) => (<SelectItem key={l.id} value={l.id} className="text-white">{l.borrower_name}</SelectItem>))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Vincular Patrimonio</label>
+          <Select value={data.patrimony_id} onValueChange={(v) => setData({ ...data, patrimony_id: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+              {patrimony.map((p) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm text-zinc-400 mb-1 block">Notas</label>
+        <Input placeholder="Detalles adicionales..." value={data.capital_breakdown} onChange={(e) => setData({ ...data, capital_breakdown: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+      </div>
     </div>
   );
 };
