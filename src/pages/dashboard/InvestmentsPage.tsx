@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, TrendingUpIcon, Calendar } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, TrendingUpIcon, Calendar, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -97,10 +97,14 @@ const InvestmentsPage = () => {
   };
 
   const fetchRelations = async (userId: string) => {
+    // Traemos TODOS los ingresos vinculados a inversiones para asegurar el cálculo total histórico
     const [loansResult, patrimonyResult, incomesResult] = await Promise.all([
       supabase.from("loans").select("id, borrower_name").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("patrimony").select("id, name").eq("user_id", userId).order("created_at", { ascending: false }),
-      supabase.from("incomes").select("id, amount, description, investment_id").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("incomes")
+        .select("id, amount, description, investment_id")
+        .eq("user_id", userId)
+        .not("investment_id", "is", null), // Solo los que tienen inversión vinculada
     ]);
 
     if (loansResult.data) setLoans(loansResult.data);
@@ -278,7 +282,7 @@ const InvestmentsPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Lógica de cálculo centralizada
+  // Lógica de cálculo centralizada y robusta
   const investmentStats = useMemo(() => {
     let totalPortfolioValue = 0;
     let totalInitialCapital = 0;
@@ -288,14 +292,16 @@ const InvestmentsPage = () => {
     const processedInvestments = investments.map(inv => {
       const initial = parseFloat(inv.initial_value || 0);
       const current = parseFloat(inv.current_value || 0);
-      const linkedIncome = incomes
-        .filter(inc => inc.investment_id === inv.id)
-        .reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
+      
+      // Filtramos todos los ingresos vinculados a esta inversión específica
+      const linkedIncomesList = incomes.filter(inc => inc.investment_id === inv.id);
+      const linkedIncome = linkedIncomesList.reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
+      const incomeCount = linkedIncomesList.length;
 
       // El valor del activo es su valor de mercado actual (o inicial si no hay cambios)
       const assetValue = inv.investment_type === "revalorization" ? current : initial;
       
-      // El retorno es la suma de revalorización + ingresos
+      // El retorno es la suma de revalorización (precio) + los ingresos (cash flow)
       const revaluation = current - initial;
       const totalReturn = revaluation + linkedIncome;
       const roi = initial > 0 ? (totalReturn / initial) * 100 : 0;
@@ -311,7 +317,8 @@ const InvestmentsPage = () => {
         linkedIncome,
         revaluation,
         totalReturn,
-        roi
+        roi,
+        incomeCount
       };
     });
 
@@ -417,9 +424,17 @@ const InvestmentsPage = () => {
                         </div>
                         <div>
                           <p className="font-bold text-white">{inv.name}</p>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
-                            {typeInfo.label}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
+                              {typeInfo.label}
+                            </span>
+                            {inv.incomeCount > 0 && (
+                              <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                                <ListChecks className="w-3 h-3" />
+                                {inv.incomeCount} ingresos
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-1">
