@@ -278,7 +278,7 @@ const InvestmentsPage = () => {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><BarChart3 className="w-6 h-6 mx-auto mb-2 text-purple-400" /><p className="text-2xl font-bold text-white">{formatCurrency(totalValue)}</p><p className="text-xs text-zinc-400">Valor Total</p></CardContent></Card>
           <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center">{totalReturn >= 0 ? <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-6 h-6 mx-auto mb-2 text-rose-400" />}<p className={`text-2xl font-bold ${totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{totalReturn >= 0 ? "+" : ""}{formatCurrency(totalReturn)}</p><p className="text-xs text-zinc-400">Retorno Total</p></CardContent></Card>
-          <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" /><p className={`text-2xl font-bold ${returnPercentage >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{returnPercentage >= 0 ? "+" : ""}{returnPercentage.toFixed(1)}%</p><p className="text-xs text-zinc-400">Porcentaje</p></CardContent></Card>
+          <Card className="bg-zinc-900 border-zinc-800"><CardContent className="p-4 text-center"><PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" /><p className={`text-2xl font-bold ${returnPercentage >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{returnPercentage >= 0 ? "+" : ""}{returnPercentage.toFixed(1)}%</p><p className="text-xs text-zinc-400">ROI</p></CardContent></Card>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
