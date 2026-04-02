@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabaseAdmin } from '@/integrations/supabase/admin';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,23 +21,19 @@ export default function AdminSetup() {
     setLoading(true);
 
     try {
-      // Insertar el nuevo administrador en la tabla 'admins'
-      const { error } = await supabaseAdmin
+      // Intentamos insertar usando el cliente estándar
+      const { error } = await supabase
         .from('admins')
         .insert([
           { 
             email: email.trim().toLowerCase(), 
-            password_hash: password.trim(), // En este sistema simple se usa el texto plano como hash
+            password_hash: password.trim(),
             name: name.trim() 
           }
         ]);
 
       if (error) {
-        if (error.code === '23505') {
-          toast.error("Este email ya está registrado como administrador");
-        } else {
-          toast.error("Error al crear admin: " + error.message);
-        }
+        toast.error("Error: " + error.message + ". Es posible que necesites permisos de base de datos.");
       } else {
         toast.success("¡Administrador creado con éxito!");
         setTimeout(() => navigate('/admin/login'), 2000);
@@ -58,7 +54,7 @@ export default function AdminSetup() {
           </div>
           <CardTitle className="text-2xl text-white">Configuración Admin</CardTitle>
           <CardDescription className="text-slate-400">
-            Crea tu cuenta de administrador para acceder al panel
+            Crea tu cuenta de administrador
           </CardDescription>
         </CardHeader>
         <CardContent>

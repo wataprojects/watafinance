@@ -1,5 +1,12 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { supabaseAdmin, Admin, AdminSession } from '@/integrations/supabase/admin';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Admin {
+  id: string;
+  email: string;
+  name: string | null;
+  created_at: string;
+}
 
 interface AdminAuthContextType {
   admin: Admin | null;
@@ -21,7 +28,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const savedSession = localStorage.getItem(ADMIN_SESSION_KEY);
     if (savedSession) {
       try {
-        const session: AdminSession = JSON.parse(savedSession);
+        const session = JSON.parse(savedSession);
         setAdmin(session.admin);
       } catch {
         localStorage.removeItem(ADMIN_SESSION_KEY);
@@ -32,11 +39,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Limpiamos el email y lo pasamos a minúsculas para evitar errores de escritura
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      const { data, error } = await supabaseAdmin
+      // Usamos el cliente estándar 'supabase' que ya tiene la API Key correcta del proyecto
+      const { data, error } = await supabase
         .from('admins')
         .select('*')
         .eq('email', cleanEmail)
@@ -48,7 +55,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Credenciales inválidas' };
       }
 
-      const session: AdminSession = {
+      const session = {
         admin: data as Admin,
         token: 'admin-token'
       };
