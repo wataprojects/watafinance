@@ -159,9 +159,10 @@ const InvestmentsPage = () => {
     }
 
     const initial = normalizeNumber(newInvestment.initial_value);
+    // Si es generadora de ingresos, el valor actual es igual al inicial para evitar error de base de datos
     const current = newInvestment.investment_type === "revalorization" 
       ? normalizeNumber(newInvestment.current_value) 
-      : null;
+      : initial;
     
     // Calcular retorno inicial
     const initialReturn = newInvestment.investment_type === "revalorization"
@@ -220,9 +221,10 @@ const InvestmentsPage = () => {
     }
 
     const initial = normalizeNumber(editInvestment.initial_value);
+    // Si es generadora de ingresos, el valor actual es igual al inicial para evitar error de base de datos
     const current = editInvestment.investment_type === "revalorization"
       ? normalizeNumber(editInvestment.current_value)
-      : null;
+      : initial;
 
     // Recalcular retorno basado en tipo
     const calculatedReturn = editInvestment.investment_type === "revalorization"
