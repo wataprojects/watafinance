@@ -97,14 +97,14 @@ const InvestmentsPage = () => {
   };
 
   const fetchRelations = async (userId: string) => {
-    // Traemos TODOS los ingresos vinculados a inversiones para asegurar el cálculo total histórico
+    // Query exacta: Cargamos TODOS los ingresos vinculados sin filtros de fecha ni límites
     const [loansResult, patrimonyResult, incomesResult] = await Promise.all([
       supabase.from("loans").select("id, borrower_name").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("patrimony").select("id, name").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("incomes")
         .select("id, amount, description, investment_id")
         .eq("user_id", userId)
-        .not("investment_id", "is", null), // Solo los que tienen inversión vinculada
+        .not("investment_id", "is", null), // Traer todos los que tengan inversión vinculada
     ]);
 
     if (loansResult.data) setLoans(loansResult.data);
@@ -282,7 +282,7 @@ const InvestmentsPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Lógica de cálculo centralizada y robusta
+  // Lógica de cálculo centralizada y robusta con logs de auditoría
   const investmentStats = useMemo(() => {
     let totalPortfolioValue = 0;
     let totalInitialCapital = 0;
@@ -297,6 +297,9 @@ const InvestmentsPage = () => {
       const linkedIncomesList = incomes.filter(inc => inc.investment_id === inv.id);
       const linkedIncome = linkedIncomesList.reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
       const incomeCount = linkedIncomesList.length;
+
+      // Log de auditoría para validación visual en consola
+      console.log(`[Audit Investment] ID: ${inv.id}, Name: ${inv.name}, Incomes Found: ${incomeCount}, Total Sum: ${linkedIncome}`);
 
       // El valor del activo es su valor de mercado actual (o inicial si no hay cambios)
       const assetValue = inv.investment_type === "revalorization" ? current : initial;
