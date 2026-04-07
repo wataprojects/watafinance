@@ -28,25 +28,37 @@ export default function AdminClients() {
   const fetchClients = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
+      // 1. Obtener todos los usuarios de Auth (fuente de verdad)
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      if (authError) throw authError;
+      
       const authUsers = authData?.users || [];
 
-      const usersWithEmail = (data || []).map((profile) => {
-        const user = authUsers.find((u: { id: string }) => u.id === profile.id);
+      // 2. Obtener todos los perfiles
+      const { data: profiles, error: profilesError } = await supabaseAdmin
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) throw profilesError;
+
+      // 3. Combinar: Mapeamos sobre los usuarios de Auth para asegurar que todos aparezcan
+      const combinedUsers = authUsers.map((user) => {
+        const profile = profiles?.find((p) => p.id === user.id);
         return {
-          ...profile,
-          email: user?.email || 'Sin email',
+          id: user.id,
+          email: user.email || 'Sin email',
+          first_name: profile?.first_name || null,
+          last_name: profile?.last_name || null,
+          created_at: user.created_at,
         };
       });
 
-      setClients(usersWithEmail);
+      // Ordenar por fecha de creación descendente
+      combinedUsers.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setClients(combinedUsers);
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {

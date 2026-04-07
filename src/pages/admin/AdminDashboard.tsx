@@ -52,28 +52,31 @@ export default function AdminDashboard() {
     setIsLoading(true);
     try {
       const [
-        usersResult,
         incomesResult,
         expensesResult,
         debtsResult,
         investmentsResult,
         patrimonyResult,
         authData,
+        profilesResult
       ] = await Promise.all([
-        supabaseAdmin.from('profiles').select('id, first_name, last_name, created_at').order('created_at', { ascending: false }).limit(5),
         supabaseAdmin.from('incomes').select('amount'),
         supabaseAdmin.from('expenses').select('amount'),
         supabaseAdmin.from('debts').select('current_amount'),
         supabaseAdmin.from('investments').select('current_value'),
         supabaseAdmin.from('patrimony').select('value'),
         supabaseAdmin.auth.admin.listUsers(),
+        supabaseAdmin.from('profiles').select('*')
       ]);
 
       const sumField = (data: any[], field: string) =>
         data?.reduce((acc, item) => acc + (parseFloat(item[field]) || 0), 0) || 0;
 
+      const authUsers = authData.data?.users || [];
+      const profiles = profilesResult.data || [];
+
       setMetrics({
-        totalUsers: authData.data?.users?.length || 0,
+        totalUsers: authUsers.length,
         totalIncomes: sumField(incomesResult.data || [], 'amount'),
         totalExpenses: sumField(expensesResult.data || [], 'amount'),
         totalDebts: sumField(debtsResult.data || [], 'current_amount'),
@@ -81,15 +84,22 @@ export default function AdminDashboard() {
         totalPatrimony: sumField(patrimonyResult.data || [], 'value'),
       });
 
-      const authUsers = authData.data?.users || [];
-      const clientsWithEmail = (usersResult.data || []).map(profile => {
-        const user = authUsers.find(u => u.id === profile.id);
-        return {
-          ...profile,
-          email: user?.email || 'Sin email'
-        };
-      });
-      setRecentClients(clientsWithEmail);
+      // Construir lista de clientes recientes basada en Auth
+      const combinedRecent = authUsers
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
+        .map(user => {
+          const profile = profiles.find(p => p.id === user.id);
+          return {
+            id: user.id,
+            email: user.email || 'Sin email',
+            first_name: profile?.first_name || null,
+            last_name: profile?.last_name || null,
+            created_at: user.created_at
+          };
+        });
+
+      setRecentClients(combinedRecent);
 
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -144,11 +154,13 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border border-slate-700">
                             <AvatarFallback className="bg-emerald-500 text-white">
-                              {(client.first_name?.charAt(0) || 'U').toUpperCase()}
+                              {(client.first_name?.charAt(0) || client.email.charAt(0) || 'U').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium text-white">{client.first_name || 'Usuario'} {client.last_name || ''}</p>
+                            <p className="text-sm font-medium text-white">
+                              {client.first_name ? `${client.first_name} ${client.last_name || ''}` : 'Usuario sin perfil'}
+                            </p>
                             <p className="text-xs text-slate-500">{client.email}</p>
                           </div>
                         </div>
