@@ -1482,7 +1482,7 @@ const ExpensesPage = () => {
 
       {/* Modal de restauración */}
       <AlertDialog open={isRestoreModalOpen} onOpenChange={setIsRestoreModalOpen}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800 max-w-sm">
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 max-sm">
           <AlertDialogHeader className="text-center pb-2">
             <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
               <RotateCcw className="w-8 h-8 text-green-400" />
@@ -1609,16 +1609,22 @@ const ExpensesPage = () => {
                   Detener recurrencia
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setIsDeleteDialogOpen(false)} 
-                  className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700"
                 >
                   Cancelar
                 </Button>
               </div>
             ) : (
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">Cancelar</Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsDeleteDialogOpen(false)} 
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs"
+                >
+                  Cancelar
+                </Button>
                 <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">Eliminar</Button>
               </div>
             )}

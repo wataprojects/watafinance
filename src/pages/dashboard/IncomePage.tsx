@@ -941,16 +941,20 @@ const IncomePage = () => {
                   Detener recurrencia
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setIsDeleteDialogOpen(false)} 
-                  className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700"
                 >
                   Cancelar
                 </Button>
               </div>
             ) : (
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsDeleteDialogOpen(false)} 
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs"
+                >
                   Cancelar
                 </Button>
                 <Button onClick={handleDeleteIncome} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">
@@ -1397,7 +1401,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {investmentTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value} className="text-white">{type.label}</SelectItem>
                   ))}
@@ -1451,7 +1455,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {patrimonyCategories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>
                   ))}
