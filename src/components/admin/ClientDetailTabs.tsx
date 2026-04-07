@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,16 +26,19 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Edit, Trash2, DollarSign, CreditCard, Landmark, 
   PiggyBank, TrendingUp, Home, User, Heart, Settings, 
-  Shield, Zap, AlertTriangle, CheckCircle2, Calendar,
-  RefreshCcw, Info
+  Shield, Zap, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
 
 interface ClientDetailTabsProps {
   clientId: string;
   profile: any;
-  financialProfile: any;
-  monetizationSettings: any;
+  stats: {
+    totalIncome: number;
+    totalExpenses: number;
+    balance: number;
+    savingsRatio: number;
+  };
   incomes: any[];
   expenses: any[];
   debts: any[];
@@ -48,8 +51,7 @@ interface ClientDetailTabsProps {
 export default function ClientDetailTabs({
   clientId,
   profile,
-  financialProfile,
-  monetizationSettings,
+  stats,
   incomes,
   expenses,
   debts,
@@ -223,9 +225,6 @@ export default function ClientDetailTabs({
           <TabsTrigger value="patrimony" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
             <Home className="h-4 w-4" /> Patrimonio
           </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <Settings className="h-4 w-4" /> Ajustes
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="health" className="mt-6 space-y-6">
@@ -233,25 +232,14 @@ export default function ClientDetailTabs({
             <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-emerald-400" /> Salud Financiera
+                  <Shield className="h-4 w-4 text-emerald-400" /> Balance Mensual
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">{financialProfile?.financial_health || 0}/100</div>
-                <p className="text-xs text-slate-500 mt-1">Basado en balance y deudas</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-amber-400" /> Nivel de Riesgo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  {financialProfile?.risk_level?.toUpperCase() || 'MODERADO'}
-                </Badge>
-                <p className="text-xs text-slate-500 mt-2">Perfil: {financialProfile?.user_type || 'Equilibrado'}</p>
+                <div className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(stats.balance)}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Ingresos - Gastos (Periodo)</p>
               </CardContent>
             </Card>
             <Card className="bg-slate-900/50 border-slate-800">
@@ -261,29 +249,42 @@ export default function ClientDetailTabs({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">{financialProfile?.savings_ratio || 0}%</div>
-                <p className="text-xs text-slate-500 mt-1">Potencial: {formatCurrency(financialProfile?.savings_potential || 0)}</p>
+                <div className="text-3xl font-bold text-white">{stats.savingsRatio.toFixed(1)}%</div>
+                <p className="text-xs text-slate-500 mt-1">Porcentaje de ingresos ahorrados</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-purple-400" /> Patrimonio Neto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-white">
+                  {formatCurrency(
+                    investments.reduce((sum, i) => sum + (parseFloat(i.current_value) || 0), 0) +
+                    patrimony.reduce((sum, p) => sum + (parseFloat(p.value) || 0), 0) -
+                    debts.reduce((sum, d) => sum + (parseFloat(d.current_amount) || 0), 0)
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Activos - Deudas totales</p>
               </CardContent>
             </Card>
           </div>
 
           <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="text-white">Resumen de Totales</CardTitle>
+              <CardTitle className="text-white">Resumen del Periodo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-slate-800/30 rounded-lg">
                   <span className="text-slate-400">Ingresos Totales</span>
-                  <span className="text-emerald-400 font-bold">{formatCurrency(financialProfile?.total_income || 0)}</span>
+                  <span className="text-emerald-400 font-bold">{formatCurrency(stats.totalIncome)}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-800/30 rounded-lg">
-                  <span className="text-slate-400">Gastos Totales</span>
-                  <span className="text-red-400 font-bold">{formatCurrency(financialProfile?.total_expenses || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-slate-800/30 rounded-lg">
-                  <span className="text-slate-400">Deuda Total</span>
-                  <span className="text-orange-400 font-bold">{formatCurrency(financialProfile?.total_debt || 0)}</span>
+                  <span className="text-slate-400">Gastos Totales (inc. préstamos)</span>
+                  <span className="text-red-400 font-bold">{formatCurrency(stats.totalExpenses)}</span>
                 </div>
               </div>
             </CardContent>
@@ -529,43 +530,6 @@ export default function ClientDetailTabs({
             </Table>
           </div>
         </TabsContent>
-
-        <TabsContent value="settings" className="mt-6 space-y-6">
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white">Preferencias del Cliente</CardTitle>
-              <CardDescription className="text-slate-400">Configuración de notificaciones y recomendaciones</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl border border-slate-800">
-                <div>
-                  <p className="font-medium text-white">Recomendaciones</p>
-                  <p className="text-xs text-slate-500">Sugerencias personalizadas activas</p>
-                </div>
-                <Switch checked={monetizationSettings?.recommendations_enabled ?? true} disabled />
-              </div>
-              <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl border border-slate-800">
-                <div>
-                  <p className="font-medium text-white">Notificaciones</p>
-                  <p className="text-xs text-slate-500">Avisos y recordatorios activos</p>
-                </div>
-                <Switch checked={monetizationSettings?.notifications_enabled ?? true} disabled />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-red-500/5 border-red-500/20">
-            <CardHeader>
-              <CardTitle className="text-red-400">Zona de Peligro</CardTitle>
-              <CardDescription className="text-slate-400">Acciones críticas sobre la cuenta del cliente</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => openDeleteDialog(profile, 'client')}>
-                <Trash2 className="h-4 w-4" /> Eliminar Cuenta Completa
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Modales de Acción */}
@@ -589,7 +553,7 @@ export default function ClientDetailTabs({
             <DialogDescription className="text-slate-400">Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="bg-slate-800 border-slate-700">Cancelar</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="bg-slate-800 border-slate-700">Cancelar</Button>
             <Button variant="destructive" onClick={() => handleAction('delete')}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
