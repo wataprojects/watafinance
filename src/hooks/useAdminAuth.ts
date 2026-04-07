@@ -42,16 +42,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      // Usamos el cliente estándar 'supabase' que ya tiene la API Key correcta del proyecto
+      console.log('[AdminAuth] Intentando login para:', cleanEmail);
+
       const { data, error } = await supabase
         .from('admins')
         .select('*')
         .eq('email', cleanEmail)
         .eq('password_hash', cleanPassword)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        console.error('Error de login admin:', error);
+      if (error) {
+        console.error('[AdminAuth] Error de base de datos:', error);
+        return { success: false, error: `Error de base de datos: ${error.message}` };
+      }
+
+      if (!data) {
+        console.warn('[AdminAuth] No se encontró el admin o la contraseña no coincide');
         return { success: false, error: 'Credenciales inválidas' };
       }
 
@@ -63,9 +69,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
       setAdmin(data as Admin);
       return { success: true };
-    } catch (err) {
-      console.error('Excepción en login admin:', err);
-      return { success: false, error: 'Error al iniciar sesión' };
+    } catch (err: any) {
+      console.error('[AdminAuth] Excepción:', err);
+      return { success: false, error: 'Error inesperado al iniciar sesión' };
     }
   };
 
