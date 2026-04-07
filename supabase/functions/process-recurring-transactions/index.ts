@@ -70,12 +70,13 @@ serve(async (req) => {
     // ============================================
     console.log('[process-recurring-transactions] Processing recurring expenses...')
 
-    // Get all recurring expenses for this user
+    // Get all recurring expenses for this user that are active (end_date is null or in the future)
     const { data: recurringExpenses, error: expensesError } = await supabaseAdmin
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_recurring', true)
+      .or(`end_date.is.null,end_date.gte.${startOfMonth}`)
 
     if (expensesError) {
       console.error('[process-recurring-transactions] Error fetching expenses:', expensesError)
@@ -85,18 +86,30 @@ serve(async (req) => {
     let expensesSkipped = 0
 
     if (recurringExpenses && recurringExpenses.length > 0) {
-      for (const expense of recurringExpenses) {
-        // Check if this recurring expense already exists for this month
+      // We need to find the "template" for each recurring series.
+      // A series is defined by description and category.
+      // We'll take the most recent one as the template.
+      const seriesTemplates = new Map()
+      for (const exp of recurringExpenses) {
+        const key = `${exp.description}-${exp.category}`
+        if (!seriesTemplates.has(key) || new Date(exp.date) > new Date(seriesTemplates.get(key).date)) {
+          seriesTemplates.set(key, exp)
+        }
+      }
+
+      for (const expense of seriesTemplates.values()) {
+        // Check if this recurring expense already exists for this month (ignoring amount)
+        // This includes records marked as is_skipped
         const { data: existingExpense, error: existingError } = await supabaseAdmin
           .from('expenses')
-          .select('id')
+          .select('id, is_skipped')
           .eq('user_id', user.id)
           .eq('description', expense.description)
           .eq('category', expense.category)
-          .eq('amount', expense.amount)
           .eq('is_recurring', true)
           .gte('date', startOfMonth)
           .lte('date', endOfMonth)
+          .limit(1)
           .maybeSingle()
 
         if (existingError) {
@@ -104,24 +117,19 @@ serve(async (req) => {
           continue
         }
 
-        // Skip if already exists or if it's trimmed
+        // Skip if already exists (even if it's skipped) or if it's trimmed
         if (existingExpense || expense.is_trimmed) {
           expensesSkipped++
           continue
         }
 
-        // Check if start_date and end_date allow this month
+        // Check if start_date allows this month
         if (expense.start_date && expense.start_date > endOfMonth) {
-          expensesSkipped++
-          continue
-        }
-        if (expense.end_date && expense.end_date < startOfMonth) {
           expensesSkipped++
           continue
         }
 
         // Create the recurring expense for this month
-        // Use the collection_day if available, otherwise use the 1st
         const collectionDay = Math.min(expense.collection_day || 1, lastDayOfMonth)
         const expenseDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${collectionDay.toString().padStart(2, '0')}`
 
@@ -140,7 +148,8 @@ serve(async (req) => {
             scheduled_change_date: expense.scheduled_change_date,
             scheduled_new_amount: expense.scheduled_new_amount,
             scheduled_change_type: expense.scheduled_change_type,
-            is_trimmed: expense.is_trimmed || false
+            is_trimmed: expense.is_trimmed || false,
+            start_date: expense.start_date
           })
 
         if (insertError) {
@@ -159,12 +168,13 @@ serve(async (req) => {
     // ============================================
     console.log('[process-recurring-transactions] Processing recurring incomes...')
 
-    // Get all recurring incomes for this user
+    // Get all recurring incomes for this user that are active
     const { data: recurringIncomes, error: incomesError } = await supabaseAdmin
       .from('incomes')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_recurring', true)
+      .or(`end_date.is.null,end_date.gte.${startOfMonth}`)
 
     if (incomesError) {
       console.error('[process-recurring-transactions] Error fetching incomes:', incomesError)
@@ -174,18 +184,27 @@ serve(async (req) => {
     let incomesSkipped = 0
 
     if (recurringIncomes && recurringIncomes.length > 0) {
-      for (const income of recurringIncomes) {
-        // Check if this recurring income already exists for this month
+      // Template logic for incomes
+      const seriesTemplates = new Map()
+      for (const inc of recurringIncomes) {
+        const key = `${inc.description}-${inc.category}`
+        if (!seriesTemplates.has(key) || new Date(inc.date) > new Date(seriesTemplates.get(key).date)) {
+          seriesTemplates.set(key, inc)
+        }
+      }
+
+      for (const income of seriesTemplates.values()) {
+        // Check if this recurring income already exists for this month (ignoring amount)
         const { data: existingIncome, error: existingError } = await supabaseAdmin
           .from('incomes')
-          .select('id')
+          .select('id, is_skipped')
           .eq('user_id', user.id)
           .eq('description', income.description)
           .eq('category', income.category)
-          .eq('amount', income.amount)
           .eq('is_recurring', true)
           .gte('date', startOfMonth)
           .lte('date', endOfMonth)
+          .limit(1)
           .maybeSingle()
 
         if (existingError) {
@@ -193,24 +212,19 @@ serve(async (req) => {
           continue
         }
 
-        // Skip if already exists
-        if (existingIncome) {
+        // Skip if already exists or if it's trimmed
+        if (existingIncome || income.is_trimmed) {
           incomesSkipped++
           continue
         }
 
-        // Check if start_date and end_date allow this month
+        // Check if start_date allows this month
         if (income.start_date && income.start_date > endOfMonth) {
-          incomesSkipped++
-          continue
-        }
-        if (income.end_date && income.end_date < startOfMonth) {
           incomesSkipped++
           continue
         }
 
         // Create the recurring income for this month
-        // Use the 1st of the month by default
         const incomeDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
 
         const { error: insertError } = await supabaseAdmin
@@ -224,7 +238,9 @@ serve(async (req) => {
             is_recurring: true,
             is_passive: income.is_passive || false,
             investment_id: income.investment_id,
-            patrimony_id: income.patrimony_id
+            patrimony_id: income.patrimony_id,
+            is_trimmed: income.is_trimmed || false,
+            start_date: income.start_date
           })
 
         if (insertError) {

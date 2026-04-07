@@ -63,6 +63,8 @@ import {
   Check,
   BadgeCheck,
   Search,
+  CalendarOff,
+  Ban,
 } from "lucide-react";
 import {
   Carousel,
@@ -502,6 +504,7 @@ const ExpensesPage = () => {
       scheduled_change_date: newExpense.scheduled_change_date ? formatDateToISO(newExpense.scheduled_change_date) : null,
       scheduled_new_amount: newExpense.scheduled_new_amount ? parseFloat(newExpense.scheduled_new_amount) : null,
       scheduled_change_type: newExpense.scheduled_change_type,
+      start_date: newExpense.is_recurring ? formatDateToISO(newExpense.date) : null,
     });
     if (!error) {
       setIsDialogOpen(false);
@@ -519,6 +522,9 @@ const ExpensesPage = () => {
         scheduled_change_type: "increase",
       });
       fetchExpenses(session.user.id);
+      toast.success("Gasto añadido correctamente");
+    } else {
+      toast.error("Error al añadir gasto");
     }
     setIsSubmitting(false);
   };
@@ -548,6 +554,9 @@ const ExpensesPage = () => {
       setIsEditDialogOpen(false);
       setSelectedExpense(null);
       fetchExpenses(session.user.id);
+      toast.success("Gasto actualizado");
+    } else {
+      toast.error("Error al actualizar gasto");
     }
     setIsSubmitting(false);
   };
@@ -560,7 +569,74 @@ const ExpensesPage = () => {
       setSelectedExpense(null);
       const { data: { session } } = await supabase.auth.getSession();
       if (session) fetchExpenses(session.user.id);
+      toast.success("Gasto eliminado");
+    } else {
+      toast.error("Error al eliminar gasto");
     }
+  };
+
+  const handleSkipMonth = async () => {
+    if (!selectedExpense) return;
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from("expenses")
+      .update({ is_skipped: true })
+      .eq("id", selectedExpense.id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) fetchExpenses(session.user.id);
+      toast.success("Gasto omitido para este mes");
+    } else {
+      toast.error("Error al omitir gasto");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleStopRecurrence = async () => {
+    if (!selectedExpense) return;
+    setIsSubmitting(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // 1. Delete current instance
+    const { error: deleteError } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", selectedExpense.id);
+
+    if (deleteError) {
+      toast.error("Error al detener recurrencia");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Set end_date for all previous instances of this series
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const endDate = formatDateToISO(yesterday);
+
+    const { error: updateError } = await supabase
+      .from("expenses")
+      .update({ end_date: endDate })
+      .eq("user_id", session.user.id)
+      .eq("description", selectedExpense.description)
+      .eq("category", selectedExpense.category)
+      .eq("is_recurring", true);
+
+    if (!updateError) {
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses(session.user.id);
+      toast.success("Recurrencia detenida");
+    } else {
+      toast.error("Error al actualizar serie recurrente");
+    }
+    setIsSubmitting(false);
   };
 
   const openEditDialog = (expense: any) => {
@@ -608,6 +684,7 @@ const ExpensesPage = () => {
   const allCategories = [...expenseCategories, ...customCategories];
 
   const filteredExpenses = expenses.filter((expense) => {
+    if (expense.is_skipped) return false;
     if (!expense.date) return false;
     const expenseDate = new Date(expense.date + "T00:00:00");
     if (isNaN(expenseDate.getTime())) return false;
@@ -700,6 +777,7 @@ const ExpensesPage = () => {
       setNewExpense({ ...newExpense, investment_id: data.id });
       setIsNewInvestmentOpen(false);
       setNewInvestment({ name: "", type: "stocks", initial_value: "", current_value: "" });
+      toast.success("Inversión creada");
     }
   };
 
@@ -719,6 +797,7 @@ const ExpensesPage = () => {
       setNewExpense({ ...newExpense, patrimony_id: data.id });
       setIsNewPatrimonyOpen(false);
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
+      toast.success("Patrimonio creado");
     }
   };
 
@@ -1499,17 +1578,50 @@ const ExpensesPage = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="space-y-4 mt-4">
-            <p className="text-zinc-300 text-sm">¿Eliminar este gasto?</p>
+            <p className="text-zinc-300 text-sm">
+              {selectedExpense?.is_recurring 
+                ? "Este es un gasto recurrente. ¿Qué deseas hacer?" 
+                : "¿Eliminar este gasto?"}
+            </p>
             {selectedExpense && (
               <div className="p-3 bg-zinc-800/50 rounded-lg">
                 <p className="text-white font-medium">{selectedExpense.description}</p>
                 <p className="text-red-400 font-bold">{formatCurrency(selectedExpense.amount)}</p>
               </div>
             )}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">Cancelar</Button>
-              <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">Eliminar</Button>
-            </div>
+            
+            {selectedExpense?.is_recurring ? (
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={handleSkipMonth} 
+                  disabled={isSubmitting}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 flex items-center justify-center gap-2"
+                >
+                  <CalendarOff className="w-4 h-4" />
+                  Eliminar solo este mes
+                </Button>
+                <Button 
+                  onClick={handleStopRecurrence} 
+                  disabled={isSubmitting}
+                  className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 flex items-center justify-center gap-2"
+                >
+                  <Ban className="w-4 h-4" />
+                  Detener recurrencia
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)} 
+                  className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">Cancelar</Button>
+                <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">Eliminar</Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

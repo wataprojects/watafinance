@@ -38,12 +38,15 @@ import {
   Sparkles,
   BadgeCheck,
   Search,
+  CalendarOff,
+  Ban,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import { getVisualBarWidth } from "@/utils/helpers";
+import { toast } from "sonner";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -236,6 +239,7 @@ const IncomePage = () => {
     incomeCategories.find((c) => c.value === categoryValue) || incomeCategories[0];
 
   const filteredIncomes = incomes.filter((income) => {
+    if (income.is_skipped) return false;
     if (!income.date) return false;
     const incomeDate = new Date(income.date + "T00:00:00");
     if (isNaN(incomeDate.getTime())) return false;
@@ -295,6 +299,7 @@ const IncomePage = () => {
       is_recurring: newIncome.is_recurring,
       investment_id: newIncome.investment_id === "none" ? null : newIncome.investment_id,
       patrimony_id: newIncome.patrimony_id === "none" ? null : newIncome.patrimony_id,
+      start_date: newIncome.is_recurring ? formatDateToISO(newIncome.date) : null,
     });
 
     if (!error) {
@@ -310,6 +315,9 @@ const IncomePage = () => {
         patrimony_id: "none",
       });
       fetchIncomes(session.user.id);
+      toast.success("Ingreso añadido correctamente");
+    } else {
+      toast.error("Error al añadir ingreso");
     }
 
     setIsSubmitting(false);
@@ -340,6 +348,9 @@ const IncomePage = () => {
       setIsEditDialogOpen(false);
       setSelectedIncome(null);
       fetchIncomes(session.user.id);
+      toast.success("Ingreso actualizado");
+    } else {
+      toast.error("Error al actualizar ingreso");
     }
 
     setIsSubmitting(false);
@@ -354,7 +365,74 @@ const IncomePage = () => {
       setSelectedIncome(null);
       const { data: { session } } = await supabase.auth.getSession();
       if (session) fetchIncomes(session.user.id);
+      toast.success("Ingreso eliminado");
+    } else {
+      toast.error("Error al eliminar ingreso");
     }
+  };
+
+  const handleSkipMonth = async () => {
+    if (!selectedIncome) return;
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from("incomes")
+      .update({ is_skipped: true })
+      .eq("id", selectedIncome.id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedIncome(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) fetchIncomes(session.user.id);
+      toast.success("Ingreso omitido para este mes");
+    } else {
+      toast.error("Error al omitir ingreso");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleStopRecurrence = async () => {
+    if (!selectedIncome) return;
+    setIsSubmitting(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // 1. Delete current instance
+    const { error: deleteError } = await supabase
+      .from("incomes")
+      .delete()
+      .eq("id", selectedIncome.id);
+
+    if (deleteError) {
+      toast.error("Error al detener recurrencia");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Set end_date for all previous instances of this series
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const endDate = formatDateToISO(yesterday);
+
+    const { error: updateError } = await supabase
+      .from("incomes")
+      .update({ end_date: endDate })
+      .eq("user_id", session.user.id)
+      .eq("description", selectedIncome.description)
+      .eq("category", selectedIncome.category)
+      .eq("is_recurring", true);
+
+    if (!updateError) {
+      setIsDeleteDialogOpen(false);
+      setSelectedIncome(null);
+      fetchIncomes(session.user.id);
+      toast.success("Recurrencia detenida");
+    } else {
+      toast.error("Error al actualizar serie recurrente");
+    }
+    setIsSubmitting(false);
   };
 
   const openEditDialog = (income: any) => {
@@ -400,6 +478,7 @@ const IncomePage = () => {
       setNewIncome({ ...newIncome, investment_id: data.id });
       setIsNewInvestmentOpen(false);
       setNewInvestment({ name: "", type: "digital", initial_value: "", current_value: "" });
+      toast.success("Inversion creada");
     }
   };
 
@@ -419,6 +498,7 @@ const IncomePage = () => {
       setNewIncome({ ...newIncome, patrimony_id: data.id });
       setIsNewPatrimonyOpen(false);
       setNewPatrimonyAsset({ name: "", category: "real_estate", value: "" });
+      toast.success("Patrimonio creado");
     }
   };
 
@@ -741,7 +821,15 @@ const IncomePage = () => {
                           <Icon className={`w-5 h-5 ${cat.textColor}`} />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{income.description || cat.label}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-white">{income.description || cat.label}</p>
+                            {income.is_recurring && (
+                              <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[9px] font-bold flex items-center gap-1">
+                                <RefreshCcw className="w-2 h-2" />
+                                Recurrente
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
                         </div>
                       </div>
@@ -822,21 +910,54 @@ const IncomePage = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="space-y-4 mt-4">
-            <p className="text-zinc-300 text-sm">Eliminar este ingreso?</p>
+            <p className="text-zinc-300 text-sm">
+              {selectedIncome?.is_recurring 
+                ? "Este es un ingreso recurrente. ¿Qué deseas hacer?" 
+                : "¿Eliminar este ingreso?"}
+            </p>
             {selectedIncome && (
               <div className="p-3 bg-zinc-800/50 rounded-lg">
                 <p className="text-white font-medium">{selectedIncome.description}</p>
                 <p className="text-green-400 font-bold">{formatCurrency(selectedIncome.amount)}</p>
               </div>
             )}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">
-                Cancelar
-              </Button>
-              <Button onClick={handleDeleteIncome} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">
-                Eliminar
-              </Button>
-            </div>
+            
+            {selectedIncome?.is_recurring ? (
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={handleSkipMonth} 
+                  disabled={isSubmitting}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 flex items-center justify-center gap-2"
+                >
+                  <CalendarOff className="w-4 h-4" />
+                  Eliminar solo este mes
+                </Button>
+                <Button 
+                  onClick={handleStopRecurrence} 
+                  disabled={isSubmitting}
+                  className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 flex items-center justify-center gap-2"
+                >
+                  <Ban className="w-4 h-4" />
+                  Detener recurrencia
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)} 
+                  className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 text-xs">
+                  Cancelar
+                </Button>
+                <Button onClick={handleDeleteIncome} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">
+                  Eliminar
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
