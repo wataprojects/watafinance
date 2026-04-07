@@ -5,90 +5,23 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import ClientDetailTabs from '@/components/admin/ClientDetailTabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabaseAdmin } from '@/integrations/supabase/admin';
-
-interface Profile {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
-  created_at: string;
-}
-
-interface Income {
-  id: string;
-  amount: number;
-  description: string | null;
-  category: string;
-  date: string;
-  is_recurring: boolean;
-  is_passive: boolean;
-}
-
-interface Expense {
-  id: string;
-  amount: number;
-  description: string | null;
-  category: string;
-  date: string;
-  is_recurring: boolean;
-}
-
-interface Debt {
-  id: string;
-  name: string;
-  creditor: string | null;
-  initial_amount: number;
-  current_amount: number;
-  interest_rate: number | null;
-  monthly_payment: number | null;
-  status: string;
-  category: string | null;
-}
-
-interface Loan {
-  id: string;
-  borrower_name: string;
-  initial_amount: number;
-  current_amount: number;
-  interest_rate: number | null;
-  monthly_payment: number | null;
-  status: string;
-  bank: string | null;
-  loan_type: string | null;
-}
-
-interface Investment {
-  id: string;
-  name: string;
-  type: string;
-  initial_value: number;
-  current_value: number;
-  return_percentage: number | null;
-  monthly_contribution: number | null;
-}
-
-interface Patrimony {
-  id: string;
-  name: string;
-  category: string;
-  value: number;
-  description: string | null;
-}
 
 export default function AdminClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
   
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [incomes, setIncomes] = useState<Income[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [patrimony, setPatrimony] = useState<Patrimony[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [financialProfile, setFinancialProfile] = useState<any>(null);
+  const [monetizationSettings, setMonetizationSettings] = useState<any>(null);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [patrimony, setPatrimony] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [clientEmail, setClientEmail] = useState('');
 
@@ -105,6 +38,8 @@ export default function AdminClientDetail() {
     try {
       const [
         profileResult,
+        financialResult,
+        monetizationResult,
         incomesResult,
         expensesResult,
         debtsResult,
@@ -114,23 +49,24 @@ export default function AdminClientDetail() {
         authData,
       ] = await Promise.all([
         supabaseAdmin.from('profiles').select('*').eq('id', id).single(),
-        supabaseAdmin.from('incomes').select('*').eq('user_id', id),
-        supabaseAdmin.from('expenses').select('*').eq('user_id', id),
-        supabaseAdmin.from('debts').select('*').eq('user_id', id),
-        supabaseAdmin.from('loans').select('*').eq('user_id', id),
-        supabaseAdmin.from('investments').select('*').eq('user_id', id),
-        supabaseAdmin.from('patrimony').select('*').eq('user_id', id),
-        supabaseAdmin.auth.admin.listUsers(),
+        supabaseAdmin.from('user_financial_profiles').select('*').eq('user_id', id).maybeSingle(),
+        supabaseAdmin.from('user_monetization_settings').select('*').eq('user_id', id).maybeSingle(),
+        supabaseAdmin.from('incomes').select('*').eq('user_id', id).order('date', { ascending: false }),
+        supabaseAdmin.from('expenses').select('*').eq('user_id', id).order('date', { ascending: false }),
+        supabaseAdmin.from('debts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+        supabaseAdmin.from('loans').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+        supabaseAdmin.from('investments').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+        supabaseAdmin.from('patrimony').select('*').eq('user_id', id).order('created_at', { ascending: false }),
+        supabaseAdmin.auth.admin.getUserById(id),
       ]);
 
-      const users = (authData as { users?: { id: string; email?: string }[] })?.users || [];
-      const user = users.find((u) => u.id === id);
-      setClientEmail(user?.email || 'Sin email');
-
+      setClientEmail(authData.data?.user?.email || 'Sin email');
       setProfile({
         ...profileResult.data,
-        email: user?.email || 'Sin email',
-      } as Profile);
+        email: authData.data?.user?.email || 'Sin email',
+      });
+      setFinancialProfile(financialResult.data);
+      setMonetizationSettings(monetizationResult.data);
       setIncomes(incomesResult.data || []);
       setExpenses(expensesResult.data || []);
       setDebts(debtsResult.data || []);
@@ -147,7 +83,7 @@ export default function AdminClientDetail() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -178,12 +114,14 @@ export default function AdminClientDetail() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
             </div>
           ) : (
             <ClientDetailTabs
               clientId={id!}
               profile={profile}
+              financialProfile={financialProfile}
+              monetizationSettings={monetizationSettings}
               incomes={incomes}
               expenses={expenses}
               debts={debts}
