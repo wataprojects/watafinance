@@ -8,11 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, ListChecks } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, ListChecks, ShieldAlert, ShieldCheck, ShieldX, Lightbulb, Link, PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
+import { useInvestmentMetrics, InvestmentMetrics } from "@/hooks/useInvestmentMetrics";
+import { generateInsights, Insight } from "@/utils/investmentInsights";
+import { PerformanceIndicator } from "@/components/dashboard/PerformanceIndicator";
+import { InvestmentMetricsCard } from "@/components/InvestmentMetricsCard";
+import { InvestmentInsights } from "@/components/InvestmentInsights";
 
 interface CategoryOption {
   value: string;
@@ -38,6 +43,18 @@ const INVESTMENT_TYPES = [
   { value: "income", label: "Generadora de ingresos", description: "Negocios, alquileres, side projects..." },
 ];
 
+const RISK_LEVELS = [
+  { value: "bajo", label: "Bajo", description: "Depósitos, bonos, bienes raíces estables", icon: ShieldCheck, color: "text-emerald-400", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
+  { value: "medio", label: "Medio", description: "Fondos indexados, ETFs, negocios establecidos", icon: ShieldAlert, color: "text-amber-400", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
+  { value: "alto", label: "Alto", description: "Crypto, acciones individuales, startups", icon: ShieldX, color: "text-rose-400", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
+];
+
+const RISK_LEVELS = [
+  { value: "bajo", label: "Bajo", description: "Depósitos, bonos, bienes raíces estables", icon: ShieldCheck, color: "text-emerald-400", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
+  { value: "medio", label: "Medio", description: "Fondos indexados, ETFs, negocios establecidos", icon: ShieldAlert, color: "text-amber-400", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
+  { value: "alto", label: "Alto", description: "Crypto, acciones individuales, startups", icon: ShieldX, color: "text-rose-400", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
+];
+
 const InvestmentsPage = () => {
   const navigate = useNavigate();
   const [investments, setInvestments] = useState<any[]>([]);
@@ -50,34 +67,46 @@ const InvestmentsPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+    const [error, setError] = useState("");
+    const [insights, setInsights] = useState<Insight[]>([]);
+    const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+    const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+    const [selectedInvestmentForIncome, setSelectedInvestmentForIncome] = useState<any>(null);
+    const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: new Date() });
+    const [insights, setInsights] = useState<Insight[]>([]);
+    const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+    const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+    const [selectedInvestmentForIncome, setSelectedInvestmentForIncome] = useState<any>(null);
+    const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: new Date() });
 
   const [newInvestment, setNewInvestment] = useState({
-    name: "",
-    investment_type: "revalorization",
-    category: "digital",
-    initial_value: "",
-    current_value: "",
-    monthly_contribution: "",
-    loan_id: "none",
-    patrimony_id: "none",
-    capital_breakdown: "",
-    start_date: new Date(),
-  });
-
-  const [editInvestment, setEditInvestment] = useState({
-    id: "",
-    name: "",
-    investment_type: "revalorization",
-    category: "digital",
-    initial_value: "",
-    current_value: "",
-    monthly_contribution: "",
-    loan_id: "none",
-    patrimony_id: "none",
-    capital_breakdown: "",
-    start_date: new Date(),
-  });
+      name: "",
+      investment_type: "revalorization",
+      category: "digital",
+      risk_level: "medio",
+      initial_value: "",
+      current_value: "",
+      monthly_contribution: "",
+      loan_id: "none",
+      patrimony_id: "none",
+      capital_breakdown: "",
+      start_date: new Date(),
+    });
+  
+    const [editInvestment, setEditInvestment] = useState({
+      id: "",
+      name: "",
+      investment_type: "revalorization",
+      category: "digital",
+      risk_level: "medio",
+      initial_value: "",
+      current_value: "",
+      monthly_contribution: "",
+      loan_id: "none",
+      patrimony_id: "none",
+      capital_breakdown: "",
+      start_date: new Date(),
+    });
 
   useEffect(() => {
     checkAuth();
@@ -168,18 +197,19 @@ const InvestmentsPage = () => {
       : initial;
     
     const { error } = await supabase.from("investments").insert({
-      user_id: session.user.id,
-      name: newInvestment.name,
-      type: newInvestment.category,
-      investment_type: newInvestment.investment_type,
-      initial_value: initial,
-      current_value: current,
-      start_date: formatDateToISO(newInvestment.start_date),
-      monthly_contribution: toNullableNumber(newInvestment.monthly_contribution),
-      loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
-      patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
-      capital_breakdown: newInvestment.capital_breakdown.trim() ? { notes: newInvestment.capital_breakdown.trim() } : null,
-    });
+          user_id: session.user.id,
+          name: newInvestment.name,
+          type: newInvestment.category,
+          investment_type: newInvestment.investment_type,
+          risk_level: newInvestment.risk_level,
+          initial_value: initial,
+          current_value: current,
+          start_date: formatDateToISO(newInvestment.start_date),
+          monthly_contribution: toNullableNumber(newInvestment.monthly_contribution),
+          loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
+          patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
+          capital_breakdown: newInvestment.capital_breakdown.trim() ? { notes: newInvestment.capital_breakdown.trim() } : null,
+        });
 
     if (error) {
       setError(error.message);
@@ -188,18 +218,19 @@ const InvestmentsPage = () => {
     }
 
     setIsDialogOpen(false);
-    setNewInvestment({
-      name: "",
-      investment_type: "revalorization",
-      category: "digital",
-      initial_value: "",
-      current_value: "",
-      monthly_contribution: "",
-      loan_id: "none",
-      patrimony_id: "none",
-      capital_breakdown: "",
-      start_date: new Date(),
-    });
+        setNewInvestment({
+          name: "",
+          investment_type: "revalorization",
+          category: "digital",
+          risk_level: "medio",
+          initial_value: "",
+          current_value: "",
+          monthly_contribution: "",
+          loan_id: "none",
+          patrimony_id: "none",
+          capital_breakdown: "",
+          start_date: new Date(),
+        });
 
     await fetchInvestments(session.user.id);
     await fetchRelations(session.user.id);
@@ -224,17 +255,18 @@ const InvestmentsPage = () => {
       : initial;
 
     const { error } = await supabase.from("investments").update({
-      name: editInvestment.name,
-      type: editInvestment.category,
-      investment_type: editInvestment.investment_type,
-      initial_value: initial,
-      current_value: current,
-      start_date: formatDateToISO(editInvestment.start_date),
-      monthly_contribution: toNullableNumber(editInvestment.monthly_contribution),
-      loan_id: editInvestment.loan_id === "none" ? null : editInvestment.loan_id,
-      patrimony_id: editInvestment.patrimony_id === "none" ? null : editInvestment.patrimony_id,
-      capital_breakdown: editInvestment.capital_breakdown.trim() ? { notes: editInvestment.capital_breakdown.trim() } : null,
-    }).eq("id", selectedInvestment.id);
+          name: editInvestment.name,
+          type: editInvestment.category,
+          investment_type: editInvestment.investment_type,
+          risk_level: editInvestment.risk_level,
+          initial_value: initial,
+          current_value: current,
+          start_date: formatDateToISO(editInvestment.start_date),
+          monthly_contribution: toNullableNumber(editInvestment.monthly_contribution),
+          loan_id: editInvestment.loan_id === "none" ? null : editInvestment.loan_id,
+          patrimony_id: editInvestment.patrimony_id === "none" ? null : editInvestment.patrimony_id,
+          capital_breakdown: editInvestment.capital_breakdown.trim() ? { notes: editInvestment.capital_breakdown.trim() } : null,
+        }).eq("id", selectedInvestment.id);
 
     if (error) {
       setError(error.message);
@@ -262,24 +294,25 @@ const InvestmentsPage = () => {
   };
 
   const openEditDialog = (inv: any) => {
-    setSelectedInvestment(inv);
-    setEditInvestment({
-      id: inv.id,
-      name: inv.name || "",
-      investment_type: inv.investment_type || "revalorization",
-      category: inv.type || "digital",
-      initial_value: inv.initial_value?.toString() || "",
-      current_value: inv.current_value?.toString() || "",
-      monthly_contribution: inv.monthly_contribution?.toString() || "",
-      loan_id: inv.loan_id || "none",
-      patrimony_id: inv.patrimony_id || "none",
-      capital_breakdown: typeof inv.capital_breakdown === "string"
-        ? inv.capital_breakdown
-        : inv.capital_breakdown?.notes || "",
-      start_date: safeDate(inv.start_date),
-    });
-    setIsEditDialogOpen(true);
-  };
+      setSelectedInvestment(inv);
+      setEditInvestment({
+        id: inv.id,
+        name: inv.name || "",
+        investment_type: inv.investment_type || "revalorization",
+        category: inv.type || "digital",
+        risk_level: inv.risk_level || "medio",
+        initial_value: inv.initial_value?.toString() || "",
+        current_value: inv.current_value?.toString() || "",
+        monthly_contribution: inv.monthly_contribution?.toString() || "",
+        loan_id: inv.loan_id || "none",
+        patrimony_id: inv.patrimony_id || "none",
+        capital_breakdown: typeof inv.capital_breakdown === "string"
+          ? inv.capital_breakdown
+          : inv.capital_breakdown?.notes || "",
+        start_date: safeDate(inv.start_date),
+      });
+      setIsEditDialogOpen(true);
+    };
 
   const investmentStats = useMemo(() => {
     let totalPortfolioValue = 0;
@@ -331,43 +364,160 @@ const InvestmentsPage = () => {
   }, [investments, incomes]);
 
   const getCategoryInfo = (categoryValue: string) => investmentCategories.find((c) => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
-  const getTypeInfo = (typeValue: string) => INVESTMENT_TYPES.find(t => t.value === typeValue) || INVESTMENT_TYPES[0];
+    const getTypeInfo = (typeValue: string) => INVESTMENT_TYPES.find(t => t.value === typeValue) || INVESTMENT_TYPES[0];
+    const getRiskInfo = (riskValue: string) => RISK_LEVELS.find(r => r.value === riskValue) || RISK_LEVELS[1];
+  
+    // Use the new metrics hook
+    const portfolioMetrics = useInvestmentMetrics(investments, incomes);
+    
+    // Generate insights when portfolio metrics change
+    useEffect(() => {
+      const allInsights = generateInsights(portfolioMetrics, investments);
+      const filteredInsights = allInsights.filter(i => !dismissedInsights.includes(i.id));
+      setInsights(filteredInsights);
+    }, [portfolioMetrics, dismissedInsights, investments]);
+  
+    const handleDismissInsight = (id: string) => {
+      setDismissedInsights(prev => [...prev, id]);
+      setInsights(prev => prev.filter(i => i.id !== id));
+    };
+  
+    const handleInsightAction = (insight: Insight) => {
+      if (insight.investmentId) {
+        const inv = investments.find(i => i.id === insight.investmentId);
+        if (inv && inv.investment_type === 'income') {
+          setSelectedInvestmentForIncome(inv);
+          setIsIncomeDialogOpen(true);
+        }
+      }
+    };
+  
+    const handleCreateIncomeForInvestment = async () => {
+      if (!selectedInvestmentForIncome || !newIncome.amount || !newIncome.description) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const { error: incomeError } = await supabase.from("incomes").insert({
+        user_id: session.user.id,
+        description: newIncome.description,
+        amount: parseFloat(newIncome.amount),
+        category: "inversion",
+        date: formatDateToISO(newIncome.date),
+        investment_id: selectedInvestmentForIncome.id,
+        is_passive: true,
+        is_recurring: false,
+      });
+  
+      if (!incomeError) {
+        setIsIncomeDialogOpen(false);
+        setNewIncome({ description: "", amount: "", date: new Date() });
+        setSelectedInvestmentForIncome(null);
+        // Refresh data
+        await fetchInvestments(session.user.id);
+        await fetchRelations(session.user.id);
+      }
+    };
+    const getRiskInfo = (riskValue: string) => RISK_LEVELS.find(r => r.value === riskValue) || RISK_LEVELS[1];
+  
+    // Use the new metrics hook
+    const portfolioMetrics = useInvestmentMetrics(investments, incomes);
+    
+    // Generate insights when portfolio metrics change
+    useEffect(() => {
+      const allInsights = generateInsights(portfolioMetrics, investments);
+      const filteredInsights = allInsights.filter(i => !dismissedInsights.includes(i.id));
+      setInsights(filteredInsights);
+    }, [portfolioMetrics, dismissedInsights, investments]);
+  
+    const handleDismissInsight = (id: string) => {
+      setDismissedInsights(prev => [...prev, id]);
+      setInsights(prev => prev.filter(i => i.id !== id));
+    };
+  
+    const handleInsightAction = (insight: Insight) => {
+      if (insight.investmentId) {
+        const inv = investments.find(i => i.id === insight.investmentId);
+        if (inv && inv.investment_type === 'income') {
+          setSelectedInvestmentForIncome(inv);
+          setIsIncomeDialogOpen(true);
+        }
+      }
+    };
+  
+    const handleCreateIncomeForInvestment = async () => {
+      if (!selectedInvestmentForIncome || !newIncome.amount || !newIncome.description) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const { error: incomeError } = await supabase.from("incomes").insert({
+        user_id: session.user.id,
+        description: newIncome.description,
+        amount: parseFloat(newIncome.amount),
+        category: "inversion",
+        date: formatDateToISO(newIncome.date),
+        investment_id: selectedInvestmentForIncome.id,
+        is_passive: true,
+        is_recurring: false,
+      });
+  
+      if (!incomeError) {
+        setIsIncomeDialogOpen(false);
+        setNewIncome({ description: "", amount: "", date: new Date() });
+        setSelectedInvestmentForIncome(null);
+        // Refresh data
+        await fetchInvestments(session.user.id);
+        await fetchRelations(session.user.id);
+      }
+    };
 
   return (
-    <div className="min-h-screen bg-black pb-28">
-      <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
-      
-      <div className="container mx-auto px-4 py-6">
-        {/* Resumen del Portfolio - Una sola línea con fuentes adaptables */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-              <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-400" />
-              <p className="text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold text-white truncate" title={formatCurrency(investmentStats.totalPortfolioValue)}>
-                {formatCurrency(investmentStats.totalPortfolioValue, false)}
-              </p>
-              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Activos</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-emerald-400" /> : <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-rose-400" />}
-              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(investmentStats.totalReturn)}>
-                {investmentStats.totalReturn >= 0 ? "+" : ""}{formatCurrency(investmentStats.totalReturn, false)}
-              </p>
-              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-              <PieChart className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-400" />
-              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                {investmentStats.totalROI >= 0 ? "+" : ""}{investmentStats.totalROI.toFixed(1)}%
-              </p>
-              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI</p>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-black pb-28">
+        <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
+        
+        <div className="container mx-auto px-4 py-6">
+          {/* Insights Panel */}
+          {insights.length > 0 && (
+            <div className="mb-6">
+              <InvestmentInsights
+                insights={insights}
+                onDismiss={handleDismissInsight}
+                onAction={handleInsightAction}
+              />
+            </div>
+          )}
+  
+          {/* Resumen del Portfolio - Una sola línea con fuentes adaptables */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+                <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-400" />
+                <p className="text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold text-white truncate" title={formatCurrency(portfolioMetrics.totalPortfolioValue)}>
+                  {formatCurrency(portfolioMetrics.totalPortfolioValue, false)}
+                </p>
+                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Activos</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+                {portfolioMetrics.totalReturn >= 0 ? <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-emerald-400" /> : <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-rose-400" />}
+                <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(portfolioMetrics.totalReturn)}>
+                  {portfolioMetrics.totalReturn >= 0 ? "+" : ""}{formatCurrency(portfolioMetrics.totalReturn, false)}
+                </p>
+                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+                <PieChart className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-400" />
+                <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  {portfolioMetrics.totalROI >= 0 ? "+" : ""}{portfolioMetrics.totalROI.toFixed(1)}%
+                </p>
+                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI</p>
+              </CardContent>
+            </Card>
+          </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -398,13 +548,15 @@ const InvestmentsPage = () => {
         <div className="space-y-4">
           {loading ? (
             <p className="text-zinc-400 text-center py-8">Cargando inversiones...</p>
-          ) : investmentStats.processedInvestments.length === 0 ? (
-            <p className="text-zinc-400 text-center py-8">No hay inversiones registradas</p>
-          ) : (
-            investmentStats.processedInvestments.map((inv) => {
+          ) : portfolioMetrics.processedInvestments.length === 0 ? (
+                      <p className="text-zinc-400 text-center py-8">No hay inversiones registradas</p>
+                    ) : (
+                      portfolioMetrics.processedInvestments.map((inv) => {
               const cat = getCategoryInfo(inv.type);
-              const typeInfo = getTypeInfo(inv.investment_type);
-              const Icon = cat.icon;
+                            const typeInfo = getTypeInfo(inv.investment_type);
+                            const riskInfo = getRiskInfo(inv.risk_level || 'medio');
+                            const Icon = cat.icon;
+                            const RiskIcon = riskInfo.icon;
 
               return (
                 <Card key={inv.id} className="bg-zinc-900 border-zinc-800 overflow-hidden">
