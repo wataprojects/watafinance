@@ -8,16 +8,38 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, ListChecks, ShieldAlert, ShieldCheck, ShieldX, Lightbulb, Link, PlusCircle } from "lucide-react";
+import { 
+  Plus, 
+  TrendingUp, 
+  TrendingDown, 
+  BarChart3, 
+  PieChart, 
+  Laptop, 
+  Home, 
+  Briefcase, 
+  Film, 
+  Coins, 
+  MoreHorizontal, 
+  Pencil, 
+  Trash2, 
+  X, 
+  Landmark, 
+  DollarSign, 
+  ListChecks, 
+  ShieldAlert, 
+  ShieldCheck, 
+  ShieldX, 
+  PlusCircle 
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import { useInvestmentMetrics, InvestmentMetrics } from "@/hooks/useInvestmentMetrics";
 import { generateInsights, Insight } from "@/utils/investmentInsights";
-import { PerformanceIndicator } from "@/components/dashboard/PerformanceIndicator";
 import { InvestmentMetricsCard } from "@/components/InvestmentMetricsCard";
 import { InvestmentInsights } from "@/components/InvestmentInsights";
+import { toast } from "sonner";
 
 interface CategoryOption {
   value: string;
@@ -49,12 +71,6 @@ const RISK_LEVELS = [
   { value: "alto", label: "Alto", description: "Crypto, acciones individuales, startups", icon: ShieldX, color: "text-rose-400", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
 ];
 
-const RISK_LEVELS = [
-  { value: "bajo", label: "Bajo", description: "Depósitos, bonos, bienes raíces estables", icon: ShieldCheck, color: "text-emerald-400", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
-  { value: "medio", label: "Medio", description: "Fondos indexados, ETFs, negocios establecidos", icon: ShieldAlert, color: "text-amber-400", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
-  { value: "alto", label: "Alto", description: "Crypto, acciones individuales, startups", icon: ShieldX, color: "text-rose-400", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
-];
-
 const InvestmentsPage = () => {
   const navigate = useNavigate();
   const [investments, setInvestments] = useState<any[]>([]);
@@ -67,46 +83,41 @@ const InvestmentsPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [insights, setInsights] = useState<Insight[]>([]);
-    const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
-    const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
-    const [selectedInvestmentForIncome, setSelectedInvestmentForIncome] = useState<any>(null);
-    const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: new Date() });
-    const [insights, setInsights] = useState<Insight[]>([]);
-    const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
-    const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
-    const [selectedInvestmentForIncome, setSelectedInvestmentForIncome] = useState<any>(null);
-    const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: new Date() });
+  const [error, setError] = useState("");
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+  const [selectedInvestmentForIncome, setSelectedInvestmentForIncome] = useState<any>(null);
+  const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: new Date() });
 
   const [newInvestment, setNewInvestment] = useState({
-      name: "",
-      investment_type: "revalorization",
-      category: "digital",
-      risk_level: "medio",
-      initial_value: "",
-      current_value: "",
-      monthly_contribution: "",
-      loan_id: "none",
-      patrimony_id: "none",
-      capital_breakdown: "",
-      start_date: new Date(),
-    });
-  
-    const [editInvestment, setEditInvestment] = useState({
-      id: "",
-      name: "",
-      investment_type: "revalorization",
-      category: "digital",
-      risk_level: "medio",
-      initial_value: "",
-      current_value: "",
-      monthly_contribution: "",
-      loan_id: "none",
-      patrimony_id: "none",
-      capital_breakdown: "",
-      start_date: new Date(),
-    });
+    name: "",
+    investment_type: "revalorization",
+    category: "digital",
+    risk_level: "medio",
+    initial_value: "",
+    current_value: "",
+    monthly_contribution: "",
+    loan_id: "none",
+    patrimony_id: "none",
+    capital_breakdown: "",
+    start_date: new Date(),
+  });
+
+  const [editInvestment, setEditInvestment] = useState({
+    id: "",
+    name: "",
+    investment_type: "revalorization",
+    category: "digital",
+    risk_level: "medio",
+    initial_value: "",
+    current_value: "",
+    monthly_contribution: "",
+    loan_id: "none",
+    patrimony_id: "none",
+    capital_breakdown: "",
+    start_date: new Date(),
+  });
 
   useEffect(() => {
     checkAuth();
@@ -197,19 +208,19 @@ const InvestmentsPage = () => {
       : initial;
     
     const { error } = await supabase.from("investments").insert({
-          user_id: session.user.id,
-          name: newInvestment.name,
-          type: newInvestment.category,
-          investment_type: newInvestment.investment_type,
-          risk_level: newInvestment.risk_level,
-          initial_value: initial,
-          current_value: current,
-          start_date: formatDateToISO(newInvestment.start_date),
-          monthly_contribution: toNullableNumber(newInvestment.monthly_contribution),
-          loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
-          patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
-          capital_breakdown: newInvestment.capital_breakdown.trim() ? { notes: newInvestment.capital_breakdown.trim() } : null,
-        });
+      user_id: session.user.id,
+      name: newInvestment.name,
+      type: newInvestment.category,
+      investment_type: newInvestment.investment_type,
+      risk_level: newInvestment.risk_level,
+      initial_value: initial,
+      current_value: current,
+      start_date: formatDateToISO(newInvestment.start_date),
+      monthly_contribution: toNullableNumber(newInvestment.monthly_contribution),
+      loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
+      patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
+      capital_breakdown: newInvestment.capital_breakdown.trim() ? { notes: newInvestment.capital_breakdown.trim() } : null,
+    });
 
     if (error) {
       setError(error.message);
@@ -218,23 +229,24 @@ const InvestmentsPage = () => {
     }
 
     setIsDialogOpen(false);
-        setNewInvestment({
-          name: "",
-          investment_type: "revalorization",
-          category: "digital",
-          risk_level: "medio",
-          initial_value: "",
-          current_value: "",
-          monthly_contribution: "",
-          loan_id: "none",
-          patrimony_id: "none",
-          capital_breakdown: "",
-          start_date: new Date(),
-        });
+    setNewInvestment({
+      name: "",
+      investment_type: "revalorization",
+      category: "digital",
+      risk_level: "medio",
+      initial_value: "",
+      current_value: "",
+      monthly_contribution: "",
+      loan_id: "none",
+      patrimony_id: "none",
+      capital_breakdown: "",
+      start_date: new Date(),
+    });
 
     await fetchInvestments(session.user.id);
     await fetchRelations(session.user.id);
     setSaving(false);
+    toast.success("Inversión añadida correctamente");
   };
 
   const handleEditInvestment = async () => {
@@ -255,18 +267,18 @@ const InvestmentsPage = () => {
       : initial;
 
     const { error } = await supabase.from("investments").update({
-          name: editInvestment.name,
-          type: editInvestment.category,
-          investment_type: editInvestment.investment_type,
-          risk_level: editInvestment.risk_level,
-          initial_value: initial,
-          current_value: current,
-          start_date: formatDateToISO(editInvestment.start_date),
-          monthly_contribution: toNullableNumber(editInvestment.monthly_contribution),
-          loan_id: editInvestment.loan_id === "none" ? null : editInvestment.loan_id,
-          patrimony_id: editInvestment.patrimony_id === "none" ? null : editInvestment.patrimony_id,
-          capital_breakdown: editInvestment.capital_breakdown.trim() ? { notes: editInvestment.capital_breakdown.trim() } : null,
-        }).eq("id", selectedInvestment.id);
+      name: editInvestment.name,
+      type: editInvestment.category,
+      investment_type: editInvestment.investment_type,
+      risk_level: editInvestment.risk_level,
+      initial_value: initial,
+      current_value: current,
+      start_date: formatDateToISO(editInvestment.start_date),
+      monthly_contribution: toNullableNumber(editInvestment.monthly_contribution),
+      loan_id: editInvestment.loan_id === "none" ? null : editInvestment.loan_id,
+      patrimony_id: editInvestment.patrimony_id === "none" ? null : editInvestment.patrimony_id,
+      capital_breakdown: editInvestment.capital_breakdown.trim() ? { notes: editInvestment.capital_breakdown.trim() } : null,
+    }).eq("id", selectedInvestment.id);
 
     if (error) {
       setError(error.message);
@@ -279,6 +291,7 @@ const InvestmentsPage = () => {
     await fetchInvestments(session.user.id);
     await fetchRelations(session.user.id);
     setSaving(false);
+    toast.success("Inversión actualizada");
   };
 
   const handleDeleteInvestment = async () => {
@@ -291,233 +304,135 @@ const InvestmentsPage = () => {
       await fetchInvestments(session.user.id);
       await fetchRelations(session.user.id);
     }
+    toast.success("Inversión eliminada");
   };
 
   const openEditDialog = (inv: any) => {
-      setSelectedInvestment(inv);
-      setEditInvestment({
-        id: inv.id,
-        name: inv.name || "",
-        investment_type: inv.investment_type || "revalorization",
-        category: inv.type || "digital",
-        risk_level: inv.risk_level || "medio",
-        initial_value: inv.initial_value?.toString() || "",
-        current_value: inv.current_value?.toString() || "",
-        monthly_contribution: inv.monthly_contribution?.toString() || "",
-        loan_id: inv.loan_id || "none",
-        patrimony_id: inv.patrimony_id || "none",
-        capital_breakdown: typeof inv.capital_breakdown === "string"
-          ? inv.capital_breakdown
-          : inv.capital_breakdown?.notes || "",
-        start_date: safeDate(inv.start_date),
-      });
-      setIsEditDialogOpen(true);
-    };
-
-  const investmentStats = useMemo(() => {
-    let totalPortfolioValue = 0;
-    let totalInitialCapital = 0;
-    let totalAccumulatedIncome = 0;
-    let totalRevaluation = 0;
-
-    const processedInvestments = investments.map(inv => {
-      const initial = parseFloat(inv.initial_value || 0);
-      const current = parseFloat(inv.current_value || 0);
-      
-      const linkedIncomesList = incomes.filter(inc => inc.investment_id === inv.id);
-      const linkedIncome = linkedIncomesList.reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
-      const incomeCount = linkedIncomesList.length;
-
-      const assetValue = inv.investment_type === "revalorization" ? current : initial;
-      
-      const revaluation = current - initial;
-      const totalReturn = revaluation + linkedIncome;
-      const roi = initial > 0 ? (totalReturn / initial) * 100 : 0;
-
-      totalPortfolioValue += assetValue;
-      totalInitialCapital += initial;
-      totalAccumulatedIncome += linkedIncome;
-      totalRevaluation += revaluation;
-
-      return {
-        ...inv,
-        assetValue,
-        linkedIncome,
-        revaluation,
-        totalReturn,
-        roi,
-        incomeCount
-      };
+    setSelectedInvestment(inv);
+    setEditInvestment({
+      id: inv.id,
+      name: inv.name || "",
+      investment_type: inv.investment_type || "revalorization",
+      category: inv.type || "digital",
+      risk_level: inv.risk_level || "medio",
+      initial_value: inv.initial_value?.toString() || "",
+      current_value: inv.current_value?.toString() || "",
+      monthly_contribution: inv.monthly_contribution?.toString() || "",
+      loan_id: inv.loan_id || "none",
+      patrimony_id: inv.patrimony_id || "none",
+      capital_breakdown: typeof inv.capital_breakdown === "string"
+        ? inv.capital_breakdown
+        : inv.capital_breakdown?.notes || "",
+      start_date: safeDate(inv.start_date),
     });
-
-    const totalReturn = totalRevaluation + totalAccumulatedIncome;
-    const totalROI = totalInitialCapital > 0 ? (totalReturn / totalInitialCapital) * 100 : 0;
-
-    return {
-      processedInvestments,
-      totalPortfolioValue,
-      totalReturn,
-      totalROI,
-      totalAccumulatedIncome,
-      totalRevaluation
-    };
-  }, [investments, incomes]);
+    setIsEditDialogOpen(true);
+  };
 
   const getCategoryInfo = (categoryValue: string) => investmentCategories.find((c) => c.value === categoryValue) || investmentCategories[investmentCategories.length - 1];
-    const getTypeInfo = (typeValue: string) => INVESTMENT_TYPES.find(t => t.value === typeValue) || INVESTMENT_TYPES[0];
-    const getRiskInfo = (riskValue: string) => RISK_LEVELS.find(r => r.value === riskValue) || RISK_LEVELS[1];
+  const getTypeInfo = (typeValue: string) => INVESTMENT_TYPES.find(t => t.value === typeValue) || INVESTMENT_TYPES[0];
+  const getRiskInfo = (riskValue: string) => RISK_LEVELS.find(r => r.value === riskValue) || RISK_LEVELS[1];
+
+  // Use the new metrics hook
+  const portfolioMetrics = useInvestmentMetrics(investments, incomes);
   
-    // Use the new metrics hook
-    const portfolioMetrics = useInvestmentMetrics(investments, incomes);
+  // Generate insights when portfolio metrics change
+  useEffect(() => {
+    const allInsights = generateInsights(portfolioMetrics, investments);
+    const filteredInsights = allInsights.filter(i => !dismissedInsights.includes(i.id));
+    setInsights(filteredInsights);
+  }, [portfolioMetrics, dismissedInsights, investments]);
+
+  const handleDismissInsight = (id: string) => {
+    setDismissedInsights(prev => [...prev, id]);
+    setInsights(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleInsightAction = (insight: Insight) => {
+    if (insight.investmentId) {
+      const inv = investments.find(i => i.id === insight.investmentId);
+      if (inv && inv.investment_type === 'income') {
+        setSelectedInvestmentForIncome(inv);
+        setIsIncomeDialogOpen(true);
+      }
+    }
+  };
+
+  const handleCreateIncomeForInvestment = async () => {
+    if (!selectedInvestmentForIncome || !newIncome.amount || !newIncome.description) return;
     
-    // Generate insights when portfolio metrics change
-    useEffect(() => {
-      const allInsights = generateInsights(portfolioMetrics, investments);
-      const filteredInsights = allInsights.filter(i => !dismissedInsights.includes(i.id));
-      setInsights(filteredInsights);
-    }, [portfolioMetrics, dismissedInsights, investments]);
-  
-    const handleDismissInsight = (id: string) => {
-      setDismissedInsights(prev => [...prev, id]);
-      setInsights(prev => prev.filter(i => i.id !== id));
-    };
-  
-    const handleInsightAction = (insight: Insight) => {
-      if (insight.investmentId) {
-        const inv = investments.find(i => i.id === insight.investmentId);
-        if (inv && inv.investment_type === 'income') {
-          setSelectedInvestmentForIncome(inv);
-          setIsIncomeDialogOpen(true);
-        }
-      }
-    };
-  
-    const handleCreateIncomeForInvestment = async () => {
-      if (!selectedInvestmentForIncome || !newIncome.amount || !newIncome.description) return;
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-  
-      const { error: incomeError } = await supabase.from("incomes").insert({
-        user_id: session.user.id,
-        description: newIncome.description,
-        amount: parseFloat(newIncome.amount),
-        category: "inversion",
-        date: formatDateToISO(newIncome.date),
-        investment_id: selectedInvestmentForIncome.id,
-        is_passive: true,
-        is_recurring: false,
-      });
-  
-      if (!incomeError) {
-        setIsIncomeDialogOpen(false);
-        setNewIncome({ description: "", amount: "", date: new Date() });
-        setSelectedInvestmentForIncome(null);
-        // Refresh data
-        await fetchInvestments(session.user.id);
-        await fetchRelations(session.user.id);
-      }
-    };
-    const getRiskInfo = (riskValue: string) => RISK_LEVELS.find(r => r.value === riskValue) || RISK_LEVELS[1];
-  
-    // Use the new metrics hook
-    const portfolioMetrics = useInvestmentMetrics(investments, incomes);
-    
-    // Generate insights when portfolio metrics change
-    useEffect(() => {
-      const allInsights = generateInsights(portfolioMetrics, investments);
-      const filteredInsights = allInsights.filter(i => !dismissedInsights.includes(i.id));
-      setInsights(filteredInsights);
-    }, [portfolioMetrics, dismissedInsights, investments]);
-  
-    const handleDismissInsight = (id: string) => {
-      setDismissedInsights(prev => [...prev, id]);
-      setInsights(prev => prev.filter(i => i.id !== id));
-    };
-  
-    const handleInsightAction = (insight: Insight) => {
-      if (insight.investmentId) {
-        const inv = investments.find(i => i.id === insight.investmentId);
-        if (inv && inv.investment_type === 'income') {
-          setSelectedInvestmentForIncome(inv);
-          setIsIncomeDialogOpen(true);
-        }
-      }
-    };
-  
-    const handleCreateIncomeForInvestment = async () => {
-      if (!selectedInvestmentForIncome || !newIncome.amount || !newIncome.description) return;
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-  
-      const { error: incomeError } = await supabase.from("incomes").insert({
-        user_id: session.user.id,
-        description: newIncome.description,
-        amount: parseFloat(newIncome.amount),
-        category: "inversion",
-        date: formatDateToISO(newIncome.date),
-        investment_id: selectedInvestmentForIncome.id,
-        is_passive: true,
-        is_recurring: false,
-      });
-  
-      if (!incomeError) {
-        setIsIncomeDialogOpen(false);
-        setNewIncome({ description: "", amount: "", date: new Date() });
-        setSelectedInvestmentForIncome(null);
-        // Refresh data
-        await fetchInvestments(session.user.id);
-        await fetchRelations(session.user.id);
-      }
-    };
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error: incomeError } = await supabase.from("incomes").insert({
+      user_id: session.user.id,
+      description: newIncome.description,
+      amount: parseFloat(newIncome.amount),
+      category: "inversion",
+      date: formatDateToISO(newIncome.date),
+      investment_id: selectedInvestmentForIncome.id,
+      is_passive: true,
+      is_recurring: false,
+    });
+
+    if (!incomeError) {
+      setIsIncomeDialogOpen(false);
+      setNewIncome({ description: "", amount: "", date: new Date() });
+      setSelectedInvestmentForIncome(null);
+      // Refresh data
+      await fetchInvestments(session.user.id);
+      await fetchRelations(session.user.id);
+      toast.success("Ingreso vinculado correctamente");
+    } else {
+      toast.error("Error al vincular ingreso");
+    }
+  };
 
   return (
-      <div className="min-h-screen bg-black pb-28">
-        <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
-        
-        <div className="container mx-auto px-4 py-6">
-          {/* Insights Panel */}
-          {insights.length > 0 && (
-            <div className="mb-6">
-              <InvestmentInsights
-                insights={insights}
-                onDismiss={handleDismissInsight}
-                onAction={handleInsightAction}
-              />
-            </div>
-          )}
-  
-          {/* Resumen del Portfolio - Una sola línea con fuentes adaptables */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-                <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-400" />
-                <p className="text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold text-white truncate" title={formatCurrency(portfolioMetrics.totalPortfolioValue)}>
-                  {formatCurrency(portfolioMetrics.totalPortfolioValue, false)}
-                </p>
-                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Activos</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-                {portfolioMetrics.totalReturn >= 0 ? <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-emerald-400" /> : <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-rose-400" />}
-                <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(portfolioMetrics.totalReturn)}>
-                  {portfolioMetrics.totalReturn >= 0 ? "+" : ""}{formatCurrency(portfolioMetrics.totalReturn, false)}
-                </p>
-                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
-                <PieChart className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-400" />
-                <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                  {portfolioMetrics.totalROI >= 0 ? "+" : ""}{portfolioMetrics.totalROI.toFixed(1)}%
-                </p>
-                <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI</p>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-black pb-28">
+      <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
+      
+      <div className="container mx-auto px-4 py-6">
+        {/* Insights Panel */}
+        {insights.length > 0 && (
+          <div className="mb-6">
+            <InvestmentInsights 
+              insights={insights} 
+              onDismiss={handleDismissInsight}
+              onAction={handleInsightAction}
+            />
           </div>
+        )}
+
+        {/* Resumen del Portfolio */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-400" />
+              <p className="text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold text-white truncate" title={formatCurrency(portfolioMetrics.totalPortfolioValue)}>
+                {formatCurrency(portfolioMetrics.totalPortfolioValue, false)}
+              </p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Activos</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              {portfolioMetrics.totalReturn >= 0 ? <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-emerald-400" /> : <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-rose-400" />}
+              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(portfolioMetrics.totalReturn)}>
+                {portfolioMetrics.totalReturn >= 0 ? "+" : ""}{formatCurrency(portfolioMetrics.totalReturn, false)}
+              </p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              <PieChart className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-400" />
+              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${portfolioMetrics.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {portfolioMetrics.totalROI >= 0 ? "+" : ""}{portfolioMetrics.totalROI.toFixed(1)}%
+              </p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI</p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -549,14 +464,14 @@ const InvestmentsPage = () => {
           {loading ? (
             <p className="text-zinc-400 text-center py-8">Cargando inversiones...</p>
           ) : portfolioMetrics.processedInvestments.length === 0 ? (
-                      <p className="text-zinc-400 text-center py-8">No hay inversiones registradas</p>
-                    ) : (
-                      portfolioMetrics.processedInvestments.map((inv) => {
+            <p className="text-zinc-400 text-center py-8">No hay inversiones registradas</p>
+          ) : (
+            portfolioMetrics.processedInvestments.map((inv) => {
               const cat = getCategoryInfo(inv.type);
-                            const typeInfo = getTypeInfo(inv.investment_type);
-                            const riskInfo = getRiskInfo(inv.risk_level || 'medio');
-                            const Icon = cat.icon;
-                            const RiskIcon = riskInfo.icon;
+              const typeInfo = getTypeInfo(inv.investment_type);
+              const riskInfo = getRiskInfo(inv.risk_level || 'medio');
+              const Icon = cat.icon;
+              const RiskIcon = riskInfo.icon;
 
               return (
                 <Card key={inv.id} className="bg-zinc-900 border-zinc-800 overflow-hidden">
@@ -568,15 +483,28 @@ const InvestmentsPage = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-white truncate">{inv.name}</p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
                               {typeInfo.label}
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 ${riskInfo.bgColor} ${riskInfo.color} border ${riskInfo.borderColor}`}>
+                              <RiskIcon className="w-3 h-3 inline mr-1" />
+                              {riskInfo.label}
                             </span>
                             {inv.incomeCount > 0 && (
                               <span className="text-[10px] text-zinc-500 flex items-center gap-1 truncate">
                                 <ListChecks className="w-3 h-3 flex-shrink-0" />
                                 {inv.incomeCount} ingresos
                               </span>
+                            )}
+                            {inv.investment_type === 'income' && inv.incomeCount === 0 && (
+                              <button 
+                                onClick={() => { setSelectedInvestmentForIncome(inv); setIsIncomeDialogOpen(true); }}
+                                className="text-[10px] text-amber-400 flex items-center gap-1 hover:text-amber-300"
+                              >
+                                <PlusCircle className="w-3 h-3" />
+                                Vincular ingreso
+                              </button>
                             )}
                           </div>
                         </div>
@@ -597,25 +525,21 @@ const InvestmentsPage = () => {
                       </div>
                       <div className="text-right min-w-0">
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 truncate">Beneficio Total</p>
-                        <p className={`text-base sm:text-lg font-bold truncate ${inv.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(inv.totalReturn)}>
-                          {inv.totalReturn >= 0 ? "+" : ""}{formatCurrency(inv.totalReturn)}
+                        <p className={`text-base sm:text-lg font-bold truncate ${inv.retornoTotal >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(inv.retornoTotal)}>
+                          {inv.retornoTotal >= 0 ? "+" : ""}{formatCurrency(inv.retornoTotal)}
                         </p>
-                        <p className={`text-[10px] font-medium truncate ${inv.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                          ROI: {inv.roi.toFixed(1)}%
+                        <p className={`text-[10px] font-medium truncate ${inv.roiTotal >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                          ROI: {inv.roiTotal.toFixed(1)}%
                         </p>
                       </div>
                     </div>
 
-                    {/* Desglose de beneficios */}
-                    <div className="px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-zinc-800/30 text-[10px]">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></div>
-                        <span className="text-zinc-400 truncate">Revalorización: {formatCurrency(inv.revaluation)}</span>
-                      </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></div>
-                        <span className="text-zinc-400 truncate">Ingresos: {formatCurrency(inv.linkedIncome)}</span>
-                      </div>
+                    {/* Métricas Avanzadas */}
+                    <div className="px-4 pb-4">
+                      <InvestmentMetricsCard 
+                        metrics={inv as InvestmentMetrics}
+                        showPerformanceIndicator={true}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -647,6 +571,47 @@ const InvestmentsPage = () => {
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">Cancelar</Button>
               <Button onClick={handleDeleteInvestment} className="flex-1 bg-red-500 hover:bg-red-600">Eliminar</Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para vincular ingreso rápido */}
+      <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Vincular Ingreso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <p className="text-zinc-400 text-sm">Registra un ingreso generado por "{selectedInvestmentForIncome?.name}"</p>
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Concepto</label>
+              <Input 
+                placeholder="Ej: Dividendo mensual, Alquiler..." 
+                value={newIncome.description}
+                onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Importe (€)</label>
+              <Input 
+                type="number" 
+                placeholder="0.00" 
+                value={newIncome.amount}
+                onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Fecha</label>
+              <DatePicker 
+                date={newIncome.date} 
+                onDateChange={(d) => setNewIncome({ ...newIncome, date: d || new Date() })} 
+              />
+            </div>
+            <Button onClick={handleCreateIncomeForInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black">
+              Registrar Ingreso
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -694,8 +659,20 @@ const InvestmentForm = ({ data, setData, loans, patrimony }: any) => {
           </Select>
         </div>
         <div>
-          <label className="text-sm text-zinc-400 mb-1 block">Fecha Inicio</label>
-          <DatePicker date={data.start_date} onDateChange={(d) => setData({ ...data, start_date: d || new Date() })} />
+          <label className="text-sm text-zinc-400 mb-1 block">Nivel de Riesgo</label>
+          <Select value={data.risk_level} onValueChange={(v) => setData({ ...data, risk_level: v })}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              {RISK_LEVELS.map((risk) => (
+                <SelectItem key={risk.value} value={risk.value} className="text-white">
+                  <div className="flex items-center gap-2">
+                    <risk.icon className={`w-4 h-4 ${risk.color}`} />
+                    {risk.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -717,16 +694,11 @@ const InvestmentForm = ({ data, setData, loans, patrimony }: any) => {
         )}
       </div>
 
-      {!isRevalorization && (
-        <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
-          <p className="text-xs text-amber-400 flex items-start gap-2">
-            <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            Los beneficios se calculan sumando los ingresos vinculados a esta inversión.
-          </p>
-        </div>
-      )}
-
       <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-zinc-400 mb-1 block">Fecha Inicio</label>
+          <DatePicker date={data.start_date} onDateChange={(d) => setData({ ...data, start_date: d || new Date() })} />
+        </div>
         <div>
           <label className="text-sm text-zinc-400 mb-1 block">Vincular Préstamo</label>
           <Select value={data.loan_id} onValueChange={(v) => setData({ ...data, loan_id: v })}>
@@ -737,16 +709,17 @@ const InvestmentForm = ({ data, setData, loans, patrimony }: any) => {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label className="text-sm text-zinc-400 mb-1 block">Vincular Patrimonio</label>
-          <Select value={data.patrimony_id} onValueChange={(v) => setData({ ...data, patrimony_id: v })}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="none" className="text-white">Ninguno</SelectItem>
-              {patrimony.map((p) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
-            </SelectContent>
-          </Select>
-        </div>
+      </div>
+
+      <div>
+        <label className="text-sm text-zinc-400 mb-1 block">Vincular Patrimonio</label>
+        <Select value={data.patrimony_id} onValueChange={(v) => setData({ ...data, patrimony_id: v })}>
+          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
+          <SelectContent className="bg-zinc-800 border-zinc-700">
+            <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+            {patrimony.map((p) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
