@@ -4,7 +4,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import ClientsTable from '@/components/admin/ClientsTable';
-import { supabaseAdmin } from '@/integrations/supabase/admin';
+import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,49 +33,16 @@ export default function AdminClients() {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Obtener todos los usuarios de Auth (fuente de verdad)
-      // Usamos un límite alto para asegurar que traemos todos
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        perPage: 1000,
-      });
+      // Invocamos la Edge Function que tiene los permisos necesarios
+      const { data, error: funcError } = await supabase.functions.invoke('admin-get-clients');
       
-      if (authError) {
-        console.error('[AdminClients] Error listUsers:', authError);
-        throw new Error(`Error al listar usuarios de Auth: ${authError.message}`);
-      }
-      
-      const authUsers = authData?.users || [];
+      if (funcError) throw funcError;
+      if (data.error) throw new Error(data.error);
 
-      // 2. Obtener todos los perfiles
-      const { data: profiles, error: profilesError } = await supabaseAdmin
-        .from('profiles')
-        .select('*');
-
-      if (profilesError) {
-        console.error('[AdminClients] Error profiles:', profilesError);
-        // No lanzamos error aquí, permitimos que se vean los usuarios de Auth sin perfil
-      }
-
-      // 3. Combinar: Mapeamos sobre los usuarios de Auth para asegurar que todos aparezcan
-      const combinedUsers = authUsers.map((user) => {
-        const profile = profiles?.find((p) => p.id === user.id);
-        return {
-          id: user.id,
-          email: user.email || 'Sin email',
-          first_name: profile?.first_name || null,
-          last_name: profile?.last_name || null,
-          created_at: user.created_at,
-        };
-      });
-
-      // Ordenar por fecha de creación descendente
-      combinedUsers.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      setClients(combinedUsers);
+      setClients(data || []);
     } catch (err: any) {
-      setError(err.message || 'Ocurrió un error inesperado al cargar los clientes');
+      console.error('[AdminClients] Error:', err);
+      setError(err.message || 'Error al conectar con el servidor de administración');
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +69,7 @@ export default function AdminClients() {
           {error && (
             <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>Error de Conexión</AlertTitle>
               <AlertDescription className="flex items-center justify-between">
                 {error}
                 <Button 
