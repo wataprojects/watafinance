@@ -338,11 +338,6 @@ const InvestmentsPage = () => {
       <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
       
       <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Inversiones</h1>
-          <p className="text-purple-400 text-sm">Patrimonio y Beneficios</p>
-        </div>
-
         {/* Resumen del Portfolio - Una sola línea con fuentes adaptables */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
           <Card className="bg-zinc-900 border-zinc-800">
