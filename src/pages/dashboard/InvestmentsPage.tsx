@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, TrendingUpIcon, Calendar, ListChecks } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, BarChart3, PieChart, Laptop, Home, Briefcase, Film, Coins, MoreHorizontal, Pencil, Trash2, X, Landmark, DollarSign, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -97,14 +97,13 @@ const InvestmentsPage = () => {
   };
 
   const fetchRelations = async (userId: string) => {
-    // Query exacta: Cargamos TODOS los ingresos vinculados sin filtros de fecha ni límites
     const [loansResult, patrimonyResult, incomesResult] = await Promise.all([
       supabase.from("loans").select("id, borrower_name").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("patrimony").select("id, name").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("incomes")
         .select("id, amount, description, investment_id")
         .eq("user_id", userId)
-        .not("investment_id", "is", null), // Traer todos los que tengan inversión vinculada
+        .not("investment_id", "is", null),
     ]);
 
     if (loansResult.data) setLoans(loansResult.data);
@@ -282,7 +281,6 @@ const InvestmentsPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Lógica de cálculo centralizada y robusta con logs de auditoría
   const investmentStats = useMemo(() => {
     let totalPortfolioValue = 0;
     let totalInitialCapital = 0;
@@ -293,18 +291,12 @@ const InvestmentsPage = () => {
       const initial = parseFloat(inv.initial_value || 0);
       const current = parseFloat(inv.current_value || 0);
       
-      // Filtramos todos los ingresos vinculados a esta inversión específica
       const linkedIncomesList = incomes.filter(inc => inc.investment_id === inv.id);
       const linkedIncome = linkedIncomesList.reduce((sum, inc) => sum + parseFloat(inc.amount || 0), 0);
       const incomeCount = linkedIncomesList.length;
 
-      // Log de auditoría para validación visual en consola
-      console.log(`[Audit Investment] ID: ${inv.id}, Name: ${inv.name}, Incomes Found: ${incomeCount}, Total Sum: ${linkedIncome}`);
-
-      // El valor del activo es su valor de mercado actual (o inicial si no hay cambios)
       const assetValue = inv.investment_type === "revalorization" ? current : initial;
       
-      // El retorno es la suma de revalorización (precio) + los ingresos (cash flow)
       const revaluation = current - initial;
       const totalReturn = revaluation + linkedIncome;
       const roi = initial > 0 ? (totalReturn / initial) * 100 : 0;
@@ -351,31 +343,33 @@ const InvestmentsPage = () => {
           <p className="text-purple-400 text-sm">Patrimonio y Beneficios</p>
         </div>
 
-        {/* Resumen del Portfolio */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Resumen del Portfolio - Responsivo */}
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-6">
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 text-center">
-              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-white">{formatCurrency(investmentStats.totalPortfolioValue)}</p>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Valor Activos</p>
+            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
+              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-400" />
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate" title={formatCurrency(investmentStats.totalPortfolioValue)}>
+                {formatCurrency(investmentStats.totalPortfolioValue)}
+              </p>
+              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Valor Activos</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 text-center">
-              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-6 h-6 mx-auto mb-2 text-rose-400" />}
-              <p className={`text-2xl font-bold ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
+              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-rose-400" />}
+              <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(investmentStats.totalReturn)}>
                 {investmentStats.totalReturn >= 0 ? "+" : ""}{formatCurrency(investmentStats.totalReturn)}
               </p>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Retorno Total</p>
+              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno Total</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 text-center">
-              <PieChart className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-              <p className={`text-2xl font-bold ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
+              <PieChart className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-blue-400" />
+              <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {investmentStats.totalROI >= 0 ? "+" : ""}{investmentStats.totalROI.toFixed(1)}%
               </p>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">ROI Global</p>
+              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI Global</p>
             </CardContent>
           </Card>
         </div>
@@ -421,57 +415,59 @@ const InvestmentsPage = () => {
                 <Card key={inv.id} className="bg-zinc-900 border-zinc-800 overflow-hidden">
                   <CardContent className="p-0">
                     <div className="p-4 flex items-center justify-between border-b border-zinc-800/50">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cat.color}`}>
                           <Icon className="w-5 h-5" />
                         </div>
-                        <div>
-                          <p className="font-bold text-white">{inv.name}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-white truncate">{inv.name}</p>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 ${inv.investment_type === "income" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"}`}>
                               {typeInfo.label}
                             </span>
                             {inv.incomeCount > 0 && (
-                              <span className="text-[10px] text-zinc-500 flex items-center gap-1">
-                                <ListChecks className="w-3 h-3" />
+                              <span className="text-[10px] text-zinc-500 flex items-center gap-1 truncate">
+                                <ListChecks className="w-3 h-3 flex-shrink-0" />
                                 {inv.incomeCount} ingresos
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-shrink-0">
                         <button onClick={() => openEditDialog(inv)} className="p-2 rounded-lg hover:bg-zinc-800"><Pencil className="w-4 h-4 text-zinc-500" /></button>
                         <button onClick={() => { setSelectedInvestment(inv); setIsDeleteDialogOpen(true); }} className="p-2 rounded-lg hover:bg-red-500/10"><Trash2 className="w-4 h-4 text-red-400" /></button>
                       </div>
                     </div>
 
                     <div className="p-4 grid grid-cols-2 gap-4 bg-zinc-900/50">
-                      <div>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Valor Activo</p>
-                        <p className="text-lg font-bold text-white">{formatCurrency(inv.assetValue)}</p>
-                        <p className="text-[10px] text-zinc-500">Invertido: {formatCurrency(inv.initial_value)}</p>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 truncate">Valor Activo</p>
+                        <p className="text-base sm:text-lg font-bold text-white truncate" title={formatCurrency(inv.assetValue)}>
+                          {formatCurrency(inv.assetValue)}
+                        </p>
+                        <p className="text-[10px] text-zinc-500 truncate">Invertido: {formatCurrency(inv.initial_value)}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Beneficio Total</p>
-                        <p className={`text-lg font-bold ${inv.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      <div className="text-right min-w-0">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 truncate">Beneficio Total</p>
+                        <p className={`text-base sm:text-lg font-bold truncate ${inv.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(inv.totalReturn)}>
                           {inv.totalReturn >= 0 ? "+" : ""}{formatCurrency(inv.totalReturn)}
                         </p>
-                        <p className={`text-[10px] font-medium ${inv.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                        <p className={`text-[10px] font-medium truncate ${inv.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                           ROI: {inv.roi.toFixed(1)}%
                         </p>
                       </div>
                     </div>
 
                     {/* Desglose de beneficios */}
-                    <div className="px-4 py-2 flex items-center gap-4 border-t border-zinc-800/30 text-[10px]">
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                        <span className="text-zinc-400">Revalorización: {formatCurrency(inv.revaluation)}</span>
+                    <div className="px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-zinc-800/30 text-[10px]">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></div>
+                        <span className="text-zinc-400 truncate">Revalorización: {formatCurrency(inv.revaluation)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
-                        <span className="text-zinc-400">Ingresos: {formatCurrency(inv.linkedIncome)}</span>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></div>
+                        <span className="text-zinc-400 truncate">Ingresos: {formatCurrency(inv.linkedIncome)}</span>
                       </div>
                     </div>
                   </CardContent>
