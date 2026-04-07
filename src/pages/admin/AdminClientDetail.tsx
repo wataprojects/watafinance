@@ -5,16 +5,16 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import ClientDetailTabs from '@/components/admin/ClientDetailTabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Calendar as CalendarIcon } from 'lucide-react';
-import { supabaseAdmin } from '@/integrations/supabase/admin';
+import { ArrowLeft, Loader2, Calendar as CalendarIcon, AlertCircle, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AdminClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
   
-  // Filtros de fecha
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const currentYear = new Date().getFullYear().toString();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -28,7 +28,7 @@ export default function AdminClientDetail() {
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [clientEmail, setClientEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const months = [
     { value: "01", label: "Enero" }, { value: "02", label: "Febrero" }, { value: "03", label: "Marzo" },
@@ -48,50 +48,39 @@ export default function AdminClientDetail() {
     if (!id) return;
     
     setIsLoading(true);
+    setError(null);
     try {
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0).getDate();
-      const endDate = `${selectedYear}-${selectedMonth}-${lastDay}`;
-
-      const [
-        profileResult,
-        incomesResult,
-        expensesResult,
-        debtsResult,
-        loansResult,
-        investmentsResult,
-        patrimonyResult,
-        authData,
-      ] = await Promise.all([
-        supabaseAdmin.from('profiles').select('*').eq('id', id).single(),
-        supabaseAdmin.from('incomes').select('*').eq('user_id', id).gte('date', startDate).lte('date', endDate).order('date', { ascending: false }),
-        supabaseAdmin.from('expenses').select('*').eq('user_id', id).gte('date', startDate).lte('date', endDate).order('date', { ascending: false }),
-        supabaseAdmin.from('debts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabaseAdmin.from('loans').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabaseAdmin.from('investments').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabaseAdmin.from('patrimony').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabaseAdmin.auth.admin.getUserById(id),
-      ]);
-
-      setClientEmail(authData.data?.user?.email || 'Sin email');
-      setProfile({
-        ...profileResult.data,
-        email: authData.data?.user?.email || 'Sin email',
+      // Invocamos la Edge Function para obtener todos los datos del cliente de forma segura
+      const { data, error: funcError } = await supabase.functions.invoke('admin-get-client-data', {
+        body: { 
+          userId: id,
+          month: selectedMonth,
+          year: selectedYear
+        }
       });
-      setIncomes(incomesResult.data || []);
-      setExpenses(expensesResult.data || []);
-      setDebts(debtsResult.data || []);
-      setLoans(loansResult.data || []);
-      setInvestments(investmentsResult.data || []);
-      setPatrimony(patrimonyResult.data || []);
-    } catch (error) {
-      console.error('Error fetching client data:', error);
+
+      if (funcError) throw funcError;
+      if (data.error) throw new Error(data.error);
+
+      setProfile({
+        ...data.profile,
+        email: data.auth?.email || 'Sin email',
+      });
+      setIncomes(data.incomes || []);
+      setExpenses(data.expenses || []);
+      setDebts(data.debts || []);
+      setLoans(data.loans || []);
+      setInvestments(data.investments || []);
+      setPatrimony(data.patrimony || []);
+      
+    } catch (err: any) {
+      console.error('[AdminClientDetail] Error:', err);
+      setError(err.message || 'Error al cargar los datos del cliente');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Cálculos en tiempo real para el periodo seleccionado
   const stats = useMemo(() => {
     const totalIncome = incomes.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
@@ -122,8 +111,8 @@ export default function AdminClientDetail() {
       <AdminSidebar />
       <div className="flex-1 flex flex-col">
         <AdminHeader
-          title={`${profile?.first_name || 'Cliente'} ${profile?.last_name || ''}`}
-          subtitle={clientEmail}
+          title={profile ? `${profile.first_name || 'Cliente'} ${profile.last_name || ''}` : 'Cargando...'}
+          subtitle={profile?.email}
         />
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -156,6 +145,19 @@ export default function AdminClientDetail() {
               </Select>
             </div>
           </div>
+
+          {error && (
+            <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error al cargar datos</AlertTitle>
+              <AlertDescription className="flex items-center justify-between">
+                {error}
+                <Button variant="outline" size="sm" onClick={fetchClientData} className="ml-4 border-red-500/50 text-red-400 hover:bg-red-500/20">
+                  <RefreshCw className="h-3 w-3 mr-2" /> Reintentar
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
