@@ -343,33 +343,33 @@ const InvestmentsPage = () => {
           <p className="text-purple-400 text-sm">Patrimonio y Beneficios</p>
         </div>
 
-        {/* Resumen del Portfolio - Responsivo */}
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-6">
+        {/* Resumen del Portfolio - Una sola línea con fuentes adaptables */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
-              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-400" />
-              <p className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate" title={formatCurrency(investmentStats.totalPortfolioValue)}>
-                {formatCurrency(investmentStats.totalPortfolioValue)}
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-400" />
+              <p className="text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold text-white truncate" title={formatCurrency(investmentStats.totalPortfolioValue)}>
+                {formatCurrency(investmentStats.totalPortfolioValue, false)}
               </p>
-              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Valor Activos</p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Activos</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
-              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-emerald-400" /> : <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-rose-400" />}
-              <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(investmentStats.totalReturn)}>
-                {investmentStats.totalReturn >= 0 ? "+" : ""}{formatCurrency(investmentStats.totalReturn)}
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              {investmentStats.totalReturn >= 0 ? <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-emerald-400" /> : <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-rose-400" />}
+              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${investmentStats.totalReturn >= 0 ? "text-emerald-400" : "text-rose-400"}`} title={formatCurrency(investmentStats.totalReturn)}>
+                {investmentStats.totalReturn >= 0 ? "+" : ""}{formatCurrency(investmentStats.totalReturn, false)}
               </p>
-              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno Total</p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">Retorno</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-3 sm:p-4 text-center overflow-hidden">
-              <PieChart className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-blue-400" />
-              <p className={`text-lg sm:text-xl md:text-2xl font-bold truncate ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            <CardContent className="p-2 sm:p-4 text-center overflow-hidden">
+              <PieChart className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-400" />
+              <p className={`text-[10px] xs:text-xs sm:text-lg md:text-xl font-bold truncate ${investmentStats.totalROI >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {investmentStats.totalROI >= 0 ? "+" : ""}{investmentStats.totalROI.toFixed(1)}%
               </p>
-              <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI Global</p>
+              <p className="text-[8px] sm:text-[10px] text-zinc-400 uppercase tracking-wider truncate">ROI</p>
             </CardContent>
           </Card>
         </div>
