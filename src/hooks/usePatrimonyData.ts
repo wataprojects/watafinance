@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Asset, Debt, Investment, CategoryDistribution, PatrimonyOverview, CATEGORY_COLORS, CATEGORY_LABELS } from '@/types/patrimony';
+import { Asset, Debt, Investment, Loan, CategoryDistribution, PatrimonyOverview, CATEGORY_COLORS, CATEGORY_LABELS } from '@/types/patrimony';
 
 export const usePatrimonyData = (userId: string | null) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,19 +20,22 @@ export const usePatrimonyData = (userId: string | null) => {
     setError(null);
 
     try {
-      const [assetsRes, debtsRes, investmentsRes] = await Promise.all([
+      const [assetsRes, debtsRes, investmentsRes, loansRes] = await Promise.all([
         supabase.from('patrimony').select('*').eq('user_id', userId).order('value', { ascending: false }),
         supabase.from('debts').select('*').eq('user_id', userId).order('current_amount', { ascending: false }),
         supabase.from('investments').select('*').eq('user_id', userId).order('current_value', { ascending: false }),
+        supabase.from('loans').select('*').eq('user_id', userId).eq('status', 'active'),
       ]);
 
       if (assetsRes.error) throw assetsRes.error;
       if (debtsRes.error) throw debtsRes.error;
       if (investmentsRes.error) throw investmentsRes.error;
+      if (loansRes.error) throw loansRes.error;
 
       setAssets((assetsRes.data || []) as Asset[]);
       setDebts((debtsRes.data || []) as Debt[]);
       setInvestments((investmentsRes.data || []) as Investment[]);
+      setLoans((loansRes.data || []) as Loan[]);
     } catch (err) {
       console.error('[usePatrimonyData] Error fetching data:', err);
       setError('Error al cargar los datos');
@@ -45,7 +49,9 @@ export const usePatrimonyData = (userId: string | null) => {
   }, [fetchData]);
 
   const totalAssets = assets.reduce((sum, a) => sum + Number(a.value), 0);
-  const totalDebts = debts.reduce((sum, d) => sum + Number(d.current_amount), 0);
+  const totalDebtsFromDebts = debts.reduce((sum, d) => sum + Number(d.current_amount), 0);
+  const totalDebtsFromLoans = loans.reduce((sum, l) => sum + Number(l.current_amount), 0);
+  const totalDebts = totalDebtsFromDebts + totalDebtsFromLoans;
   const netPatrimony = totalAssets - totalDebts;
 
   const overview: PatrimonyOverview = {
@@ -111,10 +117,13 @@ export const usePatrimonyData = (userId: string | null) => {
     assets,
     debts,
     investments,
+    loans,
     loading,
     error,
     totalAssets,
     totalDebts,
+    totalDebtsFromDebts,
+    totalDebtsFromLoans,
     netPatrimony,
     overview,
     distribution,

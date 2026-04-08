@@ -60,6 +60,21 @@ export interface Investment {
   updated_at: string;
 }
 
+export interface Loan {
+  id: string;
+  user_id: string;
+  borrower_name: string;
+  initial_amount: number;
+  current_amount: number;
+  interest_rate?: number;
+  monthly_payment?: number;
+  status?: string;
+  bank?: string;
+  loan_type?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type InsightType = 
   | 'concentration'
   | 'diversification'

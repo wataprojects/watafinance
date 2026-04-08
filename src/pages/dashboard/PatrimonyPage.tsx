@@ -37,9 +37,12 @@ const PatrimonyPage = () => {
   const {
     assets,
     debts,
+    loans,
     loading: dataLoading,
     totalAssets,
     totalDebts,
+    totalDebtsFromDebts,
+    totalDebtsFromLoans,
     netPatrimony,
     overview,
     distribution,
@@ -143,32 +146,31 @@ const PatrimonyPage = () => {
       <DashboardHeader title="FinPro" subtitle="Tu Patrimonio Integral" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header with Add Button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-              <Briefcase className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
-              <p className="text-sm text-emerald-400/70">Centro de control de riqueza</p>
-            </div>
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+            <Briefcase className="w-6 h-6 text-emerald-400" />
           </div>
-          
-          <Button
-            onClick={() => {
-              setEditingAsset(null);
-              setIsFormOpen(true);
-            }}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Agregar Activo</span>
-          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
+            <p className="text-sm text-emerald-400/70">Centro de control de riqueza</p>
+          </div>
         </div>
 
         {/* Overview Card */}
         <PatrimonyOverviewCard overview={enrichedOverview()} />
+
+        {/* Add Asset Button */}
+        <Button
+          onClick={() => {
+            setEditingAsset(null);
+            setIsFormOpen(true);
+          }}
+          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 text-lg"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Agregar Activo
+        </Button>
 
         {/* Distribution and Insights Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
