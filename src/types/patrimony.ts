@@ -121,19 +121,35 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {
+  // Spanish keys
   negocio: '#8B5CF6',
   inmueble: '#3B82F6',
   efectivo: '#10B981',
   inversion: '#F59E0B',
   vehiculo: '#EC4899',
   otros: '#6B7280',
+  // English keys (alternative)
+  business: '#8B5CF6',
+  real_estate: '#3B82F6',
+  cash: '#10B981',
+  investment: '#F59E0B',
+  vehicle: '#EC4899',
+  others: '#6B7280',
 };
 
 export const CATEGORY_LABELS: Record<string, string> = {
+  // Spanish keys
   negocio: 'Negocios',
   inmueble: 'Bienes Raíces',
   efectivo: 'Efectivo',
   inversion: 'Inversiones',
   vehiculo: 'Vehículos',
   otros: 'Otros',
+  // English keys (alternative)
+  business: 'Negocios',
+  real_estate: 'Bienes Raíces',
+  cash: 'Efectivo',
+  investment: 'Inversiones',
+  vehicle: 'Vehículos',
+  others: 'Otros',
 };

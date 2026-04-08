@@ -169,7 +169,7 @@ export const PatrimonyAssetCard: React.FC<PatrimonyAssetCardProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewDetails(asset)}
-                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 h-9"
+                className="flex-1 border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700 h-9"
               >
                 Ver Detalles
               </Button>
