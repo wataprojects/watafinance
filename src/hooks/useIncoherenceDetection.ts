@@ -30,18 +30,18 @@ export const useIncoherenceDetection = ({
           recommendations: [
             {
               label: 'Ver Inversiones',
-              route: '/inversiones',
+              route: '/dashboard/investments',
               icon: '📈',
             },
             {
               label: 'Vincular Activo',
-              route: '/patrimonio',
+              route: '/dashboard/patrimony',
               icon: '🔗',
             },
           ],
         });
       }
-    }, []);
+    });
 
     // 2. Unlinked Investments - Investments that might not be connected to assets
     const linkedInvestmentIds = new Set(
@@ -59,7 +59,7 @@ export const useIncoherenceDetection = ({
           recommendations: [
             {
               label: 'Vincular Activo',
-              route: '/patrimonio',
+              route: '/dashboard/patrimony',
               icon: '🔗',
             },
           ],
@@ -83,7 +83,7 @@ export const useIncoherenceDetection = ({
           recommendations: [
             {
               label: 'Vincular Activo',
-              route: '/deudas',
+              route: '/dashboard/debts',
               icon: '🏠',
             },
           ],
@@ -107,7 +107,7 @@ export const useIncoherenceDetection = ({
           recommendations: [
             {
               label: 'Crear Inversión',
-              route: '/inversiones',
+              route: '/dashboard/investments',
               icon: '💰',
             },
           ],
@@ -136,12 +136,12 @@ export const useIncoherenceDetection = ({
             recommendations: [
               {
                 label: 'Diversificar',
-                route: '/patrimonio',
+                route: '/dashboard/patrimony',
                 icon: '📊',
               },
               {
                 label: 'Ver Inversiones',
-                route: '/inversiones',
+                route: '/dashboard/investments',
                 icon: '📈',
               },
             ],
