@@ -1,377 +1,304 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Briefcase, Home, Car, Wallet, PiggyBank, TrendingUp, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { formatCurrency } from "@/utils/currency";
-
-const patrimonyCategories = [
-  { value: "real_estate", label: "Bienes Raíces" },
-  { value: "vehicle", label: "Vehículos" },
-  { value: "investments", label: "Inversiones" },
-  { value: "savings", label: "Ahorros" },
-  { value: "business", label: "Negocios" },
-  { value: "other", label: "Otros" },
-];
+import {
+  PatrimonyOverviewCard,
+  PatrimonyDistributionChart,
+  PatrimonyDistributionBars,
+  PatrimonyInsights,
+  PatrimonyAssetForm,
+  PatrimonyAssetCard,
+  AssetDetailModal,
+} from "@/components/patrimony";
+import { usePatrimonyData } from "@/hooks/usePatrimonyData";
+import { usePatrimonyInsights } from "@/hooks/usePatrimonyInsights";
+import { usePatrimonyEvolution } from "@/hooks/usePatrimonyEvolution";
+import { Asset } from "@/types/patrimony";
 
 const PatrimonyPage = () => {
   const navigate = useNavigate();
-  const [patrimony, setPatrimony] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Form and modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
-  
-  const [newAsset, setNewAsset] = useState({ name: "", category: "real_estate", value: "", description: "" });
-  const [editAsset, setEditAsset] = useState({ id: "", name: "", category: "real_estate", value: "", description: "" });
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
 
-  useEffect(() => { checkAuth(); }, []);
+  // Data hooks
+  const {
+    assets,
+    debts,
+    loading: dataLoading,
+    totalAssets,
+    totalDebts,
+    netPatrimony,
+    overview,
+    distribution,
+    addAsset,
+    updateAsset,
+    deleteAsset,
+  } = usePatrimonyData(userId);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) navigate("/login");
-    else fetchPatrimony(session.user.id);
+  const { createSnapshot, getLatestSnapshot, getPreviousSnapshot, getEvolutionPercentage } = usePatrimonyEvolution(userId);
+
+  const insights = usePatrimonyInsights(assets, debts, totalAssets, totalDebts, netPatrimony, distribution);
+
+  // Auth check
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+      } else {
+        setUserId(session.user.id);
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [navigate]);
+
+  // Calculate evolution when snapshots change
+  const enrichedOverview = useCallback(() => {
+    const latest = getLatestSnapshot();
+    const previous = getPreviousSnapshot();
+    const previousNet = previous?.net_patrimony ?? netPatrimony;
+    const evolutionPct = getEvolutionPercentage(netPatrimony, previousNet);
+
+    return {
+      ...overview,
+      evolutionPercentage: evolutionPct,
+      evolutionAmount: netPatrimony - previousNet,
+      previousNetPatrimony: previousNet,
+    };
+  }, [overview, netPatrimony, getLatestSnapshot, getPreviousSnapshot, getEvolutionPercentage]);
+
+  const handleAddAsset = async (data: Partial<Asset>) => {
+    await addAsset(data);
+    setIsFormOpen(false);
+    
+    // Create a snapshot after adding
+    const dist = distribution.reduce((acc, d) => {
+      acc[d.category] = d.percentage;
+      return acc;
+    }, {} as Record<string, number>);
+    await createSnapshot(totalAssets, totalDebts, netPatrimony, dist);
   };
 
-  const fetchPatrimony = async (userId: string) => {
-    setLoading(true);
-    const { data } = await supabase.from("patrimony").select("*").eq("user_id", userId).order("value", { ascending: false });
-    if (data) setPatrimony(data);
-    setLoading(false);
-  };
-
-  const handleAddAsset = async () => {
-    if (!newAsset.name || !newAsset.value) return;
-    setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setSaving(false); return; }
-
-    await supabase.from("patrimony").insert({
-      user_id: session.user.id,
-      name: newAsset.name,
-      category: newAsset.category,
-      value: parseFloat(newAsset.value),
-      description: newAsset.description,
-    });
-
-    setIsDialogOpen(false);
-    setNewAsset({ name: "", category: "real_estate", value: "", description: "" });
-    fetchPatrimony(session.user.id);
-    setSaving(false);
-  };
-
-  const handleEditAsset = async () => {
-    if (!selectedAsset) return;
-    setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setSaving(false); return; }
-
-    await supabase.from("patrimony").update({
-      name: editAsset.name,
-      category: editAsset.category,
-      value: parseFloat(editAsset.value),
-      description: editAsset.description,
-    }).eq("id", selectedAsset.id);
-
-    setIsEditDialogOpen(false);
-    setSelectedAsset(null);
-    fetchPatrimony(session.user.id);
-    setSaving(false);
+  const handleEditAsset = async (data: Partial<Asset>) => {
+    if (!editingAsset) return;
+    await updateAsset(editingAsset.id, data);
+    setEditingAsset(null);
+    setIsFormOpen(false);
   };
 
   const handleDeleteAsset = async () => {
     if (!selectedAsset) return;
-    await supabase.from("patrimony").delete().eq("id", selectedAsset.id);
+    await deleteAsset(selectedAsset.id);
     setIsDeleteDialogOpen(false);
     setSelectedAsset(null);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) fetchPatrimony(session.user.id);
   };
 
-  const openEditDialog = (asset: any) => {
+  const openEditForm = (asset: Asset) => {
+    setEditingAsset(asset);
+    setIsFormOpen(true);
+  };
+
+  const openDetailModal = (asset: Asset) => {
     setSelectedAsset(asset);
-    setEditAsset({
-      id: asset.id,
-      name: asset.name || "",
-      category: asset.category || "real_estate",
-      value: asset.value?.toString() || "",
-      description: asset.description || "",
-    });
-    setIsEditDialogOpen(true);
+    setIsDetailModalOpen(true);
   };
 
-  const totalPatrimony = patrimony.reduce((sum, p) => sum + parseFloat(p.value), 0);
-
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, any> = {
-      real_estate: Home,
-      vehicle: Car,
-      investments: TrendingUp,
-      savings: PiggyBank,
-      business: Briefcase,
-      other: Wallet,
-    };
-    return icons[category] || Wallet;
+  const openDeleteConfirm = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setIsDeleteDialogOpen(true);
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      real_estate: "bg-blue-500/20 text-blue-400",
-      vehicle: "bg-purple-500/20 text-purple-400",
-      investments: "bg-emerald-500/20 text-emerald-400",
-      savings: "bg-yellow-500/20 text-yellow-400",
-      business: "bg-rose-500/20 text-rose-400",
-      other: "bg-slate-500/20 text-slate-400",
-    };
-    return colors[category] || "bg-slate-500/20 text-slate-400";
+  const getLinkedDebt = (debtId?: string) => {
+    if (!debtId) return null;
+    return debts.find(d => d.id === debtId) || null;
   };
+
+  if (loading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 mb-4" />
+          <p className="text-zinc-400">Cargando patrimonio...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      <DashboardHeader title="FinPro" subtitle="Tu Patrimonio" />
+      <DashboardHeader title="FinPro" subtitle="Tu Patrimonio Integral" />
       
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
-            <p className="text-blue-400 text-sm">Tu riqueza total</p>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Header with Add Button */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+              <Briefcase className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
+              <p className="text-sm text-emerald-400/70">Centro de control de riqueza</p>
+            </div>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-                <Plus className="w-4 h-4 mr-2" />Nuevo Activo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-zinc-800">
-              <DialogHeader>
-                <DialogTitle className="text-white">Agregar Activo</DialogTitle>
-              </DialogHeader>
-              <button
-                onClick={() => setIsDialogOpen(false)}
-                className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
-                  <Input
-                    placeholder="Nombre del activo"
-                    value={newAsset.name}
-                    onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
-                  <Select
-                    value={newAsset.category}
-                    onValueChange={(v) => setNewAsset({ ...newAsset, category: v })}
-                  >
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
-                      {patrimonyCategories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value} className="text-white">
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 mb-1 block">Valor</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={newAsset.value}
-                    onChange={(e) => setNewAsset({ ...newAsset, value: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <Button
-                  onClick={handleAddAsset}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                  disabled={saving}
-                >
-                  {saving ? "Guardando..." : "Guardar"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          
+          <Button
+            onClick={() => {
+              setEditingAsset(null);
+              setIsFormOpen(true);
+            }}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Agregar Activo</span>
+          </Button>
         </div>
 
-        <Card className="bg-gradient-to-r from-blue-900 to-zinc-900 border-blue-800 mb-6">
-          <CardContent className="p-8 text-center">
-            <Briefcase className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-            <p className="text-5xl font-bold text-white mb-2">{formatCurrency(totalPatrimony)}</p>
-            <p className="text-blue-300">Patrimonio Total</p>
-          </CardContent>
-        </Card>
+        {/* Overview Card */}
+        <PatrimonyOverviewCard overview={enrichedOverview()} />
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-500" />
+        {/* Distribution and Insights Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <PatrimonyDistributionChart
+            distribution={distribution}
+            totalAssets={totalAssets}
+          />
+          <PatrimonyInsights insights={insights} />
+        </div>
+
+        {/* Distribution Bars */}
+        <PatrimonyDistributionBars distribution={distribution} />
+
+        {/* Assets List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <span>📋</span>
               Mis Activos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-zinc-500 text-center">Cargando...</p>
-            ) : patrimony.length === 0 ? (
-              <p className="text-zinc-500 text-center">No hay activos</p>
-            ) : (
-              <div className="space-y-3">
-                {patrimony.map((asset) => {
-                  const Icon = getCategoryIcon(asset.category);
-                  const percentage = totalPatrimony > 0 ? (parseFloat(asset.value) / totalPatrimony) * 100 : 0;
-                  return (
-                    <div key={asset.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getCategoryColor(asset.category)}`}>
-                          <Icon className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-white">{asset.name}</p>
-                          <p className="text-xs text-zinc-500">{asset.description || asset.category}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-bold text-white">{formatCurrency(asset.value)}</p>
-                          <p className="text-xs text-zinc-500">{percentage.toFixed(1)}%</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => openEditDialog(asset)}
-                            className="p-2 rounded-lg hover:bg-zinc-700"
-                          >
-                            <Pencil className="w-4 h-4 text-zinc-400" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedAsset(asset);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="p-2 rounded-lg hover:bg-red-500/20"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-400" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <span className="text-sm font-normal text-zinc-500">
+                ({assets.length})
+              </span>
+            </h2>
+          </div>
+
+          {assets.length === 0 ? (
+            <div className="p-8 text-center bg-zinc-900/50 rounded-2xl border border-zinc-800">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800 flex items-center justify-center">
+                <Briefcase className="w-8 h-8 text-zinc-600" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-zinc-400 mb-2">No tienes activos registrados</p>
+              <p className="text-sm text-zinc-500 mb-4">
+                Comienza agregando tus primeros activos para ver tu patrimonio
+              </p>
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar tu primer activo
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {assets.map((asset) => (
+                <PatrimonyAssetCard
+                  key={asset.id}
+                  asset={asset}
+                  percentage={totalAssets > 0 ? (Number(asset.value) / totalAssets) * 100 : 0}
+                  totalAssets={totalAssets}
+                  onEdit={openEditForm}
+                  onDelete={openDeleteConfirm}
+                  onViewDetails={openDetailModal}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Editar Activo</DialogTitle>
-          </DialogHeader>
-          <button
-            onClick={() => setIsEditDialogOpen(false)}
-            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Nombre</label>
-              <Input
-                value={editAsset.name}
-                onChange={(e) => setEditAsset({ ...editAsset, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
-              <Select
-                value={editAsset.category}
-                onValueChange={(v) => setEditAsset({ ...editAsset, category: v })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {patrimonyCategories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value} className="text-white">
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Valor</label>
-              <Input
-                type="number"
-                value={editAsset.value}
-                onChange={(e) => setEditAsset({ ...editAsset, value: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-            <Button
-              onClick={handleEditAsset}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-              disabled={saving}
-            >
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Asset Form Modal */}
+      {isFormOpen && (
+        <PatrimonyAssetForm
+          asset={editingAsset}
+          onSubmit={editingAsset ? handleEditAsset : handleAddAsset}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingAsset(null);
+          }}
+          debts={debts.map(d => ({ id: d.id, name: d.name }))}
+        />
+      )}
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Eliminar Activo</DialogTitle>
-          </DialogHeader>
-          <button
-            onClick={() => setIsDeleteDialogOpen(false)}
-            className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <div className="space-y-4 mt-4">
-            <p className="text-zinc-300">¿Eliminar este activo?</p>
-            {selectedAsset && (
-              <div className="p-4 bg-zinc-800/50 rounded-xl">
-                <p className="text-white font-medium">{selectedAsset.name}</p>
-                <p className="text-blue-400 font-bold">{formatCurrency(selectedAsset.value)}</p>
+      {/* Asset Detail Modal */}
+      {isDetailModalOpen && selectedAsset && (
+        <AssetDetailModal
+          asset={selectedAsset}
+          linkedDebt={getLinkedDebt(selectedAsset.linked_debt_id)}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedAsset(null);
+          }}
+          onEdit={(asset) => {
+            setIsDetailModalOpen(false);
+            openEditForm(asset);
+          }}
+          onDelete={(asset) => {
+            setIsDetailModalOpen(false);
+            openDeleteConfirm(asset);
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {isDeleteDialogOpen && selectedAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                <span className="text-3xl">🗑️</span>
               </div>
-            )}
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Eliminar Activo
+              </h3>
+              <p className="text-sm text-zinc-400">
+                ¿Estás seguro de que quieres eliminar "{selectedAsset.name}"? Esta acción no se puede deshacer.
+              </p>
+            </div>
+            
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setSelectedAsset(null);
+                }}
+                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800 h-11"
               >
                 Cancelar
               </Button>
-              <Button onClick={handleDeleteAsset} className="flex-1 bg-red-500 hover:bg-red-600">
+              <Button
+                onClick={handleDeleteAsset}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white h-11"
+              >
                 Eliminar
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <BottomNav />
     </div>
