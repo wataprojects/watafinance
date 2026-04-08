@@ -34,8 +34,8 @@ export const useIncoherenceDetection = ({
               icon: '📈',
             },
             {
-              label: 'Vincular Activo',
-              route: '/dashboard/patrimony',
+              label: 'Vincular Ingreso',
+              route: '/dashboard/income',
               icon: '🔗',
             },
           ],
@@ -58,8 +58,8 @@ export const useIncoherenceDetection = ({
           relatedIds: [investment.id],
           recommendations: [
             {
-              label: 'Vincular Activo',
-              route: '/dashboard/patrimony',
+              label: 'Vincular Ingreso',
+              route: '/dashboard/income',
               icon: '🔗',
             },
           ],
@@ -82,7 +82,7 @@ export const useIncoherenceDetection = ({
           relatedIds: [debt.id],
           recommendations: [
             {
-              label: 'Vincular Activo',
+              label: 'Ver Deudas',
               route: '/dashboard/debts',
               icon: '🏠',
             },
@@ -128,7 +128,7 @@ export const useIncoherenceDetection = ({
         
         if (dominantAsset) {
           incoherences.push({
-            id: 'high-concentration',
+            id: `high-concentration-${dominantAsset.id}`,
             type: 'high_concentration',
             severity: 'critical',
             message: `"${dominantAsset.name}" representa el ${maxPercentage.toFixed(1)}% de tu patrimonio. Alta dependencia.`,
@@ -136,7 +136,7 @@ export const useIncoherenceDetection = ({
             recommendations: [
               {
                 label: 'Diversificar',
-                route: '/dashboard/patrimony',
+                route: '#add-asset',
                 icon: '📊',
               },
               {

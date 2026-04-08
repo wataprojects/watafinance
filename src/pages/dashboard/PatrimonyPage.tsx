@@ -147,7 +147,11 @@ const PatrimonyPage = () => {
   };
 
   const handleNavigate = (route: string) => {
-    // Navigate to the specified route
+    if (route === '#add-asset') {
+      setEditingAsset(null);
+      setIsFormOpen(true);
+      return;
+    }
     if (route.startsWith('/')) {
       navigate(route);
     }
@@ -317,7 +321,7 @@ const PatrimonyPage = () => {
       {/* Delete Confirmation Dialog */}
       {isDeleteDialogOpen && selectedAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+          <div className="w-full max-sm bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/20 flex items-center justify-center">
                 <span className="text-3xl">🗑️</span>
