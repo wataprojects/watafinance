@@ -13,12 +13,16 @@ import {
   PatrimonyDistributionBars,
   PatrimonyInsights,
   PatrimonyAssetForm,
-  PatrimonyAssetCard,
-  AssetDetailModal,
+  EnhancedPatrimonyAssetCard,
+  EnhancedAssetDetailModal,
+  PatrimonyHealthIndicator,
+  IncoherenceList,
 } from "@/components/patrimony";
 import { usePatrimonyData } from "@/hooks/usePatrimonyData";
 import { usePatrimonyInsights } from "@/hooks/usePatrimonyInsights";
 import { usePatrimonyEvolution } from "@/hooks/usePatrimonyEvolution";
+import { usePatrimonyHealth } from "@/hooks/usePatrimonyHealth";
+import { useIncoherenceDetection } from "@/hooks/useIncoherenceDetection";
 import { Asset } from "@/types/patrimony";
 
 const PatrimonyPage = () => {
@@ -38,6 +42,7 @@ const PatrimonyPage = () => {
     assets,
     debts,
     loans,
+    investments,
     loading: dataLoading,
     totalAssets,
     totalDebts,
@@ -54,6 +59,22 @@ const PatrimonyPage = () => {
   const { createSnapshot, getLatestSnapshot, getPreviousSnapshot, getEvolutionPercentage } = usePatrimonyEvolution(userId);
 
   const insights = usePatrimonyInsights(assets, debts, totalAssets, totalDebts, netPatrimony, distribution);
+
+  // New hooks for intelligent analysis
+  const health = usePatrimonyHealth({
+    assets,
+    debts,
+    totalAssets,
+    totalDebts,
+    netPatrimony,
+  });
+
+  const incoherences = useIncoherenceDetection({
+    assets,
+    investments,
+    debts,
+    totalAssets,
+  });
 
   // Auth check
   useEffect(() => {
@@ -125,9 +146,21 @@ const PatrimonyPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleNavigate = (route: string) => {
+    // Navigate to the specified route
+    if (route.startsWith('/')) {
+      navigate(route);
+    }
+  };
+
   const getLinkedDebt = (debtId?: string) => {
     if (!debtId) return null;
     return debts.find(d => d.id === debtId) || null;
+  };
+
+  const getLinkedInvestments = (investmentIds: string[]) => {
+    if (!investmentIds || investmentIds.length === 0) return [];
+    return investments.filter(i => investmentIds.includes(i.id));
   };
 
   if (loading || dataLoading) {
@@ -153,9 +186,14 @@ const PatrimonyPage = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Patrimonio</h1>
-            <p className="text-sm text-emerald-400/70">Centro de control de riqueza</p>
+            <p className="text-sm text-emerald-400/70">Centro de Inteligencia Patrimonial</p>
           </div>
         </div>
+
+        {/* Health Indicator - NEW */}
+        {assets.length > 0 && (
+          <PatrimonyHealthIndicator health={health} />
+        )}
 
         {/* Overview Card */}
         <PatrimonyOverviewCard overview={enrichedOverview()} />
@@ -171,6 +209,11 @@ const PatrimonyPage = () => {
           <Plus className="w-5 h-5 mr-2" />
           Agregar Activo
         </Button>
+
+        {/* Incoherences Alert - NEW */}
+        {incoherences.length > 0 && (
+          <IncoherenceList incoherences={incoherences} onNavigate={handleNavigate} />
+        )}
 
         {/* Distribution and Insights Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,14 +259,17 @@ const PatrimonyPage = () => {
           ) : (
             <div className="space-y-3">
               {assets.map((asset) => (
-                <PatrimonyAssetCard
+                <EnhancedPatrimonyAssetCard
                   key={asset.id}
                   asset={asset}
                   percentage={totalAssets > 0 ? (Number(asset.value) / totalAssets) * 100 : 0}
                   totalAssets={totalAssets}
+                  investments={investments}
+                  debts={debts}
                   onEdit={openEditForm}
                   onDelete={openDeleteConfirm}
                   onViewDetails={openDetailModal}
+                  onNavigate={handleNavigate}
                 />
               ))}
             </div>
@@ -244,11 +290,14 @@ const PatrimonyPage = () => {
         />
       )}
 
-      {/* Asset Detail Modal */}
+      {/* Enhanced Asset Detail Modal */}
       {isDetailModalOpen && selectedAsset && (
-        <AssetDetailModal
+        <EnhancedAssetDetailModal
           asset={selectedAsset}
           linkedDebt={getLinkedDebt(selectedAsset.linked_debt_id)}
+          linkedInvestments={getLinkedInvestments(selectedAsset.linked_investment_ids)}
+          allInvestments={investments}
+          percentage={totalAssets > 0 ? (Number(selectedAsset.value) / totalAssets) * 100 : 0}
           onClose={() => {
             setIsDetailModalOpen(false);
             setSelectedAsset(null);
@@ -261,6 +310,7 @@ const PatrimonyPage = () => {
             setIsDetailModalOpen(false);
             openDeleteConfirm(asset);
           }}
+          onNavigate={handleNavigate}
         />
       )}
 

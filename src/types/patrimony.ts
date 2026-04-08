@@ -75,7 +75,7 @@ export interface Loan {
   updated_at: string;
 }
 
-export type InsightType = 
+export type InsightType =
   | 'concentration'
   | 'diversification'
   | 'orphan_income'
@@ -83,7 +83,11 @@ export type InsightType =
   | 'debt_ratio'
   | 'high_risk'
   | 'positive_revaluation'
-  | 'negative_revaluation';
+  | 'negative_revaluation'
+  | 'unlinked_investment'
+  | 'unlinked_debt'
+  | 'low_yield'
+  | 'income_opportunity';
 
 export type InsightSeverity = 'info' | 'warning' | 'critical' | 'success';
 
@@ -95,6 +99,62 @@ export interface Insight {
   severity: InsightSeverity;
   icon: string;
   action?: string;
+}
+
+// Health Status Types
+export type HealthStatus = 'excellent' | 'adequate' | 'needs_attention';
+export type IndicatorStatus = 'good' | 'warning' | 'critical';
+
+export interface HealthIndicator {
+  id: string;
+  name: string;
+  status: IndicatorStatus;
+  value: string;
+  detail?: string;
+  icon: string;
+}
+
+export interface PatrimonyHealth {
+  status: HealthStatus;
+  score: number;
+  indicators: HealthIndicator[];
+}
+
+// Asset Insight Types
+export type AssetInsightType = 'concentration' | 'risk' | 'liquidity' | 'income' | 'linkage' | 'yield';
+export type AssetInsightSeverity = 'info' | 'warning' | 'critical' | 'success';
+
+export interface AssetInsightAction {
+  label: string;
+  route: string;
+  icon: string;
+}
+
+export interface AssetInsight {
+  type: AssetInsightType;
+  severity: AssetInsightSeverity;
+  title: string;
+  message: string;
+  action?: AssetInsightAction;
+}
+
+// Incoherence Detection Types
+export type IncoherenceType = 'orphan_income' | 'unlinked_investment' | 'unlinked_debt' | 'low_yield' | 'high_concentration';
+
+export interface IncoherenceRecommendation {
+  label: string;
+  route: string;
+  icon: string;
+}
+
+export interface Incoherence {
+  id: string;
+  type: IncoherenceType;
+  severity: 'warning' | 'critical';
+  message: string;
+  assetId?: string;
+  relatedIds?: string[];
+  recommendations: IncoherenceRecommendation[];
 }
 
 export interface CategoryDistribution {
