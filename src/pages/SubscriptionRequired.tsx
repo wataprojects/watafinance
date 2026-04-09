@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Check, HelpCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Check, HelpCircle, ArrowLeft, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,34 @@ const SubscriptionRequired = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
+  const [trialInfo, setTrialInfo] = useState<{ daysRemaining: number; isInTrial: boolean } | null>(null);
+
+  useEffect(() => {
+    const checkTrial = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_end_date, subscription_status')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile?.trial_end_date) {
+        const now = new Date();
+        const endDate = new Date(profile.trial_end_date);
+        const diffTime = endDate.getTime() - now.getTime();
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        setTrialInfo({
+          daysRemaining: Math.max(0, daysRemaining),
+          isInTrial: daysRemaining > 0 && profile.subscription_status === 'trial'
+        });
+      }
+    };
+
+    checkTrial();
+  }, []);
 
   const handleSubscribe = async (priceId: string) => {
     setLoading(priceId);
@@ -83,14 +111,21 @@ const SubscriptionRequired = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-            <span className="text-3xl">🔒</span>
+            {trialInfo?.isInTrial ? (
+              <Clock className="w-8 h-8 text-green-500" />
+            ) : (
+              <span className="text-3xl">🔒</span>
+            )}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            Tu período de prueba ha terminado
+            {trialInfo?.isInTrial
+              ? `Te quedan ${trialInfo.daysRemaining} días de prueba`
+              : "Tu período de prueba ha terminado"}
           </h1>
           <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-            Gracias por probar FinPro. Para seguir disfrutando de todas las funcionalidades premium, 
-            elige el plan que mejor se adapte a ti.
+            {trialInfo?.isInTrial
+              ? "Aprovecha este tiempo para configurar tus finanzas o activa ya tu plan premium para no perder el acceso."
+              : "Gracias por probar FinPro. Para seguir disfrutando de todas las funcionalidades premium, elige el plan que mejor se adapte a ti."}
           </p>
         </div>
 
