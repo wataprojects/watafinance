@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, LogOut, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -175,27 +175,6 @@ const ProfilePage = () => {
       <DashboardHeader title="FinPro" subtitle="Gestión de perfil" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/dashboard")}
-            className="rounded-2xl text-zinc-300 hover:bg-zinc-900 hover:text-white"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            disabled={logoutLoading}
-            className="rounded-2xl border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-          >
-            {logoutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
-            Salir
-          </Button>
-        </div>
-
         <Card className="rounded-3xl border-zinc-800 bg-zinc-900">
           <CardHeader>
             <CardTitle className="text-xl text-white">Tu perfil</CardTitle>
