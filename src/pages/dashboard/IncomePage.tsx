@@ -944,6 +944,12 @@ const IncomePage = () => {
                               : formatCurrency(income.amount)}
                             {income.is_recurring && <span className="text-[10px] ml-0.5">/mes</span>}
                           </p>
+                          {income.is_recurring && (
+                            <p className="text-[9px] text-zinc-500">
+                              ({formatCurrency(income.amount)}
+                              {income.frequency === 'annual' ? '/año' : income.frequency === 'quarterly' ? '/trim' : income.frequency === 'weekly' ? '/sem' : '/mes'})
+                            </p>
+                          )}
                           <p className={`text-xs ${isPassive ? "text-green-400" : "text-blue-400"}`}>
 
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? "bg-green-500/10" : "bg-blue-500/10"}`}>

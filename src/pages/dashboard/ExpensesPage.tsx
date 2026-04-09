@@ -1509,6 +1509,12 @@ const ExpensesPage = () => {
                                   : formatCurrency(expense.amount)}
                                 {expense.is_recurring && <span className="text-[10px] ml-0.5">/mes</span>}
                               </p>
+                              {expense.is_recurring && (
+                                <p className="text-[9px] text-zinc-500">
+                                  ({formatCurrency(expense.amount)}
+                                  {expense.frequency === 'annual' ? '/año' : expense.frequency === 'quarterly' ? '/trim' : expense.frequency === 'weekly' ? '/sem' : '/mes'})
+                                </p>
+                              )}
                             </div>
                             {!isTrimmed && (
 
