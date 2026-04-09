@@ -1420,8 +1420,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setIsInvestmentDialogOpen(false);
-                  setTimeout(() => setIsNewInvestmentOpen(true), 100);
+                  setIsNewInvestmentOpen(true);
                 }}
                 className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-600 bg-zinc-800/50 flex items-center justify-center gap-2 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all"
               >
