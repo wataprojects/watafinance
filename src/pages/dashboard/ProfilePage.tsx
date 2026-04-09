@@ -305,24 +305,36 @@ const ProfilePage = () => {
             </div>
 
             {/* Mostrar estado de suscripción */}
-                                    {(() => {
-                                      const subDisplay = getSubscriptionDisplay();
-                                      const colorClasses = {
-                                        green: "border-green-500/20 bg-green-500/10 text-green-300",
-                                        yellow: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
-                                        red: "border-red-500/20 bg-red-500/10 text-red-300"
-                                      };
-                                      return (
-                                        <div className={`rounded-2xl border p-4 ${colorClasses[subDisplay.color as keyof typeof colorClasses]}`}>
-                                          <p className="text-sm font-medium">
-                                            {subDisplay.label}
-                                          </p>
-                                          <p className="mt-1 text-xs opacity-80">
-                                            {subDisplay.description}
-                                          </p>
-                                        </div>
-                                      );
-                                    })()}
+                                                {(() => {
+                                                  const subDisplay = getSubscriptionDisplay();
+                                                  const isNotActive = profile.subscription_status !== 'active';
+                                                  const colorClasses = {
+                                                    green: "border-green-500/20 bg-green-500/10 text-green-300",
+                                                    yellow: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
+                                                    red: "border-red-500/20 bg-red-500/10 text-red-300"
+                                                  };
+                                                  return (
+                                                    <div className="space-y-3">
+                                                      <div className={`rounded-2xl border p-4 ${colorClasses[subDisplay.color as keyof typeof colorClasses]}`}>
+                                                        <p className="text-sm font-medium">
+                                                          {subDisplay.label}
+                                                        </p>
+                                                        <p className="mt-1 text-xs opacity-80">
+                                                          {subDisplay.description}
+                                                        </p>
+                                                      </div>
+                                                      
+                                                      {isNotActive && (
+                                                        <Button
+                                                          onClick={() => navigate("/subscription-required")}
+                                                          className="w-full rounded-2xl bg-green-500 text-black hover:bg-green-600"
+                                                        >
+                                                          🎯 Ver planes de suscripción
+                                                        </Button>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })()}
           </CardContent>
         </Card>
       </main>
