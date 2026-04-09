@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
 import FinancialFreedom from "@/components/dashboard/FinancialFreedom";
 import FinancialHealth from "@/components/dashboard/FinancialHealth";
+import FinancialProjections from "@/components/dashboard/FinancialProjections";
 import TopExpenses from "@/components/dashboard/TopExpenses";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
 import BottomNav from "@/components/dashboard/BottomNav";
@@ -19,6 +20,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [automationRunning, setAutomationRunning] = useState(false);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   
   // Month/year selector state
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
@@ -37,8 +41,21 @@ const Dashboard = () => {
     } else {
       // Run automations when user is authenticated
       await runAutomations();
+      await fetchData(session.user.id);
     }
     setLoading(false);
+  };
+
+  const fetchData = async (userId: string) => {
+    const [incomesRes, expensesRes, loansRes] = await Promise.all([
+      supabase.from("incomes").select("*").eq("user_id", userId),
+      supabase.from("expenses").select("*").eq("user_id", userId),
+      supabase.from("loans").select("*").eq("user_id", userId).eq("status", "active")
+    ]);
+
+    if (incomesRes.data) setIncomes(incomesRes.data);
+    if (expensesRes.data) setExpenses(expensesRes.data);
+    if (loansRes.data) setLoans(loansRes.data);
   };
 
   const runAutomations = async () => {
@@ -112,6 +129,13 @@ const Dashboard = () => {
         
         {/* financialHealth después de FinancialFreedom */}
         <FinancialHealth />
+
+        {/* Financial Projections */}
+        <FinancialProjections
+          incomes={incomes}
+          expenses={expenses}
+          loans={loans}
+        />
         
         {/* Gráficos de Gastos e Ingresos/Gastos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

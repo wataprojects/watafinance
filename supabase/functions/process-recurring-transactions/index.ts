@@ -65,202 +65,168 @@ serve(async (req) => {
 
     console.log('[process-recurring-transactions] Processing month:', startOfMonth, 'to', endOfMonth)
 
-    // ============================================
-    // PROCESS RECURRING EXPENSES
-    // ============================================
-    console.log('[process-recurring-transactions] Processing recurring expenses...')
+    // Helper to process a table (expenses or incomes)
+    const processTable = async (tableName: 'expenses' | 'incomes') => {
+      console.log(`[process-recurring-transactions] Processing recurring ${tableName}...`)
 
-    // Get all recurring expenses for this user that are active (end_date is null or in the future)
-    const { data: recurringExpenses, error: expensesError } = await supabaseAdmin
-      .from('expenses')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_recurring', true)
-      .or(`end_date.is.null,end_date.gte.${startOfMonth}`)
+      // Get all recurring items for this user that are active
+      const { data: recurringItems, error: fetchError } = await supabaseAdmin
+        .from(tableName)
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_recurring', true)
+        .or(`end_date.is.null,end_date.gte.${startOfMonth}`)
 
-    if (expensesError) {
-      console.error('[process-recurring-transactions] Error fetching expenses:', expensesError)
-    }
-
-    let expensesCreated = 0
-    let expensesSkipped = 0
-
-    if (recurringExpenses && recurringExpenses.length > 0) {
-      // We need to find the "template" for each recurring series.
-      // A series is defined by description and category.
-      // We'll take the most recent one as the template.
-      const seriesTemplates = new Map()
-      for (const exp of recurringExpenses) {
-        const key = `${exp.description}-${exp.category}`
-        if (!seriesTemplates.has(key) || new Date(exp.date) > new Date(seriesTemplates.get(key).date)) {
-          seriesTemplates.set(key, exp)
-        }
+      if (fetchError) {
+        console.error(`[process-recurring-transactions] Error fetching ${tableName}:`, fetchError)
+        return { created: 0, skipped: 0 }
       }
 
-      for (const expense of seriesTemplates.values()) {
-        // Check if this recurring expense already exists for this month (ignoring amount)
-        // This includes records marked as is_skipped
-        const { data: existingExpense, error: existingError } = await supabaseAdmin
-          .from('expenses')
-          .select('id, is_skipped')
-          .eq('user_id', user.id)
-          .eq('description', expense.description)
-          .eq('category', expense.category)
-          .eq('is_recurring', true)
-          .gte('date', startOfMonth)
-          .lte('date', endOfMonth)
-          .limit(1)
-          .maybeSingle()
+      let created = 0
+      let skipped = 0
 
-        if (existingError) {
-          console.error('[process-recurring-transactions] Error checking existing expense:', existingError)
-          continue
+      if (recurringItems && recurringItems.length > 0) {
+        // Template logic: find the "source" of each series
+        const seriesTemplates = new Map()
+        for (const item of recurringItems) {
+          const key = `${item.description}-${item.category}`
+          if (!seriesTemplates.has(key) || new Date(item.date) > new Date(seriesTemplates.get(key).date)) {
+            seriesTemplates.set(key, item)
+          }
         }
 
-        // Skip if already exists (even if it's skipped) or if it's trimmed
-        if (existingExpense || expense.is_trimmed) {
-          expensesSkipped++
-          continue
-        }
+        for (const template of seriesTemplates.values()) {
+          if (template.is_trimmed) {
+            skipped++
+            continue
+          }
 
-        // Check if start_date allows this month
-        if (expense.start_date && expense.start_date > endOfMonth) {
-          expensesSkipped++
-          continue
-        }
+          // Check if start_date allows this month
+          if (template.start_date && template.start_date > endOfMonth) {
+            skipped++
+            continue
+          }
 
-        // Create the recurring expense for this month
-        const collectionDay = Math.min(expense.collection_day || 1, lastDayOfMonth)
-        const expenseDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${collectionDay.toString().padStart(2, '0')}`
+          // Determine which days this should be created for this month
+          const daysToCreate: number[] = []
+          
+          if (template.frequency === 'monthly' || !template.frequency) {
+            const paymentDays = template.payment_days || [new Date(template.date).getDate()]
+            paymentDays.forEach((day: number) => {
+              const actualDay = day === 32 ? lastDayOfMonth : Math.min(day, lastDayOfMonth)
+              daysToCreate.push(actualDay)
+            })
+          } else if (template.frequency === 'weekly') {
+            const paymentDays = template.payment_days || [new Date(template.date).getDay() || 7] // 1-7
+            // Find all occurrences of these days in the current month
+            for (let d = 1; d <= lastDayOfMonth; d++) {
+              const date = new Date(currentYear, currentMonth - 1, d)
+              const dayOfWeek = date.getDay() || 7 // 1-7 (Mon-Sun)
+              if (paymentDays.includes(dayOfWeek)) {
+                daysToCreate.push(d)
+              }
+            }
+          } else if (template.frequency === 'quarterly') {
+            // Only every 3 months from start_date
+            const startDate = new Date(template.start_date || template.date)
+            const monthsDiff = (currentYear - startDate.getFullYear()) * 12 + (currentMonth - 1 - startDate.getMonth())
+            if (monthsDiff % 3 === 0) {
+              const paymentDays = template.payment_days || [startDate.getDate()]
+              paymentDays.forEach((day: number) => {
+                const actualDay = day === 32 ? lastDayOfMonth : Math.min(day, lastDayOfMonth)
+                daysToCreate.push(actualDay)
+              })
+            }
+          } else if (template.frequency === 'annual') {
+            // Only once a year
+            const startDate = new Date(template.start_date || template.date)
+            if (startDate.getMonth() + 1 === currentMonth) {
+              const paymentDays = template.payment_days || [startDate.getDate()]
+              paymentDays.forEach((day: number) => {
+                const actualDay = day === 32 ? lastDayOfMonth : Math.min(day, lastDayOfMonth)
+                daysToCreate.push(actualDay)
+              })
+            }
+          }
 
-        const { error: insertError } = await supabaseAdmin
-          .from('expenses')
-          .insert({
-            user_id: user.id,
-            amount: expense.amount,
-            description: expense.description,
-            category: expense.category,
-            date: expenseDate,
-            is_recurring: true,
-            investment_id: expense.investment_id,
-            patrimony_id: expense.patrimony_id,
-            has_scheduled_change: expense.has_scheduled_change,
-            scheduled_change_date: expense.scheduled_change_date,
-            scheduled_new_amount: expense.scheduled_new_amount,
-            scheduled_change_type: expense.scheduled_change_type,
-            is_trimmed: expense.is_trimmed || false,
-            start_date: expense.start_date
-          })
+          // Create records for each day
+          for (const day of daysToCreate) {
+            const targetDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+            
+            // Check if already exists for this specific day
+            const { data: existing, error: existingError } = await supabaseAdmin
+              .from(tableName)
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('description', template.description)
+              .eq('category', template.category)
+              .eq('date', targetDate)
+              .limit(1)
+              .maybeSingle()
 
-        if (insertError) {
-          console.error('[process-recurring-transactions] Error creating expense:', insertError)
-        } else {
-          console.log('[process-recurring-transactions] Created expense:', expense.description)
-          expensesCreated++
-        }
-      }
-    }
+            if (existingError) {
+              console.error(`[process-recurring-transactions] Error checking existing ${tableName}:`, existingError)
+              continue
+            }
 
-    console.log('[process-recurring-transactions] Expenses: created=', expensesCreated, 'skipped=', expensesSkipped)
+            if (existing) {
+              skipped++
+              continue
+            }
 
-    // ============================================
-    // PROCESS RECURRING INCOMES
-    // ============================================
-    console.log('[process-recurring-transactions] Processing recurring incomes...')
+            // Create the record
+            const insertData: any = {
+              user_id: user.id,
+              amount: template.amount,
+              description: template.description,
+              category: template.category,
+              date: targetDate,
+              is_recurring: true,
+              investment_id: template.investment_id,
+              patrimony_id: template.patrimony_id,
+              is_trimmed: template.is_trimmed || false,
+              start_date: template.start_date,
+              frequency: template.frequency,
+              recurrence_interval: template.recurrence_interval,
+              recurrence_unit: template.recurrence_unit,
+              payment_days: template.payment_days
+            }
 
-    // Get all recurring incomes for this user that are active
-    const { data: recurringIncomes, error: incomesError } = await supabaseAdmin
-      .from('incomes')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_recurring', true)
-      .or(`end_date.is.null,end_date.gte.${startOfMonth}`)
+            if (tableName === 'expenses') {
+              insertData.has_scheduled_change = template.has_scheduled_change
+              insertData.scheduled_change_date = template.scheduled_change_date
+              insertData.scheduled_new_amount = template.scheduled_new_amount
+              insertData.scheduled_change_type = template.scheduled_change_type
+            } else {
+              insertData.is_passive = template.is_passive || false
+            }
 
-    if (incomesError) {
-      console.error('[process-recurring-transactions] Error fetching incomes:', incomesError)
-    }
+            const { error: insertError } = await supabaseAdmin
+              .from(tableName)
+              .insert(insertData)
 
-    let incomesCreated = 0
-    let incomesSkipped = 0
-
-    if (recurringIncomes && recurringIncomes.length > 0) {
-      // Template logic for incomes
-      const seriesTemplates = new Map()
-      for (const inc of recurringIncomes) {
-        const key = `${inc.description}-${inc.category}`
-        if (!seriesTemplates.has(key) || new Date(inc.date) > new Date(seriesTemplates.get(key).date)) {
-          seriesTemplates.set(key, inc)
-        }
-      }
-
-      for (const income of seriesTemplates.values()) {
-        // Check if this recurring income already exists for this month (ignoring amount)
-        const { data: existingIncome, error: existingError } = await supabaseAdmin
-          .from('incomes')
-          .select('id, is_skipped')
-          .eq('user_id', user.id)
-          .eq('description', income.description)
-          .eq('category', income.category)
-          .eq('is_recurring', true)
-          .gte('date', startOfMonth)
-          .lte('date', endOfMonth)
-          .limit(1)
-          .maybeSingle()
-
-        if (existingError) {
-          console.error('[process-recurring-transactions] Error checking existing income:', existingError)
-          continue
-        }
-
-        // Skip if already exists or if it's trimmed
-        if (existingIncome || income.is_trimmed) {
-          incomesSkipped++
-          continue
-        }
-
-        // Check if start_date allows this month
-        if (income.start_date && income.start_date > endOfMonth) {
-          incomesSkipped++
-          continue
-        }
-
-        // Create the recurring income for this month
-        const incomeDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
-
-        const { error: insertError } = await supabaseAdmin
-          .from('incomes')
-          .insert({
-            user_id: user.id,
-            amount: income.amount,
-            description: income.description,
-            category: income.category,
-            date: incomeDate,
-            is_recurring: true,
-            is_passive: income.is_passive || false,
-            investment_id: income.investment_id,
-            patrimony_id: income.patrimony_id,
-            is_trimmed: income.is_trimmed || false,
-            start_date: income.start_date
-          })
-
-        if (insertError) {
-          console.error('[process-recurring-transactions] Error creating income:', insertError)
-        } else {
-          console.log('[process-recurring-transactions] Created income:', income.description)
-          incomesCreated++
+            if (insertError) {
+              console.error(`[process-recurring-transactions] Error creating ${tableName}:`, insertError)
+            } else {
+              console.log(`[process-recurring-transactions] Created ${tableName}:`, template.description, 'for day', day)
+              created++
+            }
+          }
         }
       }
+      return { created, skipped }
     }
 
-    console.log('[process-recurring-transactions] Incomes: created=', incomesCreated, 'skipped=', incomesSkipped)
+    const expenseResults = await processTable('expenses')
+    const incomeResults = await processTable('incomes')
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Recurring transactions processed successfully',
-      expensesCreated,
-      expensesSkipped,
-      incomesCreated,
-      incomesSkipped,
+      expensesCreated: expenseResults.created,
+      expensesSkipped: expenseResults.skipped,
+      incomesCreated: incomeResults.created,
+      incomesSkipped: incomeResults.skipped,
       processedMonth: startOfMonth
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

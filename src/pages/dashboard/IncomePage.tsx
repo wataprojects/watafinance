@@ -155,6 +155,10 @@ const IncomePage = () => {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+    frequency: "monthly",
+    recurrence_interval: 1,
+    recurrence_unit: "months",
+    payment_days: [] as number[],
   });
 
   const [editIncome, setEditIncome] = useState({
@@ -167,6 +171,10 @@ const IncomePage = () => {
     date: new Date(),
     investment_id: "none",
     patrimony_id: "none",
+    frequency: "monthly",
+    recurrence_interval: 1,
+    recurrence_unit: "months",
+    payment_days: [] as number[],
   });
 
   const [newInvestment, setNewInvestment] = useState({
@@ -300,6 +308,10 @@ const IncomePage = () => {
       investment_id: newIncome.investment_id === "none" ? null : newIncome.investment_id,
       patrimony_id: newIncome.patrimony_id === "none" ? null : newIncome.patrimony_id,
       start_date: newIncome.is_recurring ? formatDateToISO(newIncome.date) : null,
+      frequency: newIncome.frequency,
+      recurrence_interval: newIncome.recurrence_interval,
+      recurrence_unit: newIncome.recurrence_unit,
+      payment_days: newIncome.payment_days.length > 0 ? newIncome.payment_days : [newIncome.date.getDate()],
     });
 
     if (!error) {
@@ -313,6 +325,10 @@ const IncomePage = () => {
         date: new Date(),
         investment_id: "none",
         patrimony_id: "none",
+        frequency: "monthly",
+        recurrence_interval: 1,
+        recurrence_unit: "months",
+        payment_days: [],
       });
       fetchIncomes(session.user.id);
       toast.success("Ingreso añadido correctamente");
@@ -342,6 +358,10 @@ const IncomePage = () => {
       is_recurring: editIncome.is_recurring,
       investment_id: editIncome.investment_id === "none" ? null : editIncome.investment_id,
       patrimony_id: editIncome.patrimony_id === "none" ? null : editIncome.patrimony_id,
+      frequency: editIncome.frequency,
+      recurrence_interval: editIncome.recurrence_interval,
+      recurrence_unit: editIncome.recurrence_unit,
+      payment_days: editIncome.payment_days.length > 0 ? editIncome.payment_days : [editIncome.date.getDate()],
     }).eq("id", selectedIncome.id);
 
     if (!error) {
@@ -447,6 +467,10 @@ const IncomePage = () => {
       date: safeDate(income.date),
       investment_id: income.investment_id || "none",
       patrimony_id: income.patrimony_id || "none",
+      frequency: income.frequency || "monthly",
+      recurrence_interval: income.recurrence_interval || 1,
+      recurrence_unit: income.recurrence_unit || "months",
+      payment_days: income.payment_days || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -1190,6 +1214,133 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           </button>
         </div>
       </div>
+
+      {income.is_recurring && (
+        <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 space-y-4">
+          <div>
+            <label className="text-xs text-zinc-400 mb-1 block">Frecuencia</label>
+            <Select
+              value={income.frequency}
+              onValueChange={(v) => setIncome({ ...income, frequency: v, payment_days: [] })}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="monthly" className="text-white">Mensual</SelectItem>
+                <SelectItem value="weekly" className="text-white">Semanal</SelectItem>
+                <SelectItem value="quarterly" className="text-white">Trimestral</SelectItem>
+                <SelectItem value="annual" className="text-white">Anual</SelectItem>
+                <SelectItem value="custom" className="text-white">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {income.frequency === "custom" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Cada</label>
+                <Input
+                  type="number"
+                  value={income.recurrence_interval}
+                  onChange={(e) => setIncome({ ...income, recurrence_interval: parseInt(e.target.value) || 1 })}
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Unidad</label>
+                <Select
+                  value={income.recurrence_unit}
+                  onValueChange={(v) => setIncome({ ...income, recurrence_unit: v })}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="days" className="text-white">Días</SelectItem>
+                    <SelectItem value="weeks" className="text-white">Semanas</SelectItem>
+                    <SelectItem value="months" className="text-white">Meses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs text-zinc-400 mb-2 block">
+              {income.frequency === "weekly" ? "Días de la semana" : "Días del mes"}
+            </label>
+            <div className="grid grid-cols-7 gap-1">
+              {income.frequency === "weekly" ? (
+                ["L", "M", "X", "J", "V", "S", "D"].map((day, i) => {
+                  const dayValue = i + 1; // 1-7
+                  const isSelected = income.payment_days.includes(dayValue);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        const newDays = isSelected
+                          ? income.payment_days.filter((d: number) => d !== dayValue)
+                          : [...income.payment_days, dayValue];
+                        setIncome({ ...income, payment_days: newDays });
+                      }}
+                      className={`h-8 rounded-md text-[10px] font-bold transition-all ${
+                        isSelected ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })
+              ) : (
+                <>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                    const isSelected = income.payment_days.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          const newDays = isSelected
+                            ? income.payment_days.filter((d: number) => d !== day)
+                            : [...income.payment_days, day];
+                          setIncome({ ...income, payment_days: newDays });
+                        }}
+                        className={`h-8 rounded-md text-[10px] font-bold transition-all ${
+                          isSelected ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const isSelected = income.payment_days.includes(32);
+                      const newDays = isSelected
+                        ? income.payment_days.filter((d: number) => d !== 32)
+                        : [...income.payment_days, 32];
+                      setIncome({ ...income, payment_days: newDays });
+                    }}
+                    className={`col-span-2 h-8 rounded-md text-[10px] font-bold transition-all ${
+                      income.payment_days.includes(32) ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                    }`}
+                  >
+                    Último día
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-2 italic">
+              {income.payment_days.length > 0
+                ? `Se cobrará los días: ${income.payment_days.map((d: number) => d === 32 ? 'Fin de mes' : d).join(', ')}`
+                : "Selecciona al menos un día de pago"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversion</label>

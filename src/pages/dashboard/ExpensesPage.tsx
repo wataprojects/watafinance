@@ -275,6 +275,10 @@ const ExpensesPage = () => {
     scheduled_change_date: null as Date | null,
     scheduled_new_amount: "",
     scheduled_change_type: "increase" as "increase" | "decrease",
+    frequency: "monthly",
+    recurrence_interval: 1,
+    recurrence_unit: "months",
+    payment_days: [] as number[],
   });
 
   const [editExpense, setEditExpense] = useState({
@@ -290,6 +294,10 @@ const ExpensesPage = () => {
     scheduled_change_date: null as Date | null,
     scheduled_new_amount: "",
     scheduled_change_type: "increase" as "increase" | "decrease",
+    frequency: "monthly",
+    recurrence_interval: 1,
+    recurrence_unit: "months",
+    payment_days: [] as number[],
   });
 
   const [newInvestment, setNewInvestment] = useState({
@@ -505,6 +513,10 @@ const ExpensesPage = () => {
       scheduled_new_amount: newExpense.scheduled_new_amount ? parseFloat(newExpense.scheduled_new_amount) : null,
       scheduled_change_type: newExpense.scheduled_change_type,
       start_date: newExpense.is_recurring ? formatDateToISO(newExpense.date) : null,
+      frequency: newExpense.frequency,
+      recurrence_interval: newExpense.recurrence_interval,
+      recurrence_unit: newExpense.recurrence_unit,
+      payment_days: newExpense.payment_days.length > 0 ? newExpense.payment_days : [newExpense.date.getDate()],
     });
     if (!error) {
       setIsDialogOpen(false);
@@ -520,6 +532,10 @@ const ExpensesPage = () => {
         scheduled_change_date: null,
         scheduled_new_amount: "",
         scheduled_change_type: "increase",
+        frequency: "monthly",
+        recurrence_interval: 1,
+        recurrence_unit: "months",
+        payment_days: [],
       });
       fetchExpenses(session.user.id);
       toast.success("Gasto añadido correctamente");
@@ -549,6 +565,10 @@ const ExpensesPage = () => {
       scheduled_change_date: editExpense.scheduled_change_date ? formatDateToISO(editExpense.scheduled_change_date) : null,
       scheduled_new_amount: editExpense.scheduled_new_amount ? parseFloat(editExpense.scheduled_new_amount) : null,
       scheduled_change_type: editExpense.scheduled_change_type,
+      frequency: editExpense.frequency,
+      recurrence_interval: editExpense.recurrence_interval,
+      recurrence_unit: editExpense.recurrence_unit,
+      payment_days: editExpense.payment_days.length > 0 ? editExpense.payment_days : [editExpense.date.getDate()],
     }).eq("id", selectedExpense.id);
     if (!error) {
       setIsEditDialogOpen(false);
@@ -655,6 +675,10 @@ const ExpensesPage = () => {
       scheduled_change_date: expense.scheduled_change_date ? safeDate(expense.scheduled_change_date) : null,
       scheduled_new_amount: expense.scheduled_new_amount?.toString() || "",
       scheduled_change_type: expense.scheduled_change_type || "increase",
+      frequency: expense.frequency || "monthly",
+      recurrence_interval: expense.recurrence_interval || 1,
+      recurrence_unit: expense.recurrence_unit || "months",
+      payment_days: expense.payment_days || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -1759,9 +1783,9 @@ const ExpenseForm = ({
       <div>
         <label className="text-xs text-zinc-400 mb-2 block">Tipo de gasto</label>
         <div className="grid grid-cols-2 gap-2">
-          <button 
-            type="button" 
-            onClick={() => setExpense({ ...expense, is_recurring: true })} 
+          <button
+            type="button"
+            onClick={() => setExpense({ ...expense, is_recurring: true })}
             className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
               expense.is_recurring ? "border-purple-500 bg-purple-500/20" : "border-zinc-700 bg-zinc-800"
             }`}
@@ -1769,9 +1793,9 @@ const ExpenseForm = ({
             <RefreshCcw className={`w-5 h-5 ${expense.is_recurring ? "text-purple-400" : "text-zinc-400"}`} />
             <span className={`font-medium text-xs ${expense.is_recurring ? "text-white" : "text-zinc-400"}`}>Recurrente</span>
           </button>
-          <button 
-            type="button" 
-            onClick={() => setExpense({ ...expense, is_recurring: false })} 
+          <button
+            type="button"
+            onClick={() => setExpense({ ...expense, is_recurring: false })}
             className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${
               !expense.is_recurring ? "border-red-500 bg-red-500/20" : "border-zinc-700 bg-zinc-800"
             }`}
@@ -1781,6 +1805,133 @@ const ExpenseForm = ({
           </button>
         </div>
       </div>
+
+      {expense.is_recurring && (
+        <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 space-y-4">
+          <div>
+            <label className="text-xs text-zinc-400 mb-1 block">Frecuencia</label>
+            <Select
+              value={expense.frequency}
+              onValueChange={(v) => setExpense({ ...expense, frequency: v, payment_days: [] })}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="monthly" className="text-white">Mensual</SelectItem>
+                <SelectItem value="weekly" className="text-white">Semanal</SelectItem>
+                <SelectItem value="quarterly" className="text-white">Trimestral</SelectItem>
+                <SelectItem value="annual" className="text-white">Anual</SelectItem>
+                <SelectItem value="custom" className="text-white">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {expense.frequency === "custom" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Cada</label>
+                <Input
+                  type="number"
+                  value={expense.recurrence_interval}
+                  onChange={(e) => setExpense({ ...expense, recurrence_interval: parseInt(e.target.value) || 1 })}
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Unidad</label>
+                <Select
+                  value={expense.recurrence_unit}
+                  onValueChange={(v) => setExpense({ ...expense, recurrence_unit: v })}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="days" className="text-white">Días</SelectItem>
+                    <SelectItem value="weeks" className="text-white">Semanas</SelectItem>
+                    <SelectItem value="months" className="text-white">Meses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs text-zinc-400 mb-2 block">
+              {expense.frequency === "weekly" ? "Días de la semana" : "Días del mes"}
+            </label>
+            <div className="grid grid-cols-7 gap-1">
+              {expense.frequency === "weekly" ? (
+                ["L", "M", "X", "J", "V", "S", "D"].map((day, i) => {
+                  const dayValue = i + 1; // 1-7
+                  const isSelected = expense.payment_days.includes(dayValue);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        const newDays = isSelected
+                          ? expense.payment_days.filter((d: number) => d !== dayValue)
+                          : [...expense.payment_days, dayValue];
+                        setExpense({ ...expense, payment_days: newDays });
+                      }}
+                      className={`h-8 rounded-md text-[10px] font-bold transition-all ${
+                        isSelected ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })
+              ) : (
+                <>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                    const isSelected = expense.payment_days.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          const newDays = isSelected
+                            ? expense.payment_days.filter((d: number) => d !== day)
+                            : [...expense.payment_days, day];
+                          setExpense({ ...expense, payment_days: newDays });
+                        }}
+                        className={`h-8 rounded-md text-[10px] font-bold transition-all ${
+                          isSelected ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const isSelected = expense.payment_days.includes(32);
+                      const newDays = isSelected
+                        ? expense.payment_days.filter((d: number) => d !== 32)
+                        : [...expense.payment_days, 32];
+                      setExpense({ ...expense, payment_days: newDays });
+                    }}
+                    className={`col-span-2 h-8 rounded-md text-[10px] font-bold transition-all ${
+                      expense.payment_days.includes(32) ? "bg-purple-500 text-white" : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                    }`}
+                  >
+                    Último día
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-2 italic">
+              {expense.payment_days.length > 0
+                ? `Se cobrará los días: ${expense.payment_days.map((d: number) => d === 32 ? 'Fin de mes' : d).join(', ')}`
+                : "Selecciona al menos un día de pago"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-zinc-400 mb-1 block">Vincular a Inversión</label>
