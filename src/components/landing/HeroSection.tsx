@@ -40,20 +40,13 @@ const HeroSection: React.FC = () => {
           </AnimatedSection>
 
           <AnimatedSection delay={700}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex justify-center items-center">
               <Button
                 onClick={() => navigate('/register')}
-                className="bg-green-500 hover:bg-green-600 text-black h-14 px-8 text-lg font-bold rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20 w-full sm:w-auto"
+                className="bg-green-500 hover:bg-green-600 text-black h-14 px-8 text-lg font-bold rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20"
               >
                 Empezar ahora
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/login')}
-                className="border-zinc-800 bg-zinc-900/50 text-white h-14 px-8 text-lg font-bold rounded-2xl hover:bg-zinc-800 transition-all w-full sm:w-auto"
-              >
-                Ver Demo
               </Button>
             </div>
           </AnimatedSection>
