@@ -389,7 +389,7 @@ const InvestmentsPage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      <DashboardHeader title="FinPro" subtitle="Gestión de Inversiones" />
+      <DashboardHeader title="Monyro" subtitle="Gestión de Inversiones" />
       
       <div className="container mx-auto px-4 py-6">
         {/* Insights Panel */}
@@ -566,7 +566,52 @@ const InvestmentsPage = () => {
           <button onClick={() => setIsDeleteDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white"><X className="w-4 h-4" /></button>
           <div className="space-y-4 mt-4">
             <p className="text-zinc-300">¿Eliminar esta inversión? Se perderán los vínculos con ingresos y préstamos.</p>
-            {selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.assetValue)}</p></div>)}
+            {selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.think
+The previous response was cut off in the middle of writing `src/pages/dashboard/InvestmentsPage.tsx`. I need to complete that file and then continue with the remaining files that need the "FinPro" to "Monyro" name change.
+
+Looking at the previous output:
+The last line was: `<dyad-write path="src/pages/dashboard/InvestmentsPage.tsx" description="Actualizando título en InvestmentsPage.tsx">` ... and it ended abruptly inside the `handleDeleteInvestment` logic or similar.
+
+Wait, looking at the provided context, I see the full content of `src/pages/dashboard/InvestmentsPage.tsx` was already provided in the system prompt's file list. I should check where the *last* `dyad-write` in the *previous turn* ended.
+
+The previous turn ended at:
+`{selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.u`
+
+Actually, it looks like it was finishing `src/pages/dashboard/InvestmentsPage.tsx`.
+
+Let's resume `src/pages/dashboard/InvestmentsPage.tsx` and then do `src/pages/dashboard/PatrimonyPage.tsx` and `src/pages/dashboard/ProfilePage.tsx`.
+
+Wait, I should check all files that contain "FinPro".
+Files to check:
+- `src/pages/Dashboard.tsx` (Done in previous turn)
+- `src/pages/dashboard/IncomePage.tsx` (Done in previous turn)
+- `src/pages/dashboard/ExpensesPage.tsx` (Done in previous turn)
+- `src/pages/dashboard/DebtsPage.tsx` (Done in previous turn)
+- `src/pages/dashboard/LoansPage.tsx` (Done in previous turn)
+- `src/pages/dashboard/InvestmentsPage.tsx` (Cut off)
+- `src/pages/dashboard/PatrimonyPage.tsx`
+- `src/pages/dashboard/ProfilePage.tsx`
+
+Let's finish `InvestmentsPage.tsx` first.
+
+The cut off point was: `...{formatCurrency(selectedInvestment.`
+Looking at the original file content for `InvestmentsPage.tsx`:
+`{selectedInvestment && (<div className="p-4 bg-zinc-800/50 rounded-xl"><p className="text-white font-medium">{selectedInvestment.name}</p><p className="text-purple-400 font-bold">{formatCurrency(selectedInvestment.assetValue)}</p></div>)}`
+
+I will rewrite the whole file `src/pages/dashboard/InvestmentsPage.tsx` to be safe, or just continue. The instructions say "Continue exactly where you left off without any preamble".
+
+However, `dyad-write` requires the full file content. I cannot just append. I must provide the full file.
+
+Wait, the user said "Your previous response did not finish completely. Continue exactly where you left off without any preamble."
+In Dyad, I must use `<dyad-write>` for the full file.
+
+Let's provide the full `src/pages/dashboard/InvestmentsPage.tsx` and then the rest.
+
+Actually, I'll check if there are other files.
+`src/pages/dashboard/ProfilePage.tsx` has "FinPro".
+`src/pages/dashboard/PatrimonyPage.tsx` has "FinPro".
+
+Let's go.assetValue)}</p></div>)}
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 border-zinc-700 text-white hover:bg-zinc-800">Cancelar</Button>
               <Button onClick={handleDeleteInvestment} className="flex-1 bg-red-500 hover:bg-red-600">Eliminar</Button>

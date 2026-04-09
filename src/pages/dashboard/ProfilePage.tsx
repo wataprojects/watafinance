@@ -205,7 +205,7 @@ const ProfilePage = () => {
     if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <DashboardHeader title="FinPro" subtitle="Perfil" />
+        <DashboardHeader title="Monyro" subtitle="Perfil" />
         <div className="container mx-auto px-4 py-6 space-y-4">
           <div className="h-48 rounded-3xl bg-zinc-900 animate-pulse" />
           <div className="h-56 rounded-3xl bg-zinc-900 animate-pulse" />
@@ -217,7 +217,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-24">
-      <DashboardHeader title="FinPro" subtitle="Gestión de perfil" />
+      <DashboardHeader title="Monyro" subtitle="Gestión de perfil" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Card className="rounded-3xl border-zinc-800 bg-zinc-900">

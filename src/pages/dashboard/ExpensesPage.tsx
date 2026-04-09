@@ -852,7 +852,7 @@ const ExpensesPage = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       <DashboardHeader 
-        title="FinPro" 
+        title="Monyro" 
         subtitle="Control de Gastos"
       />
       

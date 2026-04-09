@@ -276,7 +276,7 @@ const LoansPage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-24">
-      <DashboardHeader title="FinPro" subtitle="Gestión de Préstamos" />
+      <DashboardHeader title="Monyro" subtitle="Gestión de Préstamos" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
         {isProcessing && (

@@ -510,7 +510,7 @@ const IncomePage = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      <DashboardHeader title="FinPro" subtitle="Gestion de Ingresos" />
+      <DashboardHeader title="Monyro" subtitle="Gestion de Ingresos" />
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="grid grid-cols-2 gap-4">

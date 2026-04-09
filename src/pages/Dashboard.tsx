@@ -87,7 +87,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-black pb-28">
       {/* Header con notificaciones - usando el componente DashboardHeader */}
-      <DashboardHeader title="FinPro" subtitle="Tu gestión financiera" />
+      <DashboardHeader title="Monyro" subtitle="Tu gestión financiera" />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
