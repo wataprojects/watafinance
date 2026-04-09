@@ -67,6 +67,22 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
   return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
 };
 
+const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?: number, recurrenceUnit?: string): number => {
+  const numAmount = parseFloat(String(amount)) || 0;
+  switch (frequency) {
+    case 'weekly': return numAmount * 4.33;
+    case 'monthly': return numAmount;
+    case 'quarterly': return numAmount / 3;
+    case 'annual': return numAmount / 12;
+    case 'custom':
+      if (recurrenceUnit === 'days') return (numAmount * 30) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'weeks') return (numAmount * 4.33) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'months') return numAmount / (recurrenceInterval || 1);
+      return numAmount;
+    default: return numAmount;
+  }
+};
+
 interface CategoryOption {
   value: string;
   label: string;
@@ -278,16 +294,37 @@ const IncomePage = () => {
     return true;
   });
 
-  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-  const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  const totalIncome = filteredIncomes.reduce((sum, i) => {
+    const amount = i.is_recurring
+      ? getMonthlyAmount(parseFloat(i.amount || 0), i.frequency, i.recurrence_interval, i.recurrence_unit)
+      : parseFloat(i.amount || 0);
+    return sum + amount;
+  }, 0);
+
+  const activeIncome = filteredIncomes.filter((i) => !i.is_passive).reduce((sum, i) => {
+    const amount = i.is_recurring
+      ? getMonthlyAmount(parseFloat(i.amount || 0), i.frequency, i.recurrence_interval, i.recurrence_unit)
+      : parseFloat(i.amount || 0);
+    return sum + amount;
+  }, 0);
+
+  const passiveIncome = filteredIncomes.filter((i) => i.is_passive).reduce((sum, i) => {
+    const amount = i.is_recurring
+      ? getMonthlyAmount(parseFloat(i.amount || 0), i.frequency, i.recurrence_interval, i.recurrence_unit)
+      : parseFloat(i.amount || 0);
+    return sum + amount;
+  }, 0);
+
   const activePercentage = totalIncome > 0 ? (activeIncome / totalIncome) * 100 : 0;
   const passivePercentage = totalIncome > 0 ? (passiveIncome / totalIncome) * 100 : 0;
 
   const incomeByCategory: Record<string, number> = {};
   filteredIncomes.forEach((income) => {
     const cat = income.category || "other";
-    incomeByCategory[cat] = (incomeByCategory[cat] || 0) + parseFloat(income.amount || 0);
+    const amount = income.is_recurring
+      ? getMonthlyAmount(parseFloat(income.amount || 0), income.frequency, income.recurrence_interval, income.recurrence_unit)
+      : parseFloat(income.amount || 0);
+    incomeByCategory[cat] = (incomeByCategory[cat] || 0) + amount;
   });
 
   const sortedCategories = Object.entries(incomeByCategory)
@@ -664,6 +701,7 @@ const IncomePage = () => {
                       isNew={true}
                       investments={investments}
                       patrimony={patrimony}
+                      loans={loans}
                       isCategoryDialogOpen={isCategoryDialogOpen}
                       setIsCategoryDialogOpen={setIsCategoryDialogOpen}
                       isInvestmentDialogOpen={isInvestmentDialogOpen}
@@ -778,6 +816,7 @@ const IncomePage = () => {
                       isNew={true}
                       investments={investments}
                       patrimony={patrimony}
+                      loans={loans}
                       isCategoryDialogOpen={isCategoryDialogOpen}
                       setIsCategoryDialogOpen={setIsCategoryDialogOpen}
                       isInvestmentDialogOpen={isInvestmentDialogOpen}
@@ -898,8 +937,15 @@ const IncomePage = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="font-bold text-green-500">+{formatCurrency(income.amount)}</p>
+                          <p className="font-bold text-green-500">
+                            +
+                            {income.is_recurring
+                              ? formatCurrency(getMonthlyAmount(parseFloat(income.amount), income.frequency, income.recurrence_interval, income.recurrence_unit))
+                              : formatCurrency(income.amount)}
+                            {income.is_recurring && <span className="text-[10px] ml-0.5">/mes</span>}
+                          </p>
                           <p className={`text-xs ${isPassive ? "text-green-400" : "text-blue-400"}`}>
+
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? "bg-green-500/10" : "bg-blue-500/10"}`}>
                               {isPassive ? <><PiggyBank className="w-3 h-3 mr-1" />Pasivo</> : <><Briefcase className="w-3 h-3 mr-1" />Activo</>}
                             </span>

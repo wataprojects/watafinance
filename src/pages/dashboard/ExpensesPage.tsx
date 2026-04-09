@@ -108,8 +108,25 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
   return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
 };
 
+const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?: number, recurrenceUnit?: string): number => {
+  const numAmount = parseFloat(String(amount)) || 0;
+  switch (frequency) {
+    case 'weekly': return numAmount * 4.33;
+    case 'monthly': return numAmount;
+    case 'quarterly': return numAmount / 3;
+    case 'annual': return numAmount / 12;
+    case 'custom':
+      if (recurrenceUnit === 'days') return (numAmount * 30) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'weeks') return (numAmount * 4.33) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'months') return numAmount / (recurrenceInterval || 1);
+      return numAmount;
+    default: return numAmount;
+  }
+};
+
 interface CategoryOption {
   value: string;
+
   label: string;
   icon: any;
   color: string;
@@ -733,8 +750,10 @@ const ExpensesPage = () => {
   const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
   const trimmedSubscriptions = allSubscriptions.filter((e) => e.is_trimmed);
   
-  const totalActiveSubscriptions = activeSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-  const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalActiveSubscriptions = activeSubscriptions.reduce((sum, e) =>
+    sum + getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit), 0);
+  const totalTrimmedSavings = trimmedSubscriptions.reduce((sum, e) =>
+    sum + getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit), 0);
   const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
 
   const puntualExpenses = filteredExpenses
@@ -743,7 +762,7 @@ const ExpensesPage = () => {
 
   const recurrentExpenses = filteredExpenses
     .filter(e => e.is_recurring && !e.is_trimmed)
-    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    .reduce((sum, e) => sum + getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit), 0);
 
   const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
 
@@ -770,7 +789,10 @@ const ExpensesPage = () => {
   const expensesByCategory = filteredExpenses.reduce((acc, e) => {
     if (e.is_trimmed) return acc;
     if (!acc[e.category]) acc[e.category] = 0;
-    acc[e.category] += parseFloat(e.amount);
+    const amount = e.is_recurring
+      ? getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit)
+      : parseFloat(e.amount);
+    acc[e.category] += amount;
     return acc;
   }, {} as Record<string, number>);
 
@@ -1208,32 +1230,43 @@ const ExpensesPage = () => {
 
                   {sortedActiveSubscriptions.length > 0 && (
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                      {sortedActiveSubscriptions.map((sub) => (
-                        <div 
-                          key={sub.id} 
-                          className="relative p-3 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-pink-500/50 transition-all group"
-                        >
-                          {sub.is_trimmed && (
-                            <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                              <BadgeCheck className="w-3 h-3" />
-                              Recortada
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium text-white text-sm truncate pr-2">{sub.description}</p>
-                            <p className="font-bold text-pink-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
-                          </div>
-                          
-                          <button
-                            onClick={() => handleTrimSubscription(sub)}
-                            className="w-full py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                      {sortedActiveSubscriptions.map((sub) => {
+                        const monthlyAmount = getMonthlyAmount(parseFloat(sub.amount), sub.frequency, sub.recurrence_interval, sub.recurrence_unit);
+                        const frequencyLabel = sub.frequency === 'annual' ? '/año' : sub.frequency === 'quarterly' ? '/trim' : sub.frequency === 'weekly' ? '/sem' : '';
+                        
+                        return (
+                          <div
+                            key={sub.id}
+                            className="relative p-3 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-pink-500/50 transition-all group"
                           >
-                            <Scissors className="w-3.5 h-3.5" />
-                            Recortar
-                          </button>
-                        </div>
-                      ))}
+                            {sub.is_trimmed && (
+                              <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                <BadgeCheck className="w-3 h-3" />
+                                Recortada
+                              </div>
+                            )}
+                            
+                            <div className="flex flex-col mb-2">
+                              <p className="font-medium text-white text-sm truncate pr-2 mb-1">{sub.description}</p>
+                              <div className="flex items-baseline gap-1">
+                                <p className="font-bold text-pink-400 text-sm whitespace-nowrap">{formatCurrency(monthlyAmount)}/mes</p>
+                                {frequencyLabel && (
+                                  <p className="text-[10px] text-zinc-500">({formatCurrency(sub.amount)}{frequencyLabel})</p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <button
+                              onClick={() => handleTrimSubscription(sub)}
+                              className="w-full py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                            >
+                              <Scissors className="w-3.5 h-3.5" />
+                              Recortar
+                            </button>
+                          </div>
+                        );
+                      })}
+
                     </div>
                   )}
 
@@ -1247,30 +1280,41 @@ const ExpensesPage = () => {
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
-                        {sortedTrimmedSubscriptions.map((sub) => (
-                          <div 
-                            key={sub.id} 
-                            className="relative p-3 bg-green-500/10 rounded-xl border border-green-500/20 opacity-60"
-                          >
-                            <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                              <BadgeCheck className="w-3 h-3" />
-                              Recortada
-                            </div>
-                            
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="font-medium text-white text-sm truncate pr-2 line-through">{sub.description}</p>
-                              <p className="font-bold text-green-400 text-sm whitespace-nowrap">{formatCurrency(sub.amount)}</p>
-                            </div>
-                            
-                            <button
-                              onClick={() => handleRestoreSubscription(sub)}
-                              className="w-full py-1.5 px-3 rounded-lg bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                        {sortedTrimmedSubscriptions.map((sub) => {
+                          const monthlyAmount = getMonthlyAmount(parseFloat(sub.amount), sub.frequency, sub.recurrence_interval, sub.recurrence_unit);
+                          const frequencyLabel = sub.frequency === 'annual' ? '/año' : sub.frequency === 'quarterly' ? '/trim' : sub.frequency === 'weekly' ? '/sem' : '';
+
+                          return (
+                            <div
+                              key={sub.id}
+                              className="relative p-3 bg-green-500/10 rounded-xl border border-green-500/20 opacity-60"
                             >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                              Restaurar
-                            </button>
-                          </div>
-                        ))}
+                              <div className="absolute -top-2 -right-2 bg-green-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                <BadgeCheck className="w-3 h-3" />
+                                Recortada
+                              </div>
+                              
+                              <div className="flex flex-col mb-2">
+                                <p className="font-medium text-white text-sm truncate pr-2 mb-1 line-through">{sub.description}</p>
+                                <div className="flex items-baseline gap-1">
+                                  <p className="font-bold text-green-400 text-sm whitespace-nowrap">{formatCurrency(monthlyAmount)}/mes</p>
+                                  {frequencyLabel && (
+                                    <p className="text-[10px] text-zinc-500">({formatCurrency(sub.amount)}{frequencyLabel})</p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <button
+                                onClick={() => handleRestoreSubscription(sub)}
+                                className="w-full py-1.5 px-3 rounded-lg bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                Restaurar
+                              </button>
+                            </div>
+                          );
+                        })}
+
                       </div>
                     </div>
                   )}
@@ -1459,10 +1503,15 @@ const ExpensesPage = () => {
                           <div className="flex items-center gap-3">
                             <div className="text-right">
                               <p className={`font-bold text-sm ${isTrimmed ? "text-green-500 line-through" : "text-red-500"}`}>
-                                {isTrimmed ? "+" : "-"}{formatCurrency(expense.amount)}
+                                {isTrimmed ? "+" : "-"}
+                                {expense.is_recurring
+                                  ? formatCurrency(getMonthlyAmount(parseFloat(expense.amount), expense.frequency, expense.recurrence_interval, expense.recurrence_unit))
+                                  : formatCurrency(expense.amount)}
+                                {expense.is_recurring && <span className="text-[10px] ml-0.5">/mes</span>}
                               </p>
                             </div>
                             {!isTrimmed && (
+
                               <div className="flex flex-col gap-1">
                                 <button onClick={() => openEditDialog(expense)} className="p-1.5 rounded-lg hover:bg-zinc-700 transition-colors">
                                   <Pencil className="w-4 h-4 text-zinc-400" />
