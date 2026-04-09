@@ -179,13 +179,16 @@ const IncomePage = () => {
 
   const [newInvestment, setNewInvestment] = useState({
     name: "",
-    type: "digital",
+    investment_type: "revalorization",
+    category: "digital",
+    risk_level: "medio",
     initial_value: "",
     current_value: "",
-    risk_level: "medio",
     monthly_contribution: "",
+    loan_id: "none",
+    patrimony_id: "none",
+    capital_breakdown: "",
     start_date: new Date(),
-    description: "",
   });
 
   const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
@@ -485,47 +488,57 @@ const IncomePage = () => {
   };
 
   const handleCreateInvestment = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !newInvestment.name || !newInvestment.initial_value) {
-      toast.error("Por favor completa los campos requeridos");
+    if (!newInvestment.name || !newInvestment.initial_value) {
+      toast.error("Completa los campos obligatorios");
       return;
     }
 
-    const initial = parseFloat(newInvestment.initial_value);
-    const current = parseFloat(newInvestment.current_value) || initial;
-    const returnPct = initial > 0 ? ((current - initial) / initial) * 100 : 0;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
+    const initial = parseFloat(newInvestment.initial_value) || 0;
+    const current = newInvestment.investment_type === "revalorization"
+      ? (parseFloat(newInvestment.current_value) || initial)
+      : initial;
+    
     const { data, error } = await supabase.from("investments").insert({
       user_id: session.user.id,
       name: newInvestment.name,
-      type: newInvestment.type,
+      type: newInvestment.category,
+      investment_type: newInvestment.investment_type,
+      risk_level: newInvestment.risk_level,
       initial_value: initial,
       current_value: current,
-      return_percentage: returnPct,
-      risk_level: newInvestment.risk_level || "medio",
-      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : 0,
-      start_date: newInvestment.start_date ? formatDateToISO(newInvestment.start_date) : formatDateToISO(new Date()),
-      investment_type: "revalorization",
-      description: newInvestment.description,
+      start_date: formatDateToISO(newInvestment.start_date),
+      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : null,
+      loan_id: newInvestment.loan_id === "none" ? null : newInvestment.loan_id,
+      patrimony_id: newInvestment.patrimony_id === "none" ? null : newInvestment.patrimony_id,
+      capital_breakdown: newInvestment.capital_breakdown.trim() ? { notes: newInvestment.capital_breakdown.trim() } : null,
     }).select().single();
 
-    if (!error && data) {
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (data) {
       setInvestments([...investments, { id: data.id, name: data.name }]);
       setNewIncome({ ...newIncome, investment_id: data.id });
       setIsNewInvestmentOpen(false);
       setNewInvestment({
         name: "",
-        type: "digital",
+        investment_type: "revalorization",
+        category: "digital",
+        risk_level: "medio",
         initial_value: "",
         current_value: "",
-        risk_level: "medio",
         monthly_contribution: "",
+        loan_id: "none",
+        patrimony_id: "none",
+        capital_breakdown: "",
         start_date: new Date(),
-        description: "",
       });
-      toast.success("Inversion creada");
-    } else {
-      toast.error("Error al crear la inversion");
+      toast.success("Inversión añadida correctamente");
     }
   };
 
@@ -1562,100 +1575,113 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
           <button onClick={() => setIsNewInvestmentOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
             <X className="w-4 h-4" />
           </button>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-4 mt-4">
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Nombre</label>
+              <label className="text-sm text-zinc-400 mb-1 block">Nombre *</label>
               <Input
+                placeholder="Ej: Apartamento Playa, Cartera Bolsa..."
                 value={newInvestment.name}
                 onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white text-sm"
-                placeholder="Ej: Bitcoin, Piso Madrid..."
+                className="bg-zinc-800 border-zinc-700 text-white"
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Tipo de inversion</label>
-              <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {investmentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value} className="text-white">{type.label}</SelectItem>
-                  ))}
+              <label className="text-sm text-zinc-400 mb-2 block">Tipo de inversión *</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "revalorization", label: "Revalorización", description: "Inmuebles, acciones..." },
+                  { value: "income", label: "Generadora de ingresos", description: "Negocios, alquileres..." },
+                ].map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setNewInvestment({ ...newInvestment, investment_type: type.value })}
+                    className={`p-3 rounded-xl border text-left transition-all ${newInvestment.investment_type === type.value ? "border-purple-500 bg-purple-500/10" : "border-zinc-700 bg-zinc-800/50"}`}
+                  >
+                    <p className={`text-sm font-medium ${newInvestment.investment_type === type.value ? "text-white" : "text-zinc-400"}`}>{type.label}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">{type.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Categoría</label>
+                <Select value={newInvestment.category} onValueChange={(v) => setNewInvestment({ ...newInvestment, category: v })}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    {investmentTypes.map((cat) => (<SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Nivel de Riesgo</label>
+                <Select value={newInvestment.risk_level} onValueChange={(v) => setNewInvestment({ ...newInvestment, risk_level: v })}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectItem value="bajo" className="text-white">Bajo</SelectItem>
+                    <SelectItem value="medio" className="text-white">Medio</SelectItem>
+                    <SelectItem value="alto" className="text-white">Alto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Inversión Inicial (€) *</label>
+                <Input type="number" step="0.01" placeholder="0.00" value={newInvestment.initial_value} onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+              </div>
+              {newInvestment.investment_type === "revalorization" ? (
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Valor Actual (€) *</label>
+                  <Input type="number" step="0.01" placeholder="0.00" value={newInvestment.current_value} onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm text-zinc-400 mb-1 block">Aportación Mensual</label>
+                  <Input type="number" step="0.01" placeholder="0.00" value={newInvestment.monthly_contribution} onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Fecha Inicio</label>
+                <DatePicker date={newInvestment.start_date} onDateChange={(d) => setNewInvestment({ ...newInvestment, start_date: d || new Date() })} />
+              </div>
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Vincular Préstamo</label>
+                <Select value={newInvestment.loan_id} onValueChange={(v) => setNewInvestment({ ...newInvestment, loan_id: v })}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+                    {loans.map((l: any) => (<SelectItem key={l.id} value={l.id} className="text-white">{l.borrower_name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-zinc-400 mb-1 block">Vincular Patrimonio</label>
+              <Select value={newInvestment.patrimony_id} onValueChange={(v) => setNewInvestment({ ...newInvestment, patrimony_id: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="none" className="text-white">Ninguno</SelectItem>
+                  {patrimony.map((p: any) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Riesgo</label>
-              <Select value={newInvestment.risk_level || "medio"} onValueChange={(v) => setNewInvestment({ ...newInvestment, risk_level: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="bajo" className="text-white">Bajo</SelectItem>
-                  <SelectItem value="medio" className="text-white">Medio</SelectItem>
-                  <SelectItem value="alto" className="text-white">Alto</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm text-zinc-400 mb-1 block">Notas</label>
+              <Input placeholder="Detalles adicionales..." value={newInvestment.capital_breakdown} onChange={(e) => setNewInvestment({ ...newInvestment, capital_breakdown: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Valor inicial (EUR)</label>
-                <Input
-                  type="number"
-                  value={newInvestment.initial_value}
-                  onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Valor actual (EUR)</label>
-                <Input
-                  type="number"
-                  value={newInvestment.current_value}
-                  onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Aportacion mensual (EUR)</label>
-                <Input
-                  type="number"
-                  value={newInvestment.monthly_contribution || ""}
-                  onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Fecha de inicio</label>
-                <DatePicker
-                  date={newInvestment.start_date ? new Date(newInvestment.start_date) : new Date()}
-                  onDateChange={(date) => setNewInvestment({ ...newInvestment, start_date: date || new Date() })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Descripcion</label>
-              <Input
-                value={newInvestment.description || ""}
-                onChange={(e) => setNewInvestment({ ...newInvestment, description: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white text-sm"
-                placeholder="Descripcion opcional..."
-              />
-            </div>
-
-            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black mt-4">
-              Crear Inversion
+            <Button onClick={handleCreateInvestment} className="w-full bg-purple-500 hover:bg-purple-600 text-white mt-4">
+              Crear Inversión
             </Button>
           </div>
         </DialogContent>
