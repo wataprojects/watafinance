@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AvatarUpload from "@/components/dashboard/AvatarUpload";
-import { BottomNavigation } from "@/components/ui/bottom-navigation";
+import BottomNav from "@/components/dashboard/BottomNav";
 import { toast } from "sonner";
 
 type ProfileData = {
@@ -315,7 +315,7 @@ const ProfilePage = () => {
         </Card>
       </main>
 
-      <BottomNavigation />
+      <BottomNav />
     </div>
   );
 };
