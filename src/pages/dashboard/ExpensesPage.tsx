@@ -65,8 +65,6 @@ import {
   Search,
   CalendarOff,
   Ban,
-  CreditCard,
-  Droplets,
 } from "lucide-react";
 import {
   Carousel,
@@ -142,10 +140,26 @@ const availableIcons = [
   { value: "MoreHorizontal", icon: MoreHorizontal },
 ];
 
+function DropletsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+    </svg>
+  );
+}
+
 const expenseCategories: CategoryOption[] = [
   { value: "housing", label: "Casa", icon: Home, color: "bg-blue-500/20", textColor: "text-blue-400" },
   { value: "electricity", label: "Luz", icon: Zap, color: "bg-yellow-500/20", textColor: "text-yellow-400" },
-  { value: "water", label: "Agua", icon: Droplets, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
+  { value: "water", label: "Agua", icon: DropletsIcon, color: "bg-cyan-500/20", textColor: "text-cyan-400" },
   { value: "health", label: "Salud", icon: Heart, color: "bg-rose-500/20", textColor: "text-rose-400" },
   { value: "security", label: "Alarmas", icon: Shield, color: "bg-slate-500/20", textColor: "text-slate-400" },
   { value: "insurance", label: "Seguros", icon: Shield, color: "bg-indigo-500/20", textColor: "text-indigo-400" },
