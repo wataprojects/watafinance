@@ -6,36 +6,36 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-// Preset avatar URLs - using DiceBear PNG format for better compatibility
+// Preset avatar URLs - using DiceBear personas style for happy, professional avatars
 const PRESET_AVATARS = [
-  // Male avatars - happy expressions
-  { id: "male-1", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male1&backgroundColor=b6e3f4&hair=short01&hairColor=4a3728&skinColor=f5d0c5&clothingColor=6366f1&size=200", gender: "male" },
-  { id: "male-2", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male2&backgroundColor=c0aede&hair=short02&hairColor=2c1810&skinColor=e8beac&clothingColor=059669&size=200", gender: "male" },
-  { id: "male-3", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male3&backgroundColor=ffd5dc&hair=short03&hairColor=6b4423&skinColor=d4a77a&clothingColor=0891b2&size=200", gender: "male" },
-  { id: "male-4", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male4&backgroundColor=d1d4f9&hair=medium01&hairColor=1a1a1a&skinColor=f5d0c5&clothingColor=7c3aed&size=200", gender: "male" },
-  { id: "male-5", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male5&backgroundColor=ffdfbf&hair=short01&hairColor=8b4513&skinColor=e8beac&clothingColor=ea580c&size=200", gender: "male" },
-  { id: "male-6", url: "https://api.dicebear.com/7.x/lorelei/png?seed=male6&backgroundColor=c0aede&hair=medium02&hairColor=3d2314&skinColor=c4a484&clothingColor=2563eb&size=200", gender: "male" },
-  // Female avatars - happy expressions
-  { id: "female-1", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female1&backgroundColor=ffd5dc&hair=long01&hairColor=8b4513&skinColor=f5d0c5&clothingColor=ec4899&size=200", gender: "female" },
-  { id: "female-2", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female2&backgroundColor=b6e3f4&hair=long02&hairColor=2c1810&skinColor=e8beac&clothingColor=8b5cf6&size=200", gender: "female" },
-  { id: "female-3", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female3&backgroundColor=d1d4f9&hair=long03&hairColor=6b4423&skinColor=d4a77a&clothingColor=06b6d4&size=200", gender: "female" },
-  { id: "female-4", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female4&backgroundColor=ffdfbf&hair=bob&hairColor=1a1a1a&skinColor=f5d0c5&clothingColor=f472b6&size=200", gender: "female" },
-  { id: "female-5", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female5&backgroundColor=c0aede&hair=medium01&hairColor=8b4513&skinColor=e8beac&clothingColor=14b8a6&size=200", gender: "female" },
-  { id: "female-6", url: "https://api.dicebear.com/7.x/lorelei/png?seed=female6&backgroundColor=ffd5dc&hair=long01&hairColor=3d2314&skinColor=c4a484&clothingColor=fb923c&size=200", gender: "female" },
-  // Neutral avatars
-  { id: "neutral-1", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral1&backgroundColor=c0aede&hair=short01&hairColor=4a3728&skinColor=f5d0c5&clothingColor=6366f1&size=200", gender: "neutral" },
-  { id: "neutral-2", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral2&backgroundColor=b6e3f4&hair=medium01&hairColor=2c1810&skinColor=e8beac&clothingColor=059669&size=200", gender: "neutral" },
-  { id: "neutral-3", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral3&backgroundColor=ffd5dc&hair=short02&hairColor=6b4423&skinColor=d4a77a&clothingColor=0891b2&size=200", gender: "neutral" },
-  { id: "neutral-4", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral4&backgroundColor=d1d4f9&hair=long01&hairColor=1a1a1a&skinColor=f5d0c5&clothingColor=7c3aed&size=200", gender: "neutral" },
-  { id: "neutral-5", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral5&backgroundColor=ffdfbf&hair=short03&hairColor=8b4513&skinColor=e8beac&clothingColor=ea580c&size=200", gender: "neutral" },
-  { id: "neutral-6", url: "https://api.dicebear.com/7.x/lorelei/png?seed=neutral6&backgroundColor=c0aede&hair=long02&hairColor=3d2314&skinColor=c4a484&clothingColor=2563eb&size=200", gender: "neutral" },
+  // Male avatars - professional happy looks
+  { id: "male-1", url: "https://api.dicebear.com/7.x/personas/png?seed=male1&backgroundColor=b6e3f4", gender: "male" },
+  { id: "male-2", url: "https://api.dicebear.com/7.x/personas/png?seed=male2&backgroundColor=c0aede", gender: "male" },
+  { id: "male-3", url: "https://api.dicebear.com/7.x/personas/png?seed=male3&backgroundColor=ffd5dc", gender: "male" },
+  { id: "male-4", url: "https://api.dicebear.com/7.x/personas/png?seed=male4&backgroundColor=d1d4f9", gender: "male" },
+  { id: "male-5", url: "https://api.dicebear.com/7.x/personas/png?seed=male5&backgroundColor=ffdfbf", gender: "male" },
+  { id: "male-6", url: "https://api.dicebear.com/7.x/personas/png?seed=male6&backgroundColor=c0aede", gender: "male" },
+  // Female avatars - professional happy looks
+  { id: "female-1", url: "https://api.dicebear.com/7.x/personas/png?seed=female1&backgroundColor=ffd5dc", gender: "female" },
+  { id: "female-2", url: "https://api.dicebear.com/7.x/personas/png?seed=female2&backgroundColor=b6e3f4", gender: "female" },
+  { id: "female-3", url: "https://api.dicebear.com/7.x/personas/png?seed=female3&backgroundColor=d1d4f9", gender: "female" },
+  { id: "female-4", url: "https://api.dicebear.com/7.x/personas/png?seed=female4&backgroundColor=ffdfbf", gender: "female" },
+  { id: "female-5", url: "https://api.dicebear.com/7.x/personas/png?seed=female5&backgroundColor=c0aede", gender: "female" },
+  { id: "female-6", url: "https://api.dicebear.com/7.x/personas/png?seed=female6&backgroundColor=ffd5dc", gender: "female" },
+  // Neutral/Diverse avatars
+  { id: "neutral-1", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral1&backgroundColor=c0aede", gender: "neutral" },
+  { id: "neutral-2", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral2&backgroundColor=b6e3f4", gender: "neutral" },
+  { id: "neutral-3", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral3&backgroundColor=ffd5dc", gender: "neutral" },
+  { id: "neutral-4", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral4&backgroundColor=d1d4f9", gender: "neutral" },
+  { id: "neutral-5", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral5&backgroundColor=ffdfbf", gender: "neutral" },
+  { id: "neutral-6", url: "https://api.dicebear.com/7.x/personas/png?seed=neutral6&backgroundColor=c0aede", gender: "neutral" },
   // More variety
-  { id: "variety-1", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety1&backgroundColor=ffdfbf&hair=medium02&hairColor=4a3728&skinColor=f5d0c5&clothingColor=10b981&size=200", gender: "neutral" },
-  { id: "variety-2", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety2&backgroundColor=b6e3f4&hair=short01&hairColor=2c1810&skinColor=e8beac&clothingColor=f43f5e&size=200", gender: "neutral" },
-  { id: "variety-3", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety3&backgroundColor=ffd5dc&hair=long03&hairColor=6b4423&skinColor=d4a77a&clothingColor=a855f7&size=200", gender: "neutral" },
-  { id: "variety-4", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety4&backgroundColor=d1d4f9&hair=bob&hairColor=1a1a1a&skinColor=f5d0c5&clothingColor=0ea5e9&size=200", gender: "neutral" },
-  { id: "variety-5", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety5&backgroundColor=c0aede&hair=short02&hairColor=8b4513&skinColor=e8beac&clothingColor=eab308&size=200", gender: "neutral" },
-  { id: "variety-6", url: "https://api.dicebear.com/7.x/lorelei/png?seed=variety6&backgroundColor=ffdfbf&hair=medium01&hairColor=3d2314&skinColor=c4a484&clothingColor=84cc16&size=200", gender: "neutral" },
+  { id: "variety-1", url: "https://api.dicebear.com/7.x/personas/png?seed=variety1&backgroundColor=ffdfbf", gender: "neutral" },
+  { id: "variety-2", url: "https://api.dicebear.com/7.x/personas/png?seed=variety2&backgroundColor=b6e3f4", gender: "neutral" },
+  { id: "variety-3", url: "https://api.dicebear.com/7.x/personas/png?seed=variety3&backgroundColor=ffd5dc", gender: "neutral" },
+  { id: "variety-4", url: "https://api.dicebear.com/7.x/personas/png?seed=variety4&backgroundColor=d1d4f9", gender: "neutral" },
+  { id: "variety-5", url: "https://api.dicebear.com/7.x/personas/png?seed=variety5&backgroundColor=c0aede", gender: "neutral" },
+  { id: "variety-6", url: "https://api.dicebear.com/7.x/personas/png?seed=variety6&backgroundColor=ffdfbf", gender: "neutral" },
 ];
 
 type TabType = "all" | "male" | "female" | "neutral";
@@ -50,6 +50,8 @@ const AvatarUpload = ({ currentUrl, userId, onUpload }: AvatarUploadProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null);
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [isSaving, setIsSaving] = useState(false);
+  const [loadedAvatars, setLoadedAvatars] = useState<Set<string>>(new Set());
+  const [errorAvatars, setErrorAvatars] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setPreviewUrl(currentUrl || null);
@@ -83,6 +85,24 @@ const AvatarUpload = ({ currentUrl, userId, onUpload }: AvatarUploadProps) => {
     onUpload("");
   };
 
+  const handleImageLoad = (avatarId: string) => {
+    setLoadedAvatars(prev => new Set(prev).add(avatarId));
+    setErrorAvatars(prev => {
+      const next = new Set(prev);
+      next.delete(avatarId);
+      return next;
+    });
+  };
+
+  const handleImageError = (avatarId: string) => {
+    setErrorAvatars(prev => new Set(prev).add(avatarId));
+    setLoadedAvatars(prev => {
+      const next = new Set(prev);
+      next.delete(avatarId);
+      return next;
+    });
+  };
+
   const tabs: { id: TabType; label: string }[] = [
     { id: "all", label: "Todos" },
     { id: "male", label: "Masculinos" },
@@ -101,6 +121,8 @@ const AvatarUpload = ({ currentUrl, userId, onUpload }: AvatarUploadProps) => {
                 src={previewUrl} 
                 alt="Avatar actual" 
                 className="h-full w-full object-cover"
+                onLoad={() => handleImageLoad('preview')}
+                onError={() => handleImageError('preview')}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-zinc-800">
@@ -139,31 +161,56 @@ const AvatarUpload = ({ currentUrl, userId, onUpload }: AvatarUploadProps) => {
         {/* Avatar Grid */}
         <ScrollArea className="h-[280px] rounded-xl bg-zinc-900/50 p-3">
           <div className="grid grid-cols-4 gap-3">
-            {filteredAvatars.map(avatar => (
-              <button
-                key={avatar.id}
-                onClick={() => handleSelectAvatar(avatar.url)}
-                className={cn(
-                  "relative aspect-square overflow-hidden rounded-2xl border-2 transition-all hover:scale-105 hover:shadow-lg",
-                  previewUrl === avatar.url
-                    ? "border-green-500 shadow-green-500/20 shadow-lg"
-                    : "border-zinc-700 hover:border-zinc-600"
-                )}
-              >
-                <img
-                  src={avatar.url}
-                  alt={`Avatar ${avatar.id}`}
-                  className="h-full w-full object-cover"
-                />
-                {previewUrl === avatar.url && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500 shadow-lg">
-                      <Check className="h-4 w-4 text-black" strokeWidth={3} />
+            {filteredAvatars.map(avatar => {
+              const isLoaded = loadedAvatars.has(avatar.id);
+              const hasError = errorAvatars.has(avatar.id);
+              
+              return (
+                <button
+                  key={avatar.id}
+                  onClick={() => handleSelectAvatar(avatar.url)}
+                  className={cn(
+                    "relative aspect-square overflow-hidden rounded-2xl border-2 transition-all hover:scale-105 hover:shadow-lg",
+                    previewUrl === avatar.url
+                      ? "border-green-500 shadow-green-500/20 shadow-lg"
+                      : "border-zinc-700 hover:border-zinc-600"
+                  )}
+                >
+                  {/* Loading placeholder */}
+                  {!isLoaded && !hasError && (
+                    <div className="absolute inset-0 bg-zinc-700 animate-pulse" />
+                  )}
+                  
+                  {/* Error fallback */}
+                  {hasError && (
+                    <div className="absolute inset-0 bg-zinc-800 flex items-center justify-center">
+                      <User className="w-8 h-8 text-zinc-600" />
                     </div>
-                  </div>
-                )}
-              </button>
-            ))}
+                  )}
+                  
+                  {/* Avatar image */}
+                  <img
+                    src={avatar.url}
+                    alt={`Avatar ${avatar.id}`}
+                    className={cn(
+                      "h-full w-full object-cover",
+                      !isLoaded && "invisible"
+                    )}
+                    onLoad={() => handleImageLoad(avatar.id)}
+                    onError={() => handleImageError(avatar.id)}
+                  />
+                  
+                  {/* Selected indicator */}
+                  {previewUrl === avatar.url && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500 shadow-lg">
+                        <Check className="h-4 w-4 text-black" strokeWidth={3} />
+                      </div>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </ScrollArea>
 
