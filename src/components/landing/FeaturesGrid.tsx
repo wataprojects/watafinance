@@ -14,6 +14,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import AnimatedSection from './AnimatedSection';
+import { cn } from '@/lib/utils';
 
 const features = [
   {
