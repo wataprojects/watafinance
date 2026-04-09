@@ -162,6 +162,22 @@
   animation: check-draw 0.3s ease-out 0.2s forwards;
 }
 
+/* Gradient animation for Bento Grid */
+@keyframes gradient-xy {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: 0% 0%;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: 100% 100%;
+  }
+}
+
+.animate-gradient-xy {
+  animation: gradient-xy 15s ease infinite;
+}
+
 /* Hide scrollbar utility */
 .scrollbar-hide {
   -ms-overflow-style: none;
