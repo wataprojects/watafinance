@@ -126,6 +126,7 @@ const IncomePage = () => {
   const [loading, setLoading] = useState(true);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -222,12 +223,14 @@ const IncomePage = () => {
   }, []);
 
   const fetchOptions = async (userId: string) => {
-    const [invResult, patResult] = await Promise.all([
+    const [invResult, patResult, loansResult] = await Promise.all([
       supabase.from("investments").select("id, name").eq("user_id", userId),
       supabase.from("patrimony").select("id, name").eq("user_id", userId),
+      supabase.from("loans").select("id, borrower_name").eq("user_id", userId).eq("status", "active"),
     ]);
     if (invResult.data) setInvestments(invResult.data);
     if (patResult.data) setPatrimony(patResult.data);
+    if (loansResult.data) setLoans(loansResult.data);
   };
 
   const checkAuth = async () => {
@@ -936,6 +939,7 @@ const IncomePage = () => {
             isNew={false}
             investments={investments}
             patrimony={patrimony}
+            loans={loans}
             isCategoryDialogOpen={isCategoryDialogOpen}
             setIsCategoryDialogOpen={setIsCategoryDialogOpen}
             isInvestmentDialogOpen={isInvestmentDialogOpen}
@@ -1039,6 +1043,7 @@ interface IncomeFormProps {
   isNew: boolean;
   investments: any[];
   patrimony: any[];
+  loans: any[];
   isCategoryDialogOpen: boolean;
   setIsCategoryDialogOpen: (open: boolean) => void;
   isInvestmentDialogOpen: boolean;
@@ -1070,6 +1075,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
   isNew,
   investments,
   patrimony,
+  loans,
   isCategoryDialogOpen,
   setIsCategoryDialogOpen,
   isInvestmentDialogOpen,
