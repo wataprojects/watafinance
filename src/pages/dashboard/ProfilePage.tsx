@@ -18,6 +18,10 @@ type ProfileData = {
   last_name: string;
   avatar_url: string | null;
   created_at: string | null;
+  subscription_status: string | null;
+  subscription_tier: string | null;
+  trial_end_date: string | null;
+  current_period_end: string | null;
 };
 
 type SettingsData = {
@@ -32,11 +36,15 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-      first_name: "",
-      last_name: "",
-      avatar_url: null,
-      created_at: null,
-    });
+        first_name: "",
+        last_name: "",
+        avatar_url: null,
+        created_at: null,
+        subscription_status: null,
+        subscription_tier: null,
+        trial_end_date: null,
+        current_period_end: null,
+      });
   const [settings, setSettings] = useState<SettingsData>({
     recommendations_enabled: true,
     notifications_enabled: true,
@@ -58,26 +66,30 @@ const ProfilePage = () => {
     setUserId(session.user.id);
 
     const [profileResult, settingsResult] = await Promise.all([
+              supabase
+                .from("profiles")
+                .select("first_name, last_name, avatar_url, created_at, subscription_status, subscription_tier, trial_end_date, current_period_end")
+                .eq("id", session.user.id)
+                .single(),
           supabase
-            .from("profiles")
-            .select("first_name, last_name, avatar_url, created_at")
-            .eq("id", session.user.id)
-            .single(),
-      supabase
-        .from("user_monetization_settings")
-        .select("recommendations_enabled, notifications_enabled")
-        .eq("user_id", session.user.id)
-        .maybeSingle(),
-    ]);
-
-    if (profileResult.data) {
-          setProfile({
-            first_name: profileResult.data.first_name || "",
-            last_name: profileResult.data.last_name || "",
-            avatar_url: profileResult.data.avatar_url || null,
-            created_at: profileResult.data.created_at || null,
-          });
-        }
+            .from("user_monetization_settings")
+            .select("recommendations_enabled, notifications_enabled")
+            .eq("user_id", session.user.id)
+            .maybeSingle(),
+        ]);
+    
+        if (profileResult.data) {
+              setProfile({
+                first_name: profileResult.data.first_name || "",
+                last_name: profileResult.data.last_name || "",
+                avatar_url: profileResult.data.avatar_url || null,
+                created_at: profileResult.data.created_at || null,
+                subscription_status: profileResult.data.subscription_status || "trial",
+                subscription_tier: profileResult.data.subscription_tier || "none",
+                trial_end_date: profileResult.data.trial_end_date || null,
+                current_period_end: profileResult.data.current_period_end || null,
+              });
+            }
 
     if (settingsResult.data) {
       setSettings({
@@ -139,23 +151,56 @@ const ProfilePage = () => {
       navigate("/");
     };
   
-    const calculateTrialDays = (createdAt: string | null) => {
-      if (!createdAt) return { daysRemaining: 0, isInTrial: false };
-      
-      const trialDays = 60; // 2 meses
-      const registrationDate = new Date(createdAt);
-      const now = new Date();
-      const trialEndDate = new Date(registrationDate);
-      trialEndDate.setDate(trialEndDate.getDate() + trialDays);
-      
-      const diffTime = trialEndDate.getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      return {
-        daysRemaining: Math.max(0, daysRemaining),
-        isInTrial: daysRemaining > 0
-      };
-    };
+    const calculateTrialDays = (trialEndDate: string | null) => {
+          if (!trialEndDate) return { daysRemaining: 0, isInTrial: false };
+          
+          const now = new Date();
+          const endDate = new Date(trialEndDate);
+          
+          const diffTime = endDate.getTime() - now.getTime();
+          const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          return {
+            daysRemaining: Math.max(0, daysRemaining),
+            isInTrial: daysRemaining > 0
+          };
+        };
+    
+        const getSubscriptionDisplay = () => {
+          const status = profile.subscription_status;
+          const tier = profile.subscription_tier;
+          
+          if (status === "active") {
+            const tierName = tier === "yearly" ? "Anual" : "Mensual";
+            return {
+              label: `Plan Premium ${tierName}`,
+              color: "green",
+              description: tier === "yearly" ? "25€/año" : "2.8€/mes"
+            };
+          } else if (status === "cancelled") {
+            return {
+              label: "Suscripción cancelada",
+              color: "yellow",
+              description: "Acceso hasta fin de período"
+            };
+          } else if (status === "past_due") {
+            return {
+              label: "Pago pendiente",
+              color: "red",
+              description: "Actualiza tu método de pago"
+            };
+          } else {
+            // Trial
+            const trialInfo = calculateTrialDays(profile.trial_end_date);
+            return {
+              label: trialInfo.isInTrial
+                ? `Prueba gratuita (${trialInfo.daysRemaining} días restantes)`
+                : "Período de prueba terminado",
+              color: trialInfo.isInTrial ? "green" : "red",
+              description: trialInfo.isInTrial ? "60 días de prueba" : "2.8€/mes para continuar"
+            };
+          }
+        };
   
     if (loading) {
     return (
@@ -259,37 +304,25 @@ const ProfilePage = () => {
               />
             </div>
 
-            {/* Calcular estado de suscripción */}
-                        {(() => {
-                          const trialInfo = calculateTrialDays(profile.created_at);
-                          return (
-                            <div className={`rounded-2xl border p-4 ${
-                              trialInfo.isInTrial
-                                ? "border-green-500/20 bg-green-500/10"
-                                : "border-red-500/20 bg-red-500/10"
-                            }`}>
-                              {trialInfo.isInTrial ? (
-                                <>
-                                  <p className="text-sm text-green-300">
-                                    Te quedan <span className="font-semibold">{trialInfo.daysRemaining} días</span> de prueba gratuita
-                                  </p>
-                                  <p className="mt-1 text-xs text-green-200/80">
-                                    Después, 2.8€/mes
-                                  </p>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-sm text-red-300">
-                                    Período de prueba terminado
-                                  </p>
-                                  <p className="mt-1 text-xs text-red-200/80">
-                                    2.8€/mes para continuar usando Premium
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
+            {/* Mostrar estado de suscripción */}
+                                    {(() => {
+                                      const subDisplay = getSubscriptionDisplay();
+                                      const colorClasses = {
+                                        green: "border-green-500/20 bg-green-500/10 text-green-300",
+                                        yellow: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
+                                        red: "border-red-500/20 bg-red-500/10 text-red-300"
+                                      };
+                                      return (
+                                        <div className={`rounded-2xl border p-4 ${colorClasses[subDisplay.color as keyof typeof colorClasses]}`}>
+                                          <p className="text-sm font-medium">
+                                            {subDisplay.label}
+                                          </p>
+                                          <p className="mt-1 text-xs opacity-80">
+                                            {subDisplay.description}
+                                          </p>
+                                        </div>
+                                      );
+                                    })()}
           </CardContent>
         </Card>
       </main>
