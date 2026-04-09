@@ -24,7 +24,7 @@ const features = [
     color: "text-green-400",
     bgColor: "bg-green-500/10",
     hoverGradient: "from-green-500/20 via-emerald-500/10 to-transparent",
-    colSpan: "md:col-span-2",
+    colSpan: "md:col-span-3",
     rowSpan: "md:row-span-2"
   },
   {
@@ -34,32 +34,32 @@ const features = [
     color: "text-red-400",
     bgColor: "bg-red-500/10",
     hoverGradient: "from-red-500/20 via-rose-500/10 to-transparent",
-    colSpan: "md:col-span-2",
+    colSpan: "md:col-span-3",
     rowSpan: "md:row-span-1"
   },
   {
     title: "Inversiones",
-    description: "Sigue el rendimiento de tu portafolio.",
+    description: "Sigue el rendimiento de tu portafolio en tiempo real.",
     icon: PiggyBank,
     color: "text-purple-400",
     bgColor: "bg-purple-500/10",
     hoverGradient: "from-purple-500/20 via-violet-500/10 to-transparent",
-    colSpan: "md:col-span-1",
-    rowSpan: "md:row-span-1"
+    colSpan: "md:col-span-2",
+    rowSpan: "md:row-span-2"
   },
   {
     title: "Deudas",
-    description: "Controla lo que debes.",
+    description: "Controla lo que debes y lo que te deben.",
     icon: Target,
     color: "text-amber-400",
     bgColor: "bg-amber-500/10",
     hoverGradient: "from-amber-500/20 via-orange-500/10 to-transparent",
-    colSpan: "md:col-span-1",
+    colSpan: "md:col-span-2",
     rowSpan: "md:row-span-1"
   },
   {
     title: "Patrimonio",
-    description: "Visión integral de todos tus activos y pasivos netos en un solo lugar.",
+    description: "Visión integral de todos tus activos y pasivos netos.",
     icon: Shield,
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/10",
@@ -79,32 +79,32 @@ const features = [
   },
   {
     title: "Analíticas",
-    description: "Gráficos avanzados.",
+    description: "Gráficos avanzados para entender tu salud financiera.",
     icon: BarChart3,
     color: "text-rose-400",
     bgColor: "bg-rose-500/10",
     hoverGradient: "from-rose-500/20 via-pink-500/10 to-transparent",
-    colSpan: "md:col-span-1",
+    colSpan: "md:col-span-2",
     rowSpan: "md:row-span-1"
   },
   {
     title: "Perfil",
-    description: "Personaliza todo.",
+    description: "Personaliza tu experiencia y preferencias.",
     icon: User,
     color: "text-zinc-400",
     bgColor: "bg-zinc-500/10",
     hoverGradient: "from-zinc-500/20 via-slate-500/10 to-transparent",
-    colSpan: "md:col-span-1",
+    colSpan: "md:col-span-3",
     rowSpan: "md:row-span-1"
   },
   {
-    title: "Panel de Administración",
-    description: "Gestión avanzada de clientes y métricas globales para administradores.",
+    title: "Admin",
+    description: "Panel de control avanzado para la gestión.",
     icon: Settings,
     color: "text-cyan-400",
     bgColor: "bg-cyan-500/10",
     hoverGradient: "from-cyan-500/20 via-sky-500/10 to-transparent",
-    colSpan: "md:col-span-4",
+    colSpan: "md:col-span-3",
     rowSpan: "md:row-span-1"
   }
 ];
@@ -125,7 +125,7 @@ const FeaturesGrid: React.FC = () => {
           </p>
         </AnimatedSection>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[160px]">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6 auto-rows-[180px]">
           {features.map((feature, index) => (
             <AnimatedSection 
               key={index} 
@@ -133,7 +133,7 @@ const FeaturesGrid: React.FC = () => {
               className={cn("group", feature.colSpan, feature.rowSpan)}
             >
               <div className={cn(
-                "relative h-full p-6 md:p-8 rounded-[32px] bg-zinc-900/40 border border-zinc-800/50 overflow-hidden transition-all duration-500",
+                "relative h-full p-8 rounded-[32px] bg-zinc-900/40 border border-zinc-800/50 overflow-hidden transition-all duration-500",
                 "hover:border-zinc-700 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 backdrop-blur-xl flex flex-col justify-between"
               )}>
                 {/* Animated Gradient Background on Hover */}
@@ -144,25 +144,25 @@ const FeaturesGrid: React.FC = () => {
 
                 <div className="relative z-10">
                   <div className={cn(
-                    "w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center mb-4 md:mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                    "w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
                     feature.bgColor
                   )}>
-                    <feature.icon className={cn("w-6 h-6 md:w-7 md:h-7", feature.color)} />
+                    <feature.icon className={cn("w-7 h-7", feature.color)} />
                   </div>
                   
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-white mb-3 flex items-center justify-between">
                     {feature.title}
                     <ArrowUpRight className="w-5 h-5 text-zinc-700 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </h3>
                   
-                  <p className="text-zinc-500 leading-relaxed group-hover:text-zinc-300 transition-colors text-xs md:text-sm">
+                  <p className="text-zinc-500 leading-relaxed group-hover:text-zinc-300 transition-colors text-sm md:text-base">
                     {feature.description}
                   </p>
                 </div>
 
                 {/* Decorative element for larger cards */}
                 {feature.rowSpan.includes('row-span-2') && (
-                  <div className="mt-auto pt-4 opacity-20 group-hover:opacity-40 transition-opacity hidden md:block">
+                  <div className="mt-auto pt-6 opacity-20 group-hover:opacity-40 transition-opacity">
                     <div className="h-1 w-12 bg-zinc-700 rounded-full mb-1" />
                     <div className="h-1 w-8 bg-zinc-700 rounded-full" />
                   </div>
