@@ -1159,7 +1159,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
               <X className="w-4 h-4" />
             </button>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {incomeCategories.map((cat) => {
+              {(incomeCategories || []).map((cat) => {
                 const Icon = cat.icon;
                 return (
                   <button
@@ -1618,7 +1618,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <Select value={newInvestment.category} onValueChange={(v) => setNewInvestment({ ...newInvestment, category: v })}>
                   <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {investmentTypes.map((cat) => (<SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>))}
+                    {(investmentTypes || []).map((cat) => (<SelectItem key={cat.value} value={cat.value} className="text-white">{cat.label}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1664,7 +1664,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                   <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700">
                     <SelectItem value="none" className="text-white">Ninguno</SelectItem>
-                    {loans.map((l: any) => (<SelectItem key={l.id} value={l.id} className="text-white">{l.borrower_name}</SelectItem>))}
+                    {(loans || []).map((l: any) => (<SelectItem key={l.id} value={l.id} className="text-white">{l.borrower_name}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1676,7 +1676,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue placeholder="Ninguno" /></SelectTrigger>
                 <SelectContent className="bg-zinc-800 border-zinc-700">
                   <SelectItem value="none" className="text-white">Ninguno</SelectItem>
-                  {patrimony.map((p: any) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
+                  {(patrimony || []).map((p: any) => (<SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
