@@ -37,14 +37,14 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-md">
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-emerald-500 rounded-2xl">
               <TrendingUp className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">FinPro</h1>
+              <h1 className="text-2xl font-bold text-white">Monyro</h1>
               <p className="text-sm text-slate-400">Panel de Administración</p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function AdminLogin() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@finpro.com"
+                    placeholder="admin@monyro.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
@@ -117,7 +117,7 @@ export default function AdminLogin() {
         </Card>
 
         <p className="text-center text-slate-500 mt-6 text-sm">
-          © 2024 FinPro. Todos los derechos reservados.
+          © 2024 Monyro. Todos los derechos reservados.
         </p>
       </div>
     </div>

@@ -21,7 +21,7 @@ const AppDownloadSection: React.FC = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 rounded-[40px] p-8 md:p-16 text-center">
           <AnimatedSection>
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Lleva FinPro contigo</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Lleva Monyro contigo</h2>
             <p className="text-zinc-400 text-lg mb-12 max-w-2xl mx-auto">
               Instala nuestra aplicación en tu dispositivo para acceder más rápido, recibir notificaciones en tiempo real y gestionar tus finanzas sin conexión.
             </p>

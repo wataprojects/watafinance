@@ -50,7 +50,7 @@ const InstallPromptBanner: React.FC = () => {
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         role="banner"
-        aria-label="Instalar FinPro"
+        aria-label="Instalar Monyro"
       >
         <div className="bg-gradient-to-r from-green-600 via-green-500 to-green-600 shadow-lg shadow-green-500/20">
           <div className="container mx-auto px-4 py-3">
@@ -61,7 +61,7 @@ const InstallPromptBanner: React.FC = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-white font-semibold text-sm sm:text-base truncate">
-                    ¿Quieres instalar FinPro en tu móvil?
+                    ¿Quieres instalar Monyro en tu móvil?
                   </p>
                   <p className="text-green-100 text-xs hidden sm:block">
                     Accede más rápido desde tu pantalla de inicio

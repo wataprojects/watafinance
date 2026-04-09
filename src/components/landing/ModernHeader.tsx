@@ -34,7 +34,7 @@ const ModernHeader: React.FC = () => {
           <div className="w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
             <Wallet className="w-5 h-5 text-black" />
           </div>
-          <span className="text-2xl font-bold text-white tracking-tight">FinPro</span>
+          <span className="text-2xl font-bold text-white tracking-tight">Monyro</span>
         </div>
 
         {/* Desktop Nav */}

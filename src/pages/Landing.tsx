@@ -27,7 +27,7 @@ const Landing = () => {
               <div className="w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center">
                 <Wallet className="w-4 h-4 text-black" />
               </div>
-              <span className="text-xl font-bold text-white">FinPro</span>
+              <span className="text-xl font-bold text-white">Monyro</span>
             </div>
 
             <div className="flex gap-8 text-sm text-zinc-500">
@@ -37,7 +37,7 @@ const Landing = () => {
             </div>
 
             <p className="text-zinc-600 text-sm">
-              © 2025 FinPro. Todos los derechos reservados.
+              © 2025 Monyro. Todos los derechos reservados.
             </p>
           </div>
         </div>

@@ -97,7 +97,7 @@ const OnboardingDashboard: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right duration-300">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-white">¡Bienvenido a FinPro!</h2>
+        <h2 className="text-2xl font-bold text-white">¡Bienvenido a Monyro!</h2>
         <p className="text-zinc-400">Tu resumen financiero de este mes</p>
       </div>
 

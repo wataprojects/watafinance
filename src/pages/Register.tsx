@@ -92,7 +92,7 @@ const Register = () => {
           <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
             <Wallet className="w-7 h-7 text-black" />
           </div>
-          <span className="text-3xl font-bold text-white">FinPro</span>
+          <span className="text-3xl font-bold text-white">Monyro</span>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800">

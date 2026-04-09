@@ -20,7 +20,7 @@ export default function AdminSidebar() {
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">FinPro</h1>
+            <h1 className="text-lg font-bold text-white">Monyro</h1>
             <p className="text-xs text-slate-400">Administración</p>
           </div>
         </Link>

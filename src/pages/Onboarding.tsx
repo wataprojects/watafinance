@@ -66,7 +66,7 @@ const Onboarding: React.FC = () => {
           <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
             <Wallet className="w-6 h-6 text-black" />
           </div>
-          <span className="text-2xl font-bold text-white">FinPro</span>
+          <span className="text-2xl font-bold text-white">Monyro</span>
         </div>
       </header>
 

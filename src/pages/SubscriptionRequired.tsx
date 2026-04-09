@@ -125,7 +125,7 @@ const SubscriptionRequired = () => {
           <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
             {trialInfo?.isInTrial
               ? "Aprovecha este tiempo para configurar tus finanzas o activa ya tu plan premium para no perder el acceso."
-              : "Gracias por probar FinPro. Para seguir disfrutando de todas las funcionalidades premium, elige el plan que mejor se adapte a ti."}
+              : "Gracias por probar Monyro. Para seguir disfrutando de todas las funcionalidades premium, elige el plan que mejor se adapte a ti."}
           </p>
         </div>
 
@@ -152,7 +152,7 @@ const SubscriptionRequired = () => {
                 <ul className="space-y-3 mb-8 text-left">
                   <li className="flex items-center gap-3 text-zinc-300">
                     <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span>Acceso completo a FinPro</span>
+                    <span>Acceso completo a Monyro</span>
                   </li>
                   <li className="flex items-center gap-3 text-zinc-300">
                     <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
@@ -256,8 +256,8 @@ const SubscriptionRequired = () => {
           </div>
           <p className="text-zinc-400 mb-6">
             Contáctanos en{" "}
-            <a href="mailto:soporte@finpro.app" className="text-green-400 hover:underline">
-              soporte@finpro.app
+            <a href="mailto:soporte@monyro.app" className="text-green-400 hover:underline">
+              soporte@monyro.app
             </a>
           </p>
           

@@ -131,8 +131,8 @@ serve(async (req) => {
     
     if (resendApiKey) {
       const subject = debtType === 'they_owe' 
-        ? `${creatorName} te debe dinero - FinPro`
-        : `${creatorName} te pide dinero - FinPro`
+        ? `${creatorName} te debe dinero - Monyro`
+        : `${creatorName} te pide dinero - Monyro`
       
       const htmlContent = `
         <!DOCTYPE html>
@@ -145,13 +145,13 @@ serve(async (req) => {
           <div style="max-width: 500px; margin: 0 auto; background: #18181b; border-radius: 16px; padding: 32px;">
             <div style="text-align: center; margin-bottom: 24px;">
               <div style="width: 60px; height: 60px; background: #f59e0b; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <span style="font-size: 28px; font-weight: bold; color: #000;">F</span>
+                <span style="font-size: 28px; font-weight: bold; color: #000;">M</span>
               </div>
               <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0;">Nueva deuda registrada</h1>
             </div>
             
             <p style="color: #a1a1aa; margin: 0 0 24px 0;">
-              ${creatorName} ha registrado una deuda contigo en FinPro.
+              ${creatorName} ha registrado una deuda contigo en Monyro.
             </p>
             
             <div style="background: #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
@@ -176,17 +176,17 @@ serve(async (req) => {
             <p style="color: #71717a; font-size: 14px; margin: 0 0 24px 0;">
               ${associatedUserId 
                 ? 'La deuda ha sido asociada a tu cuenta. Puedes aceptarla o rechazarla desde la app.' 
-                : 'Para confirmar o rechazar esta deuda, crea una cuenta en FinPro.'}
+                : 'Para confirmar o rechazar esta deuda, crea una cuenta en Monyro.'}
             </p>
             
-            <a href="${Deno.env.get('SUPABASE_URL') || 'https://finpro.app'}/register${inviteToken ? `?invite=${inviteToken}&debt=${debtId}` : ''}" 
+            <a href="${Deno.env.get('SUPABASE_URL') || 'https://monyro.app'}/register${inviteToken ? `?invite=${inviteToken}&debt=${debtId}` : ''}" 
                style="display: block; background: #f59e0b; color: #000; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; text-align: center;">
-              ${associatedUserId ? 'Ver en FinPro' : 'Crear cuenta en FinPro'}
+              ${associatedUserId ? 'Ver en Monyro' : 'Crear cuenta en Monyro'}
             </a>
             
             <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #3f3f46; text-align: center;">
               <p style="color: #71717a; font-size: 12px; margin: 0;">
-                FinPro - Gestión financiera colaborativa
+                Monyro - Gestión financiera colaborativa
               </p>
             </div>
           </div>
@@ -201,7 +201,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${resendApiKey}`
         },
         body: JSON.stringify({
-          from: 'FinPro <noreply@finpro.app>',
+          from: 'Monyro <noreply@monyro.app>',
           to: creditorEmail,
           subject: subject,
           html: htmlContent

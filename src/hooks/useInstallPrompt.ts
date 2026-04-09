@@ -25,7 +25,7 @@ interface UseInstallPromptReturn {
   resetDismiss: () => void;
 }
 
-const DISMISSED_KEY = 'finpro_install_dismissed';
+const DISMISSED_KEY = 'monyro_install_dismissed';
 
 export function useInstallPrompt(): UseInstallPromptReturn {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);

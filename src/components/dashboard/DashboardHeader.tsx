@@ -19,7 +19,7 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  title = "FinPro",
+  title = "Monyro",
   subtitle = "Tu gestión financiera",
 }) => {
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-500">
-              <span className="font-bold text-black">F</span>
+              <span className="font-bold text-black">M</span>
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">{title}</h1>

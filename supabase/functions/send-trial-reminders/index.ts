@@ -16,15 +16,15 @@ interface EmailTemplate {
 
 const EMAIL_TEMPLATES: Record<number, EmailTemplate> = {
   7: {
-    subject: '⏰ Tu prueba gratuita de FinPro termina en 7 días',
+    subject: '⏰ Tu prueba gratuita de Monyro termina en 7 días',
     daysRemaining: 7
   },
   3: {
-    subject: '⚠️ Tu prueba gratuita de FinPro termina en 3 días',
+    subject: '⚠️ Tu prueba gratuita de Monyro termina en 3 días',
     daysRemaining: 3
   },
   1: {
-    subject: '🚨 Último día: Tu prueba gratuita de FinPro termina hoy',
+    subject: '🚨 Último día: Tu prueba gratuita de Monyro termina hoy',
     daysRemaining: 1
   }
 };
@@ -38,13 +38,13 @@ const getEmailContent = (daysRemaining: number, firstName: string) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinPro - Recordatorio de Prueba</title>
+  <title>Monyro - Recordatorio de Prueba</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #000; color: #fff;">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <!-- Logo -->
     <div style="text-align: center; margin-bottom: 40px;">
-      <h1 style="color: #22c55e; margin: 0; font-size: 32px;">FinPro</h1>
+      <h1 style="color: #22c55e; margin: 0; font-size: 32px;">Monyro</h1>
     </div>
 
     <!-- Main Card -->
@@ -61,8 +61,8 @@ const getEmailContent = (daysRemaining: number, firstName: string) => {
       
       <p style="color: #a1a1aa; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
         ${isLastDay 
-          ? 'Tu período de prueba gratuita de <strong>FinPro</strong> termina <strong>HOY</strong>. No pierdas el acceso a todas las funcionalidades premium.'
-          : `Tu período de prueba gratuita de <strong>FinPro</strong> termina en <strong style="color: #22c55e; font-size: 24px;">${daysRemaining} día${daysRemaining > 1 ? 's' : ''}</strong>.`
+          ? 'Tu período de prueba gratuita de <strong>Monyro</strong> termina <strong>HOY</strong>. No pierdas el acceso a todas las funcionalidades premium.'
+          : `Tu período de prueba gratuita de <strong>Monyro</strong> termina en <strong style="color: #22c55e; font-size: 24px;">${daysRemaining} día${daysRemaining > 1 ? 's' : ''}</strong>.`
         }
       </p>
 
@@ -73,7 +73,7 @@ const getEmailContent = (daysRemaining: number, firstName: string) => {
       </div>
 
       <p style="color: #71717a; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
-        Después de hoy, necesitarás una suscripción activa para seguir usando FinPro:
+        Después de hoy, necesitarás una suscripción activa para seguir usando Monyro:
       </p>
 
       <!-- Pricing Options -->
@@ -98,8 +98,8 @@ const getEmailContent = (daysRemaining: number, firstName: string) => {
 
     <!-- Footer -->
     <div style="text-align: center; color: #52525b; font-size: 12px;">
-      <p style="margin: 0 0 8px 0;">¿Tienes preguntas? Contáctanos en soporte@finpro.app</p>
-      <p style="margin: 0;">© 2024 FinPro. Todos los derechos reservados.</p>
+      <p style="margin: 0 0 8px 0;">¿Tienes preguntas? Contáctanos en soporte@monyro.app</p>
+      <p style="margin: 0;">© 2024 Monyro. Todos los derechos reservados.</p>
     </div>
   </div>
 </body>
@@ -199,7 +199,7 @@ serve(async (req) => {
               'Authorization': `Bearer ${RESEND_API_KEY}`
             },
             body: JSON.stringify({
-              from: 'FinPro <soporte@finpro.app>',
+              from: 'Monyro <soporte@monyro.app>',
               to: email,
               subject: template.subject,
               html: emailHtml
