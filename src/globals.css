@@ -100,6 +100,17 @@
   }
 }
 
+/* Custom Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 /* Confetti animation for subscription trimming celebration */
 @keyframes confetti-fall {
   0% {
@@ -159,4 +170,9 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Gradient Text Utility */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-600;
 }
