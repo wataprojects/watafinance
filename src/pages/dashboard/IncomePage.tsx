@@ -182,6 +182,10 @@ const IncomePage = () => {
     type: "digital",
     initial_value: "",
     current_value: "",
+    risk_level: "medio",
+    monthly_contribution: "",
+    start_date: new Date(),
+    description: "",
   });
 
   const [newPatrimonyAsset, setNewPatrimonyAsset] = useState({
@@ -482,7 +486,10 @@ const IncomePage = () => {
 
   const handleCreateInvestment = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !newInvestment.name || !newInvestment.initial_value) return;
+    if (!session || !newInvestment.name || !newInvestment.initial_value) {
+      toast.error("Por favor completa los campos requeridos");
+      return;
+    }
 
     const initial = parseFloat(newInvestment.initial_value);
     const current = parseFloat(newInvestment.current_value) || initial;
@@ -495,14 +502,30 @@ const IncomePage = () => {
       initial_value: initial,
       current_value: current,
       return_percentage: returnPct,
+      risk_level: newInvestment.risk_level || "medio",
+      monthly_contribution: newInvestment.monthly_contribution ? parseFloat(newInvestment.monthly_contribution) : 0,
+      start_date: newInvestment.start_date ? formatDateToISO(newInvestment.start_date) : formatDateToISO(new Date()),
+      investment_type: "revalorization",
+      description: newInvestment.description,
     }).select().single();
 
     if (!error && data) {
       setInvestments([...investments, { id: data.id, name: data.name }]);
       setNewIncome({ ...newIncome, investment_id: data.id });
       setIsNewInvestmentOpen(false);
-      setNewInvestment({ name: "", type: "digital", initial_value: "", current_value: "" });
+      setNewInvestment({
+        name: "",
+        type: "digital",
+        initial_value: "",
+        current_value: "",
+        risk_level: "medio",
+        monthly_contribution: "",
+        start_date: new Date(),
+        description: "",
+      });
       toast.success("Inversion creada");
+    } else {
+      toast.error("Error al crear la inversion");
     }
   };
 
@@ -1532,10 +1555,13 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
       </Button>
 
       <Dialog open={isNewInvestmentOpen} onOpenChange={setIsNewInvestmentOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Nueva Inversion</DialogTitle>
           </DialogHeader>
+          <button onClick={() => setIsNewInvestmentOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+            <X className="w-4 h-4" />
+          </button>
           <div className="space-y-3 mt-4">
             <div>
               <label className="text-xs text-zinc-400 mb-1 block">Nombre</label>
@@ -1543,10 +1569,12 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 value={newInvestment.name}
                 onChange={(e) => setNewInvestment({ ...newInvestment, name: e.target.value })}
                 className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                placeholder="Ej: Bitcoin, Piso Madrid..."
               />
             </div>
+
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Tipo</label>
+              <label className="text-xs text-zinc-400 mb-1 block">Tipo de inversion</label>
               <Select value={newInvestment.type} onValueChange={(v) => setNewInvestment({ ...newInvestment, type: v })}>
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
@@ -1558,28 +1586,76 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Riesgo</label>
+              <Select value={newInvestment.risk_level || "medio"} onValueChange={(v) => setNewInvestment({ ...newInvestment, risk_level: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="bajo" className="text-white">Bajo</SelectItem>
+                  <SelectItem value="medio" className="text-white">Medio</SelectItem>
+                  <SelectItem value="alto" className="text-white">Alto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Valor inicial</label>
+                <label className="text-xs text-zinc-400 mb-1 block">Valor inicial (EUR)</label>
                 <Input
                   type="number"
                   value={newInvestment.initial_value}
                   onChange={(e) => setNewInvestment({ ...newInvestment, initial_value: e.target.value })}
                   className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                  placeholder="0.00"
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-400 mb-1 block">Valor actual</label>
+                <label className="text-xs text-zinc-400 mb-1 block">Valor actual (EUR)</label>
                 <Input
                   type="number"
                   value={newInvestment.current_value}
                   onChange={(e) => setNewInvestment({ ...newInvestment, current_value: e.target.value })}
                   className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                  placeholder="0.00"
                 />
               </div>
             </div>
-            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black">
-              Crear
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Aportacion mensual (EUR)</label>
+                <Input
+                  type="number"
+                  value={newInvestment.monthly_contribution || ""}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, monthly_contribution: e.target.value })}
+                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Fecha de inicio</label>
+                <DatePicker
+                  date={newInvestment.start_date ? new Date(newInvestment.start_date) : new Date()}
+                  onDateChange={(date) => setNewInvestment({ ...newInvestment, start_date: date || new Date() })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Descripcion</label>
+              <Input
+                value={newInvestment.description || ""}
+                onChange={(e) => setNewInvestment({ ...newInvestment, description: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                placeholder="Descripcion opcional..."
+              />
+            </div>
+
+            <Button onClick={handleCreateInvestment} className="w-full bg-emerald-500 hover:bg-emerald-600 text-black mt-4">
+              Crear Inversion
             </Button>
           </div>
         </DialogContent>
