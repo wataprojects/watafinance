@@ -19,6 +19,7 @@ interface UseInstallPromptReturn {
   isInstallable: boolean;
   isInstalled: boolean;
   isDismissed: boolean;
+  isBannerVisible: boolean;
   deferredPrompt: BeforeInstallPromptEvent | null;
   showPrompt: () => Promise<boolean>;
   dismiss: () => void;
@@ -31,6 +32,7 @@ export function useInstallPrompt(): UseInstallPromptReturn {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   useEffect(() => {
     // Check if already dismissed in current session
@@ -74,6 +76,19 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     };
   }, []);
 
+  const isInstallable = !!deferredPrompt && !isInstalled && !isDismissed;
+
+  useEffect(() => {
+    if (isInstallable) {
+      const timer = setTimeout(() => {
+        setIsBannerVisible(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsBannerVisible(false);
+    }
+  }, [isInstallable]);
+
   const showPrompt = useCallback(async (): Promise<boolean> => {
     if (!deferredPrompt) {
       return false;
@@ -111,9 +126,10 @@ export function useInstallPrompt(): UseInstallPromptReturn {
   }, []);
 
   return {
-    isInstallable: !!deferredPrompt && !isInstalled && !isDismissed,
+    isInstallable,
     isInstalled,
     isDismissed,
+    isBannerVisible,
     deferredPrompt,
     showPrompt,
     dismiss,

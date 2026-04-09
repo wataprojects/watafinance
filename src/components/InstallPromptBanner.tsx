@@ -5,24 +5,20 @@ import { X, Download, Smartphone } from 'lucide-react';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 const InstallPromptBanner: React.FC = () => {
-  const { isInstallable, showPrompt, dismiss, isInstalled } = useInstallPrompt();
-  const [isVisible, setIsVisible] = useState(false);
+  const { isInstallable, isBannerVisible, showPrompt, dismiss, isInstalled } = useInstallPrompt();
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    if (isInstallable && !isInstalled) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        setIsAnimating(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (isBannerVisible) {
+      setIsAnimating(true);
+    } else {
+      setIsAnimating(false);
     }
-  }, [isInstallable, isInstalled]);
+  }, [isBannerVisible]);
 
   const handleDismiss = () => {
     setIsAnimating(false);
     setTimeout(() => {
-      setIsVisible(false);
       dismiss();
     }, 300);
   };
@@ -34,20 +30,19 @@ const InstallPromptBanner: React.FC = () => {
     }
   };
 
-  if (!isInstallable && !isVisible) {
+  if (!isInstallable && !isBannerVisible) {
     return null;
   }
 
   return (
     <>
-      {isVisible && <div className="fixed inset-0 z-40 pointer-events-none" aria-hidden="true" />}
+      {isBannerVisible && <div className="fixed inset-0 z-40 pointer-events-none" aria-hidden="true" />}
       
       <div
         className={`
           fixed top-0 left-0 right-0 z-50 
-          transform transition-transform duration-300 ease-out
-          ${isAnimating ? 'translate-y-0' : '-translate-y-full'}
-          ${isVisible ? 'opacity-100' : 'opacity-0'}
+          transform transition-all duration-300 ease-out
+          ${isAnimating ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}
         `}
         role="banner"
         aria-label="Instalar Monyro"
@@ -93,7 +88,7 @@ const InstallPromptBanner: React.FC = () => {
         </div>
       </div>
 
-      {isVisible && <div className="h-[60px] sm:h-[60px]" aria-hidden="true" />}
+      {isBannerVisible && <div className="h-[60px] sm:h-[60px]" aria-hidden="true" />}
     </>
   );
 };

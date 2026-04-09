@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { Wallet, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 const ModernHeader: React.FC = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isBannerVisible } = useInstallPrompt();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,9 +24,12 @@ const ModernHeader: React.FC = () => {
   return (
     <header 
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 py-4",
+        "fixed left-0 right-0 z-[60] transition-all duration-300 px-4 py-4",
         isScrolled ? "bg-black/80 backdrop-blur-md border-b border-zinc-800 py-3" : "bg-transparent"
       )}
+      style={{ 
+        top: isBannerVisible ? '60px' : '0px'
+      }}
     >
       <div className="container mx-auto flex justify-between items-center">
         <div 
