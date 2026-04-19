@@ -48,12 +48,10 @@ const Dashboard = () => {
   };
 
   const fetchData = async (userId: string) => {
-    // We fetch data from the last 2 months to ensure we have enough context for projections
-    const twoMonthsAgo = startOfMonth(subMonths(new Date(), 2)).toISOString().split('T')[0];
-
+    // Cargamos TODO el historial para poder calcular el saldo inicial real
     const [incomesRes, expensesRes, loansRes] = await Promise.all([
-      supabase.from("incomes").select("*").eq("user_id", userId).gte('date', twoMonthsAgo),
-      supabase.from("expenses").select("*").eq("user_id", userId).gte('date', twoMonthsAgo),
+      supabase.from("incomes").select("*").eq("user_id", userId),
+      supabase.from("expenses").select("*").eq("user_id", userId),
       supabase.from("loans").select("*").eq("user_id", userId).eq("status", "active")
     ]);
 
@@ -64,32 +62,7 @@ const Dashboard = () => {
 
   const runAutomations = async () => {
     setAutomationRunning(true);
-    console.log('[Dashboard] Running automations...');
-    
     const result = await runAllAutomations();
-    
-    if (result.success) {
-      // Show success feedback if something was processed
-      if (result.recurringTransactions) {
-        const { expensesCreated, incomesCreated } = result.recurringTransactions;
-        if (expensesCreated > 0 || incomesCreated > 0) {
-          console.log('[Dashboard] Recurring transactions processed:', result.recurringTransactions);
-        }
-      }
-      
-      if (result.loans) {
-        const { loansProcessed, loansCompleted } = result.loans;
-        if (loansProcessed > 0) {
-          console.log('[Dashboard] Loans processed:', result.loans);
-          if (loansCompleted > 0) {
-            toast.success(`¡${loansCompleted} préstamo(s) completado(s)!`);
-          }
-        }
-      }
-    } else {
-      console.error('[Dashboard] Automation errors:', result.errors);
-    }
-    
     setAutomationRunning(false);
   };
 
@@ -107,16 +80,13 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-black pb-28">
-      {/* Header con notificaciones - usando el componente DashboardHeader */}
       <DashboardHeader title="Monyro" subtitle="Tu gestión financiera" />
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Automation running indicator */}
         {automationRunning && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-green-500"></div>
-            <span className="text-zinc-400 text-sm">Procesando transacciones recurrentes...</span>
+            <span className="text-zinc-400 text-sm">Actualizando datos...</span>
           </div>
         )}
         
@@ -128,20 +98,19 @@ const Dashboard = () => {
           navigate={handleNavigate}
         />
         
-        {/* FinancialFreedom antes de FinancialHealth */}
         <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
         
-        {/* financialHealth después de FinancialFreedom */}
         <FinancialHealth />
 
-        {/* Financial Projections */}
+        {/* Pasamos el mes y año seleccionados para que la proyección sea coherente */}
         <FinancialProjections
           incomes={incomes}
           expenses={expenses}
           loans={loans}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
         />
         
-        {/* Gráficos de Gastos e Ingresos/Gastos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TopExpenses />
           <IncomeExpenseChart />
