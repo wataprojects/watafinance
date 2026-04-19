@@ -1,4 +1,14 @@
-import { format, addDays, isAfter, isBefore, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getDate } from "date-fns";
+import { 
+  addDays, 
+  isAfter, 
+  isBefore, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  format,
+  getDate,
+  isSameDay
+} from "date-fns";
 
 export interface Transaction {
   id: string;
@@ -6,139 +16,138 @@ export interface Transaction {
   description: string;
   category: string;
   date: string;
-  is_recurring: boolean;
+  is_recurring?: boolean;
   frequency?: string;
-  recurrence_interval?: number;
-  recurrence_unit?: string;
   payment_days?: number[];
-  is_passive?: boolean;
+  type?: 'income' | 'expense';
+  is_skipped?: boolean;
   is_trimmed?: boolean;
+  end_date?: string | null;
 }
 
 export interface ProjectionResult {
   projectedIncome: number;
   projectedExpenses: number;
-  upcomingPayments: Transaction[];
-  cashFlowTimeline: { date: string; balance: number }[];
-  fixedVsVariable: { fixed: number; variable: number };
   estimatedSavings: number;
+  cashFlowTimeline: { date: string; balance: number }[];
+  upcomingPayments: Transaction[];
   riskAlerts: string[];
+  fixedVsVariable: { fixed: number; variable: number };
 }
 
 export const calculateProjections = (
   incomes: Transaction[],
   expenses: Transaction[],
-  currentBalance: number = 0
+  startingBalance: number = 0
 ): ProjectionResult => {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const next30Days = eachDayOfInterval({ start: now, end: addDays(now, 30) });
-
+  const today = new Date();
+  const thirtyDaysFromNow = addDays(today, 30);
+  
   let projectedIncome = 0;
   let projectedExpenses = 0;
   let fixedExpenses = 0;
   let variableExpenses = 0;
+  const upcomingPayments: Transaction[] = [];
+  const riskAlerts: string[] = [];
 
-  // Helper to calculate prorated monthly amount
-  const getProratedMonthly = (amount: number, frequency: string = 'monthly'): number => {
-    switch (frequency) {
-      case 'weekly': return amount * 4.33;
-      case 'quarterly': return amount / 3;
-      case 'annual': return amount / 12;
-      case 'monthly':
-      default: return amount;
+  // Helper to check if a recurring transaction falls within the next 30 days
+  const getOccurrencesInNext30Days = (t: Transaction, type: 'income' | 'expense') => {
+    const occurrences: { date: Date; amount: number }[] = [];
+    
+    if (!t.is_recurring) {
+      const tDate = new Date(t.date);
+      if (isAfter(tDate, today) && isBefore(tDate, thirtyDaysFromNow)) {
+        occurrences.push({ date: tDate, amount: t.amount });
+      }
+      return occurrences;
     }
+
+    // For recurring transactions
+    const paymentDays = t.payment_days || [new Date(t.date).getDate()];
+    const interval = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
+
+    interval.forEach(day => {
+      const dayOfMonth = getDate(day);
+      const isPaymentDay = paymentDays.includes(dayOfMonth) || 
+                          (paymentDays.includes(32) && isSameDay(day, endOfMonth(day)));
+      
+      // Check if the series hasn't ended
+      const hasNotEnded = !t.end_date || isBefore(day, new Date(t.end_date));
+
+      if (isPaymentDay && hasNotEnded && !t.is_skipped && !t.is_trimmed) {
+        occurrences.push({ date: day, amount: t.amount });
+      }
+    });
+
+    return occurrences;
   };
 
   // Process Incomes
   incomes.forEach(income => {
-    if (income.is_recurring) {
-      projectedIncome += getProratedMonthly(income.amount, income.frequency);
-    } else {
-      const incomeDate = new Date(income.date);
-      if (incomeDate >= monthStart && incomeDate <= monthEnd) {
-        projectedIncome += income.amount;
-      }
-    }
+    const occurrences = getOccurrencesInNext30Days(income, 'income');
+    occurrences.forEach(occ => {
+      projectedIncome += occ.amount;
+      upcomingPayments.push({ ...income, date: occ.date.toISOString(), type: 'income' });
+    });
   });
 
   // Process Expenses
   expenses.forEach(expense => {
-    if (expense.is_trimmed) return;
-
-    if (expense.is_recurring) {
-      const monthlyAmount = getProratedMonthly(expense.amount, expense.frequency);
-      projectedExpenses += monthlyAmount;
-      fixedExpenses += monthlyAmount;
-    } else {
-      const expenseDate = new Date(expense.date);
-      if (expenseDate >= monthStart && expenseDate <= monthEnd) {
-        projectedExpenses += expense.amount;
-        variableExpenses += expense.amount;
-      }
-    }
-  });
-
-  // Upcoming Payments (next 30 days)
-  const upcomingPayments: Transaction[] = [];
-  const allTransactions = [...incomes.map(i => ({ ...i, type: 'income' })), ...expenses.map(e => ({ ...e, type: 'expense' }))];
-
-  next30Days.forEach(day => {
-    const dayOfMonth = getDate(day);
-    const dayOfWeek = getDay(day) === 0 ? 7 : getDay(day); // Map 0-6 (Sun-Sat) to 1-7 (Mon-Sun)
-
-    allTransactions.forEach(t => {
-      if (!t.is_recurring || t.is_trimmed) return;
-
-      let isDue = false;
-      if (t.frequency === 'monthly' || !t.frequency) {
-        if (t.payment_days?.includes(dayOfMonth)) isDue = true;
-        // Handle "Last Day" logic if needed (e.g., if 31 is selected and month has 30 days)
-        if (t.payment_days?.includes(32) && dayOfMonth === getDate(endOfMonth(day))) isDue = true;
-      } else if (t.frequency === 'weekly') {
-        if (t.payment_days?.includes(dayOfWeek)) isDue = true;
-      }
-
-      if (isDue) {
-        upcomingPayments.push({
-          ...t,
-          date: format(day, 'yyyy-MM-dd')
-        } as Transaction);
+    const occurrences = getOccurrencesInNext30Days(expense, 'expense');
+    occurrences.forEach(occ => {
+      projectedExpenses += occ.amount;
+      upcomingPayments.push({ ...expense, date: occ.date.toISOString(), type: 'expense' });
+      
+      // Categorize as fixed or variable (simplified logic)
+      if (expense.is_recurring || ['housing', 'loans', 'services', 'subscriptions'].includes(expense.category)) {
+        fixedExpenses += occ.amount;
+      } else {
+        variableExpenses += occ.amount;
       }
     });
   });
 
-  // Cash Flow Timeline
-  let runningBalance = currentBalance;
-  const cashFlowTimeline = next30Days.map(day => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const dayIncomes = upcomingPayments.filter(p => (p as any).type === 'income' && p.date === dateStr);
-    const dayExpenses = upcomingPayments.filter(p => (p as any).type === 'expense' && p.date === dateStr);
+  // Generate Timeline
+  const timeline: { date: string; balance: number }[] = [];
+  let currentBalance = startingBalance;
+  
+  const days = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
+  
+  days.forEach(day => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    const daysTransactions = upcomingPayments.filter(t => 
+      format(new Date(t.date), 'yyyy-MM-dd') === dayStr
+    );
 
-    dayIncomes.forEach(i => runningBalance += i.amount);
-    dayExpenses.forEach(e => runningBalance -= e.amount);
+    daysTransactions.forEach(t => {
+      if (t.type === 'income') currentBalance += t.amount;
+      else currentBalance -= t.amount;
+    });
 
-    return { date: dateStr, balance: runningBalance };
+    timeline.push({ date: dayStr, balance: currentBalance });
+    
+    if (currentBalance < 0 && !riskAlerts.some(a => a.includes("saldo negativo"))) {
+      riskAlerts.push(`Riesgo de saldo negativo detectado alrededor del ${format(day, 'dd/MM')}.`);
+    }
   });
 
-  // Risk Alerts
-  const riskAlerts: string[] = [];
-  if (cashFlowTimeline.some(day => day.balance < 0)) {
-    const firstNegativeDay = cashFlowTimeline.find(day => day.balance < 0);
-    riskAlerts.push(`Predicción de saldo negativo el ${format(new Date(firstNegativeDay!.date), 'dd/MM')}`);
+  // Additional Risk Analysis
+  const savingsRate = projectedIncome > 0 ? (projectedIncome - projectedExpenses) / projectedIncome : 0;
+  if (savingsRate < 0.1 && projectedIncome > 0) {
+    riskAlerts.push("Tu capacidad de ahorro es baja (menor al 10%). Considera revisar tus gastos variables.");
   }
-  if (projectedExpenses > projectedIncome) {
-    riskAlerts.push("Los gastos proyectados superan a los ingresos este mes");
+
+  if (fixedExpenses > projectedIncome * 0.6) {
+    riskAlerts.push("Tus gastos fijos superan el 60% de tus ingresos. Esto reduce tu flexibilidad financiera.");
   }
 
   return {
     projectedIncome,
     projectedExpenses,
-    upcomingPayments: upcomingPayments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    cashFlowTimeline,
-    fixedVsVariable: { fixed: fixedExpenses, variable: variableExpenses },
     estimatedSavings: Math.max(0, projectedIncome - projectedExpenses),
-    riskAlerts
+    cashFlowTimeline: timeline,
+    upcomingPayments: upcomingPayments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    riskAlerts,
+    fixedVsVariable: { fixed: fixedExpenses, variable: variableExpenses }
   };
 };
