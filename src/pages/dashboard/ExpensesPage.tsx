@@ -1588,7 +1588,7 @@ const ExpensesPage = () => {
               className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
             >
               Cancelar
-            </CodeButton>
+            </Button>
             <Button
               onClick={confirmRestore}
               disabled={trimLoading}
@@ -2014,7 +2014,7 @@ const ExpenseForm = ({
               <span className={`font-medium ${expense.investment_id !== "none" ? "text-emerald-400" : "text-zinc-400"}`}>
                 {getInvestmentLabel()}
               </span>
-              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+              <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
             </button>
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800">
@@ -2105,7 +2105,7 @@ const ExpenseForm = ({
               <span className={`font-medium ${expense.patrimony_id !== "none" ? "text-sky-400" : "text-zinc-400"}`}>
                 {getPatrimonyLabel()}
               </span>
-              <ChevronRight className="w-4 h-4 text-zinc-500 ml-auto" />
+              <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
             </button>
           </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800">
