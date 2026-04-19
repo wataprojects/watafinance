@@ -14,7 +14,7 @@ import {
   Clock,
   Info
 } from "lucide-react";
-import { format, isAfter, isBefore, startOfMonth, endOfMonth, isSameDay, startOfDay, parseISO, startOfToday } from "date-fns";
+import { format, isAfter, isBefore, startOfMonth, endOfMonth, isSameDay, startOfDay, parseISO, startOfToday, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Tooltip,
