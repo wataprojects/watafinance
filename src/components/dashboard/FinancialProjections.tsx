@@ -75,6 +75,7 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
     const today = startOfToday();
     const sevenDaysFromNow = addDays(today, 7);
     
+    // Filtramos los movimientos que caen en los próximos 7 días
     return projections.upcomingPayments.filter(p => {
       const pDate = startOfDay(new Date(p.date));
       return (isSameDay(pDate, today) || isAfter(pDate, today)) && 

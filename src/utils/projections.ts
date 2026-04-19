@@ -9,7 +9,6 @@ import {
   getDate,
   isSameDay,
   subDays,
-  startOfToday,
   startOfDay
 } from "date-fns";
 
@@ -38,12 +37,20 @@ export interface ProjectionResult {
   fixedVsVariable: { fixed: number; variable: number };
 }
 
+// Helper para parsear fechas de forma segura (evitando desfases de zona horaria)
+const parseSafeDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  // Si es solo fecha YYYY-MM-DD, añadimos la hora para que se interprete como local
+  const normalized = dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00`;
+  return new Date(normalized);
+};
+
 export const calculateProjections = (
   incomes: Transaction[],
   expenses: Transaction[],
   startingBalance: number = 0
 ): ProjectionResult => {
-  const today = startOfToday();
+  const today = startOfDay(new Date());
   const thirtyDaysFromNow = addDays(today, 30);
   const sixtyDaysAgo = subDays(today, 60);
   
@@ -54,14 +61,14 @@ export const calculateProjections = (
   const upcomingPayments: Transaction[] = [];
   const riskAlerts: string[] = [];
 
-  // --- 1. PROMEDIOS VARIABLES ---
+  // --- 1. PROMEDIOS VARIABLES (HISTORIAL) ---
   const calculateVariableAverage = (transactions: Transaction[]) => {
     const pastVariable = transactions.filter(t => 
       !t.is_recurring && 
-      isAfter(startOfDay(new Date(t.date)), sixtyDaysAgo) && 
-      isBefore(startOfDay(new Date(t.date)), today)
+      isAfter(startOfDay(parseSafeDate(t.date)), sixtyDaysAgo) && 
+      isBefore(startOfDay(parseSafeDate(t.date)), today)
     );
-    const total = pastVariable.reduce((sum, t) => sum + t.amount, 0);
+    const total = pastVariable.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     return total / 2;
   };
 
@@ -69,23 +76,24 @@ export const calculateProjections = (
   const avgVariableExpenses = calculateVariableAverage(expenses);
 
   // --- 2. IDENTIFICAR SERIES ÚNICAS ---
-  // Agrupamos por descripción para no duplicar proyecciones de la misma serie
+  // Para evitar el error de los 3670€, solo tomamos la instancia más reciente de cada serie recurrente
   const getUniqueSeries = (transactions: Transaction[]) => {
     const seriesMap = new Map<string, Transaction>();
     const puntuals: Transaction[] = [];
 
     transactions.forEach(t => {
       if (!t.is_recurring) {
-        const tDate = startOfDay(new Date(t.date));
+        const tDate = startOfDay(parseSafeDate(t.date));
         if (isSameDay(tDate, today) || isAfter(tDate, today)) {
           puntuals.push(t);
         }
         return;
       }
       
-      const key = `${t.description?.toLowerCase()}-${t.category}`;
+      // Clave única por descripción y categoría
+      const key = `${(t.description || '').toLowerCase()}-${t.category}`;
       const existing = seriesMap.get(key);
-      if (!existing || new Date(t.date) > new Date(existing.date)) {
+      if (!existing || parseSafeDate(t.date) > parseSafeDate(existing.date)) {
         seriesMap.set(key, t);
       }
     });
@@ -96,22 +104,23 @@ export const calculateProjections = (
   const uniqueIncomes = getUniqueSeries(incomes);
   const uniqueExpenses = getUniqueSeries(expenses);
 
-  // Helper para calcular ocurrencias
+  // Helper para calcular ocurrencias en los próximos 30 días
   const getOccurrences = (t: Transaction) => {
     const occurrences: { date: Date; amount: number }[] = [];
+    const amount = Number(t.amount) || 0;
     
     if (!t.is_recurring) {
-      const tDate = startOfDay(new Date(t.date));
+      const tDate = startOfDay(parseSafeDate(t.date));
       if ((isSameDay(tDate, today) || isAfter(tDate, today)) && isBefore(tDate, thirtyDaysFromNow)) {
-        occurrences.push({ date: tDate, amount: t.amount });
+        occurrences.push({ date: tDate, amount });
       }
       return occurrences;
     }
 
-    // Para recurrentes, si no hay días de pago, usamos el día del registro original
+    // Para recurrentes, usamos los días de pago o el día original
     const paymentDays = (t.payment_days && t.payment_days.length > 0) 
       ? t.payment_days 
-      : [new Date(t.date).getDate()];
+      : [parseSafeDate(t.date).getDate()];
       
     const interval = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
 
@@ -120,17 +129,17 @@ export const calculateProjections = (
       const isLastDayOfMonth = isSameDay(day, endOfMonth(day));
       const isPaymentDay = paymentDays.includes(dayOfMonth) || (paymentDays.includes(32) && isLastDayOfMonth);
       
-      const hasNotEnded = !t.end_date || isBefore(startOfDay(day), startOfDay(new Date(t.end_date)));
+      const hasNotEnded = !t.end_date || isBefore(startOfDay(day), startOfDay(parseSafeDate(t.end_date)));
 
       if (isPaymentDay && hasNotEnded && !t.is_skipped && !t.is_trimmed) {
-        occurrences.push({ date: day, amount: t.amount });
+        occurrences.push({ date: day, amount });
       }
     });
 
     return occurrences;
   };
 
-  // Procesar todo
+  // Procesar Ingresos
   uniqueIncomes.forEach(income => {
     getOccurrences(income).forEach(occ => {
       projectedIncome += occ.amount;
@@ -138,6 +147,7 @@ export const calculateProjections = (
     });
   });
 
+  // Procesar Gastos
   uniqueExpenses.forEach(expense => {
     getOccurrences(expense).forEach(occ => {
       projectedExpenses += occ.amount;
@@ -149,6 +159,7 @@ export const calculateProjections = (
     });
   });
 
+  // Añadir promedios variables
   projectedIncome += avgVariableIncome;
   projectedExpenses += avgVariableExpenses;
   variableExpenses += avgVariableExpenses;
@@ -161,7 +172,7 @@ export const calculateProjections = (
 
   days.forEach(day => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    upcomingPayments.filter(t => format(new Date(t.date), 'yyyy-MM-dd') === dayStr).forEach(t => {
+    upcomingPayments.filter(t => format(parseSafeDate(t.date), 'yyyy-MM-dd') === dayStr).forEach(t => {
       if (t.type === 'income') currentBalance += t.amount;
       else currentBalance -= t.amount;
     });
@@ -173,6 +184,7 @@ export const calculateProjections = (
     }
   });
 
+  // Alertas de riesgo
   if (projectedIncome > 0 && (projectedIncome - projectedExpenses) / projectedIncome < 0.05) {
     riskAlerts.push("Tu capacidad de ahorro proyectada es muy baja.");
   }
