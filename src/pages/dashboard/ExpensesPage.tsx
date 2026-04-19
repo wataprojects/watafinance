@@ -640,38 +640,42 @@ const ExpensesPage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // 1. Delete current instance
-    const { error: deleteError } = await supabase
-      .from("expenses")
-      .delete()
-      .eq("id", selectedExpense.id);
-
-    if (deleteError) {
-      toast.error("Error al detener recurrencia");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // 2. Set end_date for all previous instances of this series
+    // 1. Set end_date for ALL instances of this series (past and future)
+    // This ensures the automation function won't pick it up as a template anymore
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const endDate = formatDateToISO(yesterday);
 
     const { error: updateError } = await supabase
       .from("expenses")
-      .update({ end_date: endDate })
+      .update({ 
+        end_date: endDate,
+        is_recurring: false // Also mark as non-recurring to be safe
+      })
       .eq("user_id", session.user.id)
       .eq("description", selectedExpense.description)
       .eq("category", selectedExpense.category)
       .eq("is_recurring", true);
 
-    if (!updateError) {
+    if (updateError) {
+      toast.error("Error al detener la serie recurrente");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Delete the current instance that the user is looking at
+    const { error: deleteError } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", selectedExpense.id);
+
+    if (!deleteError) {
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
       fetchExpenses(session.user.id);
-      toast.success("Recurrencia detenida");
+      toast.success("Recurrencia detenida permanentemente");
     } else {
-      toast.error("Error al actualizar serie recurrente");
+      toast.error("Error al eliminar la instancia actual");
     }
     setIsSubmitting(false);
   };
@@ -1584,7 +1588,7 @@ const ExpensesPage = () => {
               className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
             >
               Cancelar
-            </Button>
+            </CodeButton>
             <Button
               onClick={confirmRestore}
               disabled={trimLoading}
