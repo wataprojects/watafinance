@@ -8,7 +8,8 @@ import {
   format,
   getDate,
   isSameDay,
-  subDays
+  subDays,
+  startOfToday
 } from "date-fns";
 
 export interface Transaction {
@@ -41,7 +42,7 @@ export const calculateProjections = (
   expenses: Transaction[],
   startingBalance: number = 0
 ): ProjectionResult => {
-  const today = new Date();
+  const today = startOfToday();
   const thirtyDaysFromNow = addDays(today, 30);
   const sixtyDaysAgo = subDays(today, 60);
   
@@ -53,7 +54,6 @@ export const calculateProjections = (
   const riskAlerts: string[] = [];
 
   // --- 1. CÁLCULO DE PROMEDIOS VARIABLES (HISTORIAL) ---
-  // Calculamos cuánto sueles ingresar/gastar de forma variable (no recurrente)
   const calculateVariableAverage = (transactions: Transaction[]) => {
     const pastVariable = transactions.filter(t => 
       !t.is_recurring && 
@@ -61,7 +61,7 @@ export const calculateProjections = (
       isBefore(new Date(t.date), today)
     );
     const total = pastVariable.reduce((sum, t) => sum + t.amount, 0);
-    return total / 2; // Promedio mensual (basado en 60 días)
+    return total / 2; // Promedio mensual
   };
 
   const avgVariableIncome = calculateVariableAverage(incomes);
@@ -74,8 +74,8 @@ export const calculateProjections = (
 
     transactions.forEach(t => {
       if (!t.is_recurring) {
-        // Solo incluimos puntuales si están programados a futuro
-        if (isAfter(new Date(t.date), today)) {
+        const tDate = new Date(t.date);
+        if (isSameDay(tDate, today) || isAfter(tDate, today)) {
           nonRecurring.push(t);
         }
         return;
@@ -99,7 +99,7 @@ export const calculateProjections = (
     
     if (!t.is_recurring) {
       const tDate = new Date(t.date);
-      if (isAfter(tDate, today) && isBefore(tDate, thirtyDaysFromNow)) {
+      if ((isSameDay(tDate, today) || isAfter(tDate, today)) && isBefore(tDate, thirtyDaysFromNow)) {
         occurrences.push({ date: tDate, amount: t.amount });
       }
       return occurrences;
@@ -122,7 +122,7 @@ export const calculateProjections = (
     return occurrences;
   };
 
-  // Procesar Ingresos (Fijos + Programados)
+  // Procesar Ingresos
   uniqueIncomes.forEach(income => {
     const occurrences = getOccurrencesInNext30Days(income);
     occurrences.forEach(occ => {
@@ -131,7 +131,7 @@ export const calculateProjections = (
     });
   });
 
-  // Procesar Gastos (Fijos + Programados)
+  // Procesar Gastos
   uniqueExpenses.forEach(expense => {
     const occurrences = getOccurrencesInNext30Days(expense);
     occurrences.forEach(occ => {
@@ -147,7 +147,6 @@ export const calculateProjections = (
     });
   });
 
-  // Añadir promedios variables al total
   projectedIncome += avgVariableIncome;
   projectedExpenses += avgVariableExpenses;
   variableExpenses += avgVariableExpenses;
@@ -157,7 +156,6 @@ export const calculateProjections = (
   let currentBalance = startingBalance;
   const days = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
   
-  // Repartimos el promedio variable diario para que el gráfico sea fluido
   const dailyVarIncome = avgVariableIncome / 30;
   const dailyVarExpense = avgVariableExpenses / 30;
 
@@ -167,13 +165,11 @@ export const calculateProjections = (
       format(new Date(t.date), 'yyyy-MM-dd') === dayStr
     );
 
-    // Sumamos/restamos transacciones específicas del día
     daysTransactions.forEach(t => {
       if (t.type === 'income') currentBalance += t.amount;
       else currentBalance -= t.amount;
     });
 
-    // Aplicamos el goteo variable diario
     currentBalance += dailyVarIncome;
     currentBalance -= dailyVarExpense;
 
@@ -184,7 +180,6 @@ export const calculateProjections = (
     }
   });
 
-  // Análisis de Riesgo
   const savingsRate = projectedIncome > 0 ? (projectedIncome - projectedExpenses) / projectedIncome : 0;
   
   if (savingsRate < 0.05 && projectedIncome > 0) {

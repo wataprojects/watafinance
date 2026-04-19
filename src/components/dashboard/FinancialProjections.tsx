@@ -15,7 +15,7 @@ import {
   Wallet,
   Info
 } from "lucide-react";
-import { format, isAfter, isBefore, addDays, startOfMonth } from "date-fns";
+import { format, isAfter, isBefore, addDays, startOfMonth, startOfToday, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Tooltip,
@@ -32,7 +32,6 @@ interface FinancialProjectionsProps {
 
 const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, expenses, loans }) => {
   // Convert loans to recurring expenses for projection
-  // Using 'borrower_name' as per the database schema
   const loanExpenses = useMemo(() => loans.map(loan => ({
     id: loan.id,
     amount: parseFloat(loan.monthly_payment || 0),
@@ -72,10 +71,16 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
     return calculateProjections(incomes, allExpenses, estimatedStartingBalance);
   }, [incomes, allExpenses, estimatedStartingBalance]);
 
-  const next7Days = projections.upcomingPayments.filter(p =>
-    isAfter(new Date(p.date), new Date()) &&
-    isBefore(new Date(p.date), addDays(new Date(), 7))
-  );
+  const next7Days = useMemo(() => {
+    const today = startOfToday();
+    const sevenDaysFromNow = addDays(today, 7);
+    
+    return projections.upcomingPayments.filter(p => {
+      const pDate = new Date(p.date);
+      return (isSameDay(pDate, today) || isAfter(pDate, today)) && 
+             isBefore(pDate, addDays(sevenDaysFromNow, 1));
+    });
+  }, [projections.upcomingPayments]);
 
   return (
     <div className="space-y-6">
