@@ -98,8 +98,11 @@ export const calculateProjections = (
       projectedExpenses += occ.amount;
       upcomingPayments.push({ ...expense, date: occ.date.toISOString(), type: 'expense' });
       
-      // Categorize as fixed or variable (simplified logic)
-      if (expense.is_recurring || ['housing', 'loans', 'services', 'subscriptions'].includes(expense.category)) {
+      // Categorize as fixed or variable (more accurate logic)
+      const essentialCategories = ['housing', 'loans', 'electricity', 'water', 'internet', 'subscriptions', 'insurance', 'security', 'gas'];
+      const isEssential = essentialCategories.includes(expense.category);
+      
+      if (expense.is_recurring || isEssential) {
         fixedExpenses += occ.amount;
       } else {
         variableExpenses += occ.amount;
@@ -131,14 +134,17 @@ export const calculateProjections = (
     }
   });
 
-  // Additional Risk Analysis
+  // Additional Risk Analysis - More realistic thresholds
   const savingsRate = projectedIncome > 0 ? (projectedIncome - projectedExpenses) / projectedIncome : 0;
-  if (savingsRate < 0.1 && projectedIncome > 0) {
-    riskAlerts.push("Tu capacidad de ahorro es baja (menor al 10%). Considera revisar tus gastos variables.");
+  
+  // Only alert if savings rate is very low (less than 5%)
+  if (savingsRate < 0.05 && projectedIncome > 0) {
+    riskAlerts.push("Tu capacidad de ahorro proyectada es muy baja (menor al 5%).");
   }
 
-  if (fixedExpenses > projectedIncome * 0.6) {
-    riskAlerts.push("Tus gastos fijos superan el 60% de tus ingresos. Esto reduce tu flexibilidad financiera.");
+  // Only alert if fixed expenses are extremely high (more than 85%)
+  if (fixedExpenses > projectedIncome * 0.85) {
+    riskAlerts.push("Tus gastos fijos son muy elevados respecto a tus ingresos.");
   }
 
   return {

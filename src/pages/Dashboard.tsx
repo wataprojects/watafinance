@@ -15,6 +15,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { runAllAutomations } from "@/utils/automation";
 import { toast } from "sonner";
+import { startOfMonth, subMonths } from "date-fns";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -47,9 +48,12 @@ const Dashboard = () => {
   };
 
   const fetchData = async (userId: string) => {
+    // We fetch data from the last 2 months to ensure we have enough context for projections
+    const twoMonthsAgo = startOfMonth(subMonths(new Date(), 2)).toISOString().split('T')[0];
+
     const [incomesRes, expensesRes, loansRes] = await Promise.all([
-      supabase.from("incomes").select("*").eq("user_id", userId),
-      supabase.from("expenses").select("*").eq("user_id", userId),
+      supabase.from("incomes").select("*").eq("user_id", userId).gte('date', twoMonthsAgo),
+      supabase.from("expenses").select("*").eq("user_id", userId).gte('date', twoMonthsAgo),
       supabase.from("loans").select("*").eq("user_id", userId).eq("status", "active")
     ]);
 
