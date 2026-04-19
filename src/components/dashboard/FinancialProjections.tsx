@@ -15,7 +15,7 @@ import {
   Wallet,
   Info
 } from "lucide-react";
-import { format, isAfter, isBefore, addDays, startOfMonth, startOfToday, isSameDay } from "date-fns";
+import { format, isAfter, isBefore, addDays, startOfMonth, startOfToday, isSameDay, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Tooltip,
@@ -47,20 +47,20 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
 
   // Estimate a starting balance based on current month's activity so far
   const estimatedStartingBalance = useMemo(() => {
-    const today = new Date();
+    const today = startOfToday();
     const monthStart = startOfMonth(today);
     
     const monthIncomes = incomes
       .filter(i => {
-        const d = new Date(i.date);
-        return isAfter(d, monthStart) && isBefore(d, today);
+        const d = startOfDay(new Date(i.date));
+        return (isSameDay(d, monthStart) || isAfter(d, monthStart)) && isBefore(d, today);
       })
       .reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
       
     const monthExpenses = expenses
       .filter(e => {
-        const d = new Date(e.date);
-        return isAfter(d, monthStart) && isBefore(d, today);
+        const d = startOfDay(new Date(e.date));
+        return (isSameDay(d, monthStart) || isAfter(d, monthStart)) && isBefore(d, today);
       })
       .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
       
@@ -76,9 +76,9 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
     const sevenDaysFromNow = addDays(today, 7);
     
     return projections.upcomingPayments.filter(p => {
-      const pDate = new Date(p.date);
+      const pDate = startOfDay(new Date(p.date));
       return (isSameDay(pDate, today) || isAfter(pDate, today)) && 
-             isBefore(pDate, addDays(sevenDaysFromNow, 1));
+             (isSameDay(pDate, sevenDaysFromNow) || isBefore(pDate, sevenDaysFromNow));
     });
   }, [projections.upcomingPayments]);
 
