@@ -32,10 +32,11 @@ interface FinancialProjectionsProps {
 
 const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, expenses, loans }) => {
   // Convert loans to recurring expenses for projection
+  // Using 'borrower_name' as per the database schema
   const loanExpenses = useMemo(() => loans.map(loan => ({
     id: loan.id,
     amount: parseFloat(loan.monthly_payment || 0),
-    description: loan.name,
+    description: `Préstamo: ${loan.borrower_name || loan.bank || 'Sin nombre'}`,
     category: 'loans',
     date: new Date().toISOString(),
     is_recurring: true,
@@ -46,7 +47,6 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
   const allExpenses = useMemo(() => [...expenses, ...loanExpenses], [expenses, loanExpenses]);
 
   // Estimate a starting balance based on current month's activity so far
-  // This makes the projection much more realistic than starting at 0
   const estimatedStartingBalance = useMemo(() => {
     const today = new Date();
     const monthStart = startOfMonth(today);
@@ -94,7 +94,7 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({ incomes, ex
                     <Info className="w-3.5 h-3.5 text-zinc-600" />
                   </TooltipTrigger>
                   <TooltipContent className="bg-zinc-800 border-zinc-700 text-zinc-300 text-[10px] max-w-[200px]">
-                    Estimación basada en tus ingresos y gastos recurrentes programados para los próximos 30 días.
+                    Estimación basada en tus ingresos y gastos recurrentes (incluyendo préstamos) programados para los próximos 30 días.
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
