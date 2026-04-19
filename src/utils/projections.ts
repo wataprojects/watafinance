@@ -7,7 +7,8 @@ import {
   eachDayOfInterval, 
   format,
   getDate,
-  isSameDay
+  isSameDay,
+  subDays
 } from "date-fns";
 
 export interface Transaction {
@@ -42,6 +43,7 @@ export const calculateProjections = (
 ): ProjectionResult => {
   const today = new Date();
   const thirtyDaysFromNow = addDays(today, 30);
+  const sixtyDaysAgo = subDays(today, 60);
   
   let projectedIncome = 0;
   let projectedExpenses = 0;
@@ -50,23 +52,36 @@ export const calculateProjections = (
   const upcomingPayments: Transaction[] = [];
   const riskAlerts: string[] = [];
 
-  // --- DEDUPLICACIÓN DE SERIES RECURRENTES ---
-  // Solo queremos proyectar la instancia más reciente de cada serie recurrente
+  // --- 1. CÁLCULO DE PROMEDIOS VARIABLES (HISTORIAL) ---
+  // Calculamos cuánto sueles ingresar/gastar de forma variable (no recurrente)
+  const calculateVariableAverage = (transactions: Transaction[]) => {
+    const pastVariable = transactions.filter(t => 
+      !t.is_recurring && 
+      isAfter(new Date(t.date), sixtyDaysAgo) && 
+      isBefore(new Date(t.date), today)
+    );
+    const total = pastVariable.reduce((sum, t) => sum + t.amount, 0);
+    return total / 2; // Promedio mensual (basado en 60 días)
+  };
+
+  const avgVariableIncome = calculateVariableAverage(incomes);
+  const avgVariableExpenses = calculateVariableAverage(expenses);
+
+  // --- 2. DEDUPLICACIÓN DE SERIES RECURRENTES ---
   const getUniqueSeries = (transactions: Transaction[]) => {
     const seriesMap = new Map<string, Transaction>();
     const nonRecurring: Transaction[] = [];
 
     transactions.forEach(t => {
       if (!t.is_recurring) {
-        nonRecurring.push(t);
+        // Solo incluimos puntuales si están programados a futuro
+        if (isAfter(new Date(t.date), today)) {
+          nonRecurring.push(t);
+        }
         return;
       }
-      
-      // Creamos una clave única para la serie (Descripción + Categoría)
       const key = `${t.description}-${t.category}`;
       const existing = seriesMap.get(key);
-      
-      // Si no existe o este registro es más reciente que el guardado, lo actualizamos
       if (!existing || new Date(t.date) > new Date(existing.date)) {
         seriesMap.set(key, t);
       }
@@ -78,7 +93,7 @@ export const calculateProjections = (
   const uniqueIncomes = getUniqueSeries(incomes);
   const uniqueExpenses = getUniqueSeries(expenses);
 
-  // Helper to check if a transaction falls within the next 30 days
+  // Helper para ocurrencias en 30 días
   const getOccurrencesInNext30Days = (t: Transaction) => {
     const occurrences: { date: Date; amount: number }[] = [];
     
@@ -90,7 +105,6 @@ export const calculateProjections = (
       return occurrences;
     }
 
-    // Para recurrentes, proyectamos según sus días de pago
     const paymentDays = t.payment_days || [new Date(t.date).getDate()];
     const interval = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
 
@@ -98,8 +112,6 @@ export const calculateProjections = (
       const dayOfMonth = getDate(day);
       const isPaymentDay = paymentDays.includes(dayOfMonth) || 
                           (paymentDays.includes(32) && isSameDay(day, endOfMonth(day)));
-      
-      // Verificar que la serie no haya terminado
       const hasNotEnded = !t.end_date || isBefore(day, new Date(t.end_date));
 
       if (isPaymentDay && hasNotEnded && !t.is_skipped && !t.is_trimmed) {
@@ -110,7 +122,7 @@ export const calculateProjections = (
     return occurrences;
   };
 
-  // Procesar Ingresos Únicos
+  // Procesar Ingresos (Fijos + Programados)
   uniqueIncomes.forEach(income => {
     const occurrences = getOccurrencesInNext30Days(income);
     occurrences.forEach(occ => {
@@ -119,7 +131,7 @@ export const calculateProjections = (
     });
   });
 
-  // Procesar Gastos Únicos
+  // Procesar Gastos (Fijos + Programados)
   uniqueExpenses.forEach(expense => {
     const occurrences = getOccurrencesInNext30Days(expense);
     occurrences.forEach(occ => {
@@ -127,9 +139,7 @@ export const calculateProjections = (
       upcomingPayments.push({ ...expense, date: occ.date.toISOString(), type: 'expense' });
       
       const essentialCategories = ['housing', 'loans', 'electricity', 'water', 'internet', 'subscriptions', 'insurance', 'security', 'gas'];
-      const isEssential = essentialCategories.includes(expense.category);
-      
-      if (expense.is_recurring || isEssential) {
+      if (expense.is_recurring || essentialCategories.includes(expense.category)) {
         fixedExpenses += occ.amount;
       } else {
         variableExpenses += occ.amount;
@@ -137,21 +147,35 @@ export const calculateProjections = (
     });
   });
 
-  // Generar Línea de Tiempo
+  // Añadir promedios variables al total
+  projectedIncome += avgVariableIncome;
+  projectedExpenses += avgVariableExpenses;
+  variableExpenses += avgVariableExpenses;
+
+  // --- 3. GENERAR LÍNEA DE TIEMPO ---
   const timeline: { date: string; balance: number }[] = [];
   let currentBalance = startingBalance;
   const days = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
   
+  // Repartimos el promedio variable diario para que el gráfico sea fluido
+  const dailyVarIncome = avgVariableIncome / 30;
+  const dailyVarExpense = avgVariableExpenses / 30;
+
   days.forEach(day => {
     const dayStr = format(day, 'yyyy-MM-dd');
     const daysTransactions = upcomingPayments.filter(t => 
       format(new Date(t.date), 'yyyy-MM-dd') === dayStr
     );
 
+    // Sumamos/restamos transacciones específicas del día
     daysTransactions.forEach(t => {
       if (t.type === 'income') currentBalance += t.amount;
       else currentBalance -= t.amount;
     });
+
+    // Aplicamos el goteo variable diario
+    currentBalance += dailyVarIncome;
+    currentBalance -= dailyVarExpense;
 
     timeline.push({ date: dayStr, balance: currentBalance });
     
@@ -160,15 +184,15 @@ export const calculateProjections = (
     }
   });
 
-  // Análisis de Riesgo Realista
+  // Análisis de Riesgo
   const savingsRate = projectedIncome > 0 ? (projectedIncome - projectedExpenses) / projectedIncome : 0;
   
   if (savingsRate < 0.05 && projectedIncome > 0) {
     riskAlerts.push("Tu capacidad de ahorro proyectada es muy baja (menor al 5%).");
   }
 
-  if (fixedExpenses > projectedIncome * 0.9) {
-    riskAlerts.push("Tus gastos fijos son extremadamente altos respecto a tus ingresos.");
+  if (fixedExpenses > projectedIncome * 0.8) {
+    riskAlerts.push("Tus gastos fijos consumen casi todos tus ingresos previstos.");
   }
 
   return {
