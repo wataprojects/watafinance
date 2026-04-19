@@ -14,7 +14,7 @@ import {
   Clock,
   Info
 } from "lucide-react";
-import { format, isAfter, isBefore, startOfMonth, endOfMonth, isSameDay, startOfDay, parseISO } from "date-fns";
+import { format, isAfter, isBefore, startOfMonth, endOfMonth, isSameDay, startOfDay, parseISO, startOfToday } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Tooltip,
@@ -41,7 +41,7 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({
   // Definimos el rango del mes seleccionado
   const monthStart = useMemo(() => startOfDay(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1)), [selectedMonth, selectedYear]);
   const monthEnd = useMemo(() => endOfMonth(monthStart), [monthStart]);
-  const today = startOfDay(new Date());
+  const today = startOfToday();
 
   // Calculamos el saldo inicial REAL (todo lo acumulado antes de este mes)
   const initialBalance = useMemo(() => {
@@ -70,11 +70,10 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({
 
   const allExpenses = useMemo(() => [...expenses, ...loanExpenses], [expenses, loanExpenses]);
 
-  // Calculamos la proyección para el mes seleccionado
+  // Calculamos la proyección para el mes seleccionado completo
   const projections = useMemo(() => {
-    // Ajustamos la lógica para que proyecte desde el inicio del mes seleccionado
-    return calculateProjections(incomes, allExpenses, initialBalance);
-  }, [incomes, allExpenses, initialBalance]);
+    return calculateProjections(incomes, allExpenses, initialBalance, monthStart, monthEnd);
+  }, [incomes, allExpenses, initialBalance, monthStart, monthEnd]);
 
   // Filtramos los movimientos que caen en el mes seleccionado
   const monthMovements = useMemo(() => {
@@ -91,13 +90,19 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({
   const monthSavings = Math.max(0, monthIncomes - monthExpenses);
 
   // Timeline filtrado para el mes
-  const monthTimeline = projections.cashFlowTimeline.filter(d => {
-    const dDate = startOfDay(parseISO(d.date));
-    return (isSameDay(dDate, monthStart) || isAfter(dDate, monthStart)) && 
-           (isSameDay(dDate, monthEnd) || isBefore(dDate, monthEnd));
-  });
+  const monthTimeline = projections.cashFlowTimeline;
 
   const monthName = format(monthStart, 'MMMM', { locale: es });
+
+  // Próximos 7 días (solo si estamos en el mes actual o futuro)
+  const next7Days = useMemo(() => {
+    const sevenDaysFromNow = addDays(today, 7);
+    return monthMovements.filter(p => {
+      const pDate = startOfDay(parseISO(p.date));
+      return (isSameDay(pDate, today) || isAfter(pDate, today)) && 
+             (isSameDay(pDate, sevenDaysFromNow) || isBefore(pDate, sevenDaysFromNow));
+    });
+  }, [monthMovements, today]);
 
   return (
     <div className="space-y-6">
@@ -187,7 +192,57 @@ const FinancialProjections: React.FC<FinancialProjectionsProps> = ({
         </Card>
       </div>
 
-      {/* Timeline del Mes */}
+      {/* Upcoming Payments */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Próximos Movimientos (7 días)
+            </CardTitle>
+            <span className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
+              {next7Days.length} programados
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {next7Days.length > 0 ? (
+            <div className="space-y-3">
+              {next7Days.map((payment, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-xl border border-zinc-800 hover:border-zinc-700 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      payment.type === 'income' ? 'bg-green-500/20' : 'bg-red-500/20'
+                    }`}>
+                      {payment.type === 'income' ? (
+                        <ArrowUpRight className={`w-4 h-4 text-green-500`} />
+                      ) : (
+                        <ArrowDownRight className={`w-4 h-4 text-red-500`} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{payment.description}</p>
+                      <p className="text-[10px] text-zinc-500">
+                        {format(parseISO(payment.date), "EEEE d 'de' MMMM", { locale: es })}
+                      </p>
+                    </div>
+                  </div>
+                  <p className={`text-sm font-bold ${payment.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                    {payment.type === 'income' ? '+' : '-'}{formatCurrency(payment.amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+              <p className="text-xs text-zinc-500">No hay movimientos programados para la próxima semana.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cash Flow Timeline */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-zinc-400 flex items-center gap-2">

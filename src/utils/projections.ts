@@ -12,7 +12,8 @@ import {
   isSameDay,
   subDays,
   startOfDay,
-  parseISO
+  parseISO,
+  startOfToday
 } from "date-fns";
 
 export interface Transaction {
@@ -40,7 +41,6 @@ export interface ProjectionResult {
   fixedVsVariable: { fixed: number; variable: number };
 }
 
-// Helper para obtener solo la parte YYYY-MM-DD de una fecha o string
 const toDateString = (date: Date | string) => {
   if (typeof date === 'string') {
     return date.split('T')[0];
@@ -51,11 +51,12 @@ const toDateString = (date: Date | string) => {
 export const calculateProjections = (
   incomes: Transaction[],
   expenses: Transaction[],
-  startingBalance: number = 0
+  startingBalance: number = 0,
+  startDate: Date = startOfToday(),
+  endDate: Date = addDays(startDate, 30)
 ): ProjectionResult => {
-  const today = startOfDay(new Date());
+  const today = startOfToday();
   const todayStr = toDateString(today);
-  const thirtyDaysFromNow = addDays(today, 30);
   const sixtyDaysAgo = subDays(today, 60);
   
   let projectedIncome = 0;
@@ -87,7 +88,8 @@ export const calculateProjections = (
     transactions.forEach(t => {
       if (!t.is_recurring) {
         const tDateStr = toDateString(t.date);
-        if (tDateStr >= todayStr) {
+        // Incluimos puntuales que caigan dentro del rango solicitado
+        if (tDateStr >= toDateString(startDate) && tDateStr <= toDateString(endDate)) {
           puntuals.push(t);
         }
         return;
@@ -106,14 +108,14 @@ export const calculateProjections = (
   const uniqueIncomes = getUniqueSeries(incomes);
   const uniqueExpenses = getUniqueSeries(expenses);
 
-  // Helper para calcular ocurrencias
+  // Helper para calcular ocurrencias en el rango solicitado
   const getOccurrences = (t: Transaction) => {
     const occurrences: { dateStr: string; amount: number }[] = [];
     const amount = Number(t.amount) || 0;
     
     if (!t.is_recurring) {
       const tDateStr = toDateString(t.date);
-      if (tDateStr >= todayStr && tDateStr <= toDateString(thirtyDaysFromNow)) {
+      if (tDateStr >= toDateString(startDate) && tDateStr <= toDateString(endDate)) {
         occurrences.push({ dateStr: tDateStr, amount });
       }
       return occurrences;
@@ -123,7 +125,7 @@ export const calculateProjections = (
       ? t.payment_days 
       : [parseISO(t.date).getDate()];
       
-    const interval = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
+    const interval = eachDayOfInterval({ start: startDate, end: endDate });
 
     interval.forEach(day => {
       const dayOfMonth = getDate(day);
@@ -133,6 +135,8 @@ export const calculateProjections = (
       const dayStr = toDateString(day);
       const hasNotEnded = !t.end_date || dayStr <= toDateString(t.end_date);
 
+      // Para recurrentes, solo proyectamos si es hoy o futuro, 
+      // o si es pasado pero no tenemos un registro real (esto es complejo, simplificamos a futuro)
       if (isPaymentDay && hasNotEnded && !t.is_skipped && !t.is_trimmed) {
         occurrences.push({ dateStr: dayStr, amount });
       }
@@ -164,21 +168,18 @@ export const calculateProjections = (
   // --- 3. TIMELINE ---
   const timeline: { date: string; balance: number }[] = [];
   let currentBalance = startingBalance;
-  const days = eachDayOfInterval({ start: today, end: thirtyDaysFromNow });
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
   
-  // Promedio variable neto diario
   const dailyVar = (avgVariableIncome - avgVariableExpenses) / 30;
 
   days.forEach(day => {
     const dayStr = toDateString(day);
     
-    // Sumar/restar transacciones específicas de este día
     upcomingPayments.filter(t => t.date === dayStr).forEach(t => {
       if (t.type === 'income') currentBalance += t.amount;
       else currentBalance -= t.amount;
     });
 
-    // Aplicar goteo variable
     currentBalance += dailyVar;
 
     timeline.push({ date: dayStr, balance: currentBalance });
