@@ -916,17 +916,17 @@ const IncomePage = () => {
                   return (
                     <div
                       key={income.id}
-                      className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl"
+                      className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl gap-3 min-w-0"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.color}`}>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cat.color}`}>
                           <Icon className={`w-5 h-5 ${cat.textColor}`} />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-white">{income.description || cat.label}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-white truncate">{income.description || cat.label}</p>
                             {income.is_recurring && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[9px] font-bold flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[9px] font-bold flex items-center gap-1 flex-shrink-0">
                                 <RefreshCcw className="w-2 h-2" />
                                 Recurrente
                               </span>
@@ -935,9 +935,9 @@ const IncomePage = () => {
                           <p className="text-xs text-zinc-500">{formatDateSafe(income.date)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-bold text-green-500">
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right min-w-0">
+                          <p className="font-bold text-green-500 whitespace-nowrap">
                             +
                             {income.is_recurring
                               ? formatCurrency(getMonthlyAmount(parseFloat(income.amount), income.frequency, income.recurrence_interval, income.recurrence_unit))
@@ -945,17 +945,16 @@ const IncomePage = () => {
                             {income.is_recurring && <span className="text-[10px] ml-0.5">/mes</span>}
                           </p>
                           {income.is_recurring && (
-                            <p className="text-[9px] text-zinc-500">
+                            <p className="text-[9px] text-zinc-500 whitespace-nowrap">
                               ({formatCurrency(income.amount)}
                               {income.frequency === 'annual' ? '/año' : income.frequency === 'quarterly' ? '/trim' : income.frequency === 'weekly' ? '/sem' : '/mes'})
                             </p>
                           )}
-                          <p className={`text-xs ${isPassive ? "text-green-400" : "text-blue-400"}`}>
-
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${isPassive ? "bg-green-500/10" : "bg-blue-500/10"}`}>
+                          <div className="flex justify-end">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${isPassive ? "bg-green-500/10 text-green-400" : "bg-blue-500/10 text-blue-400"}`}>
                               {isPassive ? <><PiggyBank className="w-3 h-3 mr-1" />Pasivo</> : <><Briefcase className="w-3 h-3 mr-1" />Activo</>}
                             </span>
-                          </p>
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1">
                           <button onClick={() => openEditDialog(income)} className="p-2 rounded-lg hover:bg-zinc-700 transition-colors">
