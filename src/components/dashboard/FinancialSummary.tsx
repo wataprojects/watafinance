@@ -17,6 +17,22 @@ interface FinancialSummaryProps {
   navigate?: (path: string) => void;
 }
 
+const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?: number, recurrenceUnit?: string): number => {
+  const numAmount = parseFloat(String(amount)) || 0;
+  switch (frequency) {
+    case 'weekly': return numAmount * 4.33;
+    case 'monthly': return numAmount;
+    case 'quarterly': return numAmount / 3;
+    case 'annual': return numAmount / 12;
+    case 'custom':
+      if (recurrenceUnit === 'days') return (numAmount * 30) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'weeks') return (numAmount * 4.33) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'months') return numAmount / (recurrenceInterval || 1);
+      return numAmount;
+    default: return numAmount;
+  }
+};
+
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   selectedMonth,
   selectedYear,
@@ -49,33 +65,33 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0).getDate();
     const endDate = `${year}-${selectedMonth}-${lastDay}`;
 
-    // Fetch incomes for the selected month and year
+    // Fetch incomes for the selected month and year (including recurrence fields)
     const incomesResult = await supabase
       .from("incomes")
-      .select("amount, date")
+      .select("amount, date, is_recurring, frequency, recurrence_interval, recurrence_unit")
       .eq("user_id", session.user.id)
       .gte("date", startDate)
       .lte("date", endDate);
 
-    // Fetch expenses for the selected month and year
-        // Excluir plantillas recurrentes (que tienen start_date igual a su date o no tienen start_date)
-        const expensesResult = await supabase
-          .from("expenses")
-          .select("amount, date, is_recurring, start_date")
-          .eq("user_id", session.user.id)
-          .gte("date", startDate)
-          .lte("date", endDate);
-        
-        // Filtrar gastos en el cliente para excluir plantillas recurrentes
-        let filteredExpenses = expensesResult.data || [];
-        filteredExpenses = filteredExpenses.filter((e: any) => {
-          if (!e.is_recurring) return true; // Gastos no recurrentes siempre incluidos
-          if (!e.start_date) return false; // Sin start_date = plantilla, excluir
-          if (e.start_date === e.date) return false; // start_date igual a date = plantilla, excluir
-          return true; // Es una ocurrencia generada, incluir
-        });
-        
-        if (expensesResult.data) setExpenses(filteredExpenses);
+    // Fetch expenses for the selected month and year (including recurrence fields)
+    // Excluir plantillas recurrentes (que tienen start_date igual a su date o no tienen start_date)
+    const expensesResult = await supabase
+      .from("expenses")
+      .select("amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit")
+      .eq("user_id", session.user.id)
+      .gte("date", startDate)
+      .lte("date", endDate);
+    
+    // Filtrar gastos en el cliente para excluir plantillas recurrentes
+    let filteredExpenses = expensesResult.data || [];
+    filteredExpenses = filteredExpenses.filter((e: any) => {
+      if (!e.is_recurring) return true; // Gastos no recurrentes siempre incluidos
+      if (!e.start_date) return false; // Sin start_date = plantilla, excluir
+      if (e.start_date === e.date) return false; // start_date igual a date = plantilla, excluir
+      return true; // Es una ocurrencia generada, incluir
+    });
+    
+    setExpenses(filteredExpenses);
 
     // Fetch active loans for the user
     const loansResult = await supabase
@@ -85,16 +101,25 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .eq("status", "active");
 
     if (incomesResult.data) setIncomes(incomesResult.data);
-    if (expensesResult.data) setExpenses(expensesResult.data);
     if (loansResult.data) setLoans(loansResult.data);
     setLoading(false);
   };
 
-  // Total incomes for the selected month
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+  // Total incomes for the selected month (considering recurrence)
+  const totalIncome = incomes.reduce((sum, i) => {
+    const amount = i.is_recurring
+      ? getMonthlyAmount(parseFloat(i.amount || 0), i.frequency, i.recurrence_interval, i.recurrence_unit)
+      : parseFloat(i.amount || 0);
+    return sum + amount;
+  }, 0);
   
-  // Total expenses for the selected month
-  const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  // Total expenses for the selected month (considering recurrence)
+  const totalExpenses = expenses.reduce((sum, e) => {
+    const amount = e.is_recurring
+      ? getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit)
+      : parseFloat(e.amount);
+    return sum + amount;
+  }, 0);
   
   // Total loans monthly payment (only active loans)
   const totalLoansMonthly = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
