@@ -976,21 +976,20 @@ const ExpensesPage = () => {
                 </div>
 
                 {/* Distribución por categoría - Filas independientes */}
-                {sortedCategories.length > 0 && (
-                  <div className="mt-6 pt-4 border-t border-zinc-700">
-                    {/* ✅ Botón "Nuevo Gasto" - ENCIMA DEL HEADER */}
-                    <div className="mb-4">
-                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Nuevo Gasto
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
-                          </DialogHeader>
+                <div className="mt-6 pt-4 border-t border-zinc-700">
+                                  {/* Boton Nuevo Gasto - SIEMPRE VISIBLE */}
+                                  <div className="mb-4">
+                                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                      <DialogTrigger asChild>
+                                        <Button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 text-sm font-semibold">
+                                          <Plus className="w-4 h-4 mr-2" />
+                                          Nuevo Gasto
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle className="text-white">Agregar Gasto</DialogTitle>
+                                        </DialogHeader>
                           <button onClick={() => setIsDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
                             <X className="w-4 h-4" />
                           </button>
