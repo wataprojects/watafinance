@@ -795,7 +795,12 @@ const ExpensesPage = () => {
   ].filter(item => item.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  const totalExpenses = filteredExpenses.reduce((sum, e) => {
+    const amount = e.is_recurring
+      ? getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit)
+      : parseFloat(e.amount);
+    return sum + amount;
+  }, 0);
   const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
