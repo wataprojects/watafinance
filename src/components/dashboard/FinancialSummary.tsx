@@ -91,14 +91,12 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       return true; // Es una ocurrencia generada, incluir
     });
     
-    // Filtrar ingresos en el cliente para excluir plantillas recurrentes y saltos
+    // Filtrar ingresos en el cliente para excluir solo los saltos (is_skipped)
+    // NO filtrar plantillas - IncomePage.tsx tampoco lo hace
     let filteredIncomes = incomesResult.data || [];
     filteredIncomes = filteredIncomes.filter((i: any) => {
       if (i.is_skipped) return false; // Ingresos saltados, excluir
-      if (!i.is_recurring) return true; // Ingresos no recurrentes siempre incluidos
-      if (!i.start_date) return false; // Sin start_date = plantilla, excluir
-      if (i.start_date === i.date) return false; // start_date igual a date = plantilla, excluir
-      return true; // Es una ocurrencia generada, incluir
+      return true;
     });
     
     setExpenses(filteredExpenses);
