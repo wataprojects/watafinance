@@ -576,6 +576,7 @@ const ExpensesPage = () => {
       category: editExpense.category,
       date: formatDateToISO(editExpense.date),
       is_recurring: editExpense.is_recurring,
+      start_date: selectedExpense.start_date || (editExpense.is_recurring ? formatDateToISO(new Date()) : null),
       investment_id: editExpense.investment_id === "none" ? null : editExpense.investment_id,
       patrimony_id: editExpense.patrimony_id === "none" ? null : editExpense.patrimony_id,
       has_scheduled_change: editExpense.has_scheduled_change,
