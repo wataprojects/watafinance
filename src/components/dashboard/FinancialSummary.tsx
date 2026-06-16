@@ -68,7 +68,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     // Fetch incomes for the selected month and year (including recurrence fields)
     const incomesResult = await supabase
       .from("incomes")
-      .select("amount, date, is_recurring, frequency, recurrence_interval, recurrence_unit")
+      .select("amount, date, is_recurring, frequency, recurrence_interval, recurrence_unit, start_date, is_skipped")
       .eq("user_id", session.user.id)
       .gte("date", startDate)
       .lte("date", endDate);
@@ -91,7 +91,18 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       return true; // Es una ocurrencia generada, incluir
     });
     
+    // Filtrar ingresos en el cliente para excluir plantillas recurrentes y saltos
+    let filteredIncomes = incomesResult.data || [];
+    filteredIncomes = filteredIncomes.filter((i: any) => {
+      if (i.is_skipped) return false; // Ingresos saltados, excluir
+      if (!i.is_recurring) return true; // Ingresos no recurrentes siempre incluidos
+      if (!i.start_date) return false; // Sin start_date = plantilla, excluir
+      if (i.start_date === i.date) return false; // start_date igual a date = plantilla, excluir
+      return true; // Es una ocurrencia generada, incluir
+    });
+    
     setExpenses(filteredExpenses);
+    setIncomes(filteredIncomes);
 
     // Fetch active loans for the user
     const loansResult = await supabase
@@ -100,7 +111,6 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .eq("user_id", session.user.id)
       .eq("status", "active");
 
-    if (incomesResult.data) setIncomes(incomesResult.data);
     if (loansResult.data) setLoans(loansResult.data);
     setLoading(false);
   };
