@@ -728,27 +728,38 @@ const ExpensesPage = () => {
 
   const allCategories = [...expenseCategories, ...customCategories];
 
-  const filteredExpenses = expenses.filter((expense) => {
-    if (expense.is_skipped) return false;
-    if (!expense.date) return false;
-    const expenseDate = new Date(expense.date + "T00:00:00");
-    if (isNaN(expenseDate.getTime())) return false;
-    const expenseYear = expenseDate.getFullYear().toString();
-    const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
-    if (filterYear !== "all" && expenseYear !== filterYear) return false;
-    if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
-    
-    // Filtro de búsqueda por descripción o categoría
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      const matchesDescription = expense.description?.toLowerCase().includes(query);
-      const categoryInfo = allCategories.find((c) => c.value === expense.category);
-      const matchesCategory = categoryInfo?.label?.toLowerCase().includes(query);
-      if (!matchesDescription && !matchesCategory) return false;
-    }
-    
-    return true;
-  });
+  // Filtrar gastos: excluir plantillas recurrentes (que tienen is_recurring pero no start_date o start_date == date)
+    // Las ocurrencias generadas automáticamente tienen start_date diferente a su date
+    const filteredExpenses = expenses.filter((expense) => {
+      if (expense.is_skipped) return false;
+      if (!expense.date) return false;
+      
+      // Excluir plantillas recurrentes: son gastos con is_recurring que no tienen start_date
+      // o tienen start_date igual a su date (son el registro original, no las ocurrencias generadas)
+      if (expense.is_recurring) {
+        if (!expense.start_date || expense.start_date === expense.date) {
+          return false; // Es una plantilla, no incluirla
+        }
+      }
+      
+      const expenseDate = new Date(expense.date + "T00:00:00");
+      if (isNaN(expenseDate.getTime())) return false;
+      const expenseYear = expenseDate.getFullYear().toString();
+      const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+      if (filterYear !== "all" && expenseYear !== filterYear) return false;
+      if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
+      
+      // Filtro de búsqueda por descripción o categoría
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const matchesDescription = expense.description?.toLowerCase().includes(query);
+        const categoryInfo = allCategories.find((c) => c.value === expense.category);
+        const matchesCategory = categoryInfo?.label?.toLowerCase().includes(query);
+        if (!matchesDescription && !matchesCategory) return false;
+      }
+      
+      return true;
+    });
 
   const allSubscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
   const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
