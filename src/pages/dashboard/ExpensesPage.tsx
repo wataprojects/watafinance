@@ -1129,7 +1129,6 @@ const ExpensesPage = () => {
                                           </>
                                         ) : null}
                   </div>
-                )}
 
                 {totalTrimmedSavings > 0 && (
                   <div className="mt-4 pt-4 border-t border-zinc-700">
