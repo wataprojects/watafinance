@@ -74,7 +74,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .lte("date", endDate);
 
     // Fetch expenses for the selected month and year (including recurrence fields)
-    // Excluir plantillas recurrentes (que tienen start_date igual a su date o no tienen start_date)
+    // Las plantillas recurrentes se excluyen en el filtro del cliente (start_date === date)
     const expensesResult = await supabase
       .from("expenses")
       .select("amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit")
@@ -83,11 +83,12 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .lte("date", endDate);
     
     // Filtrar gastos en el cliente para excluir plantillas recurrentes
+    // Las ocurrencias generadas tienen start_date diferente a su date (la fecha de creación de la plantilla)
     let filteredExpenses = expensesResult.data || [];
     filteredExpenses = filteredExpenses.filter((e: any) => {
       if (!e.is_recurring) return true; // Gastos no recurrentes siempre incluidos
-      if (!e.start_date) return false; // Sin start_date = plantilla, excluir
-      if (e.start_date === e.date) return false; // start_date igual a date = plantilla, excluir
+      if (!e.start_date) return false; // Sin start_date = plantilla original, excluir
+      if (e.start_date === e.date) return false; // start_date igual a date = plantilla original, excluir
       return true; // Es una ocurrencia generada, incluir
     });
     

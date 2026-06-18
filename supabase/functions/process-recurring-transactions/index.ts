@@ -185,7 +185,9 @@ serve(async (req) => {
               investment_id: template.investment_id,
               patrimony_id: template.patrimony_id,
               is_trimmed: template.is_trimmed || false,
-              start_date: template.start_date,
+              // Use template's start_date if available, otherwise use template's original date
+              // This ensures occurrences have start_date !== date (unlike the template)
+              start_date: template.start_date || template.date,
               frequency: template.frequency,
               recurrence_interval: template.recurrence_interval,
               recurrence_unit: template.recurrence_unit,

@@ -729,18 +729,20 @@ const ExpensesPage = () => {
 
   const allCategories = [...expenseCategories, ...customCategories];
 
-  // Filtrar gastos: excluir plantillas recurrentes (que tienen is_recurring pero no start_date o start_date == date)
+  // Filtrar gastos: excluir plantillas recurrentes originales
+  // Las ocurrencias generadas tienen start_date diferente a su date
     // Las ocurrencias generadas automáticamente tienen start_date diferente a su date
     const filteredExpenses = expenses.filter((expense) => {
       if (expense.is_skipped) return false;
       if (!expense.date) return false;
       
-      // Excluir plantillas recurrentes: son gastos con is_recurring que no tienen start_date
-      // o tienen start_date igual a su date (son el registro original, no las ocurrencias generadas)
+      // Excluir plantillas recurrentes: gastos con is_recurring donde start_date === date
+      // Las ocurrencias generadas tienen start_date = fecha de creación de la plantilla (diferente a su date)
       if (expense.is_recurring) {
         if (!expense.start_date || expense.start_date === expense.date) {
-          return false; // Es una plantilla, no incluirla
+          return false; // Es una plantilla original, no incluirla (sus ocurrencias aparecerán)
         }
+        // Las ocurrencias tienen start_date !== date, se incluyen normalmente
       }
       
       const expenseDate = new Date(expense.date + "T00:00:00");
