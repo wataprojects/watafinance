@@ -72,6 +72,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 // Helper function to chunk array into groups of size
 const chunkArray = <T,>(array: T[], size: number): T[][] => {
@@ -232,6 +233,7 @@ const months = [
 
 const ExpensesPage = () => {
   const navigate = useNavigate();
+  const { filterMonth, filterYear, setFilterMonth, setFilterYear } = useDateFilter();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
@@ -269,11 +271,6 @@ const ExpensesPage = () => {
   const [selectedSubscription, setSelectedSubscription] = useState<any>(null);
   const [savedAmount, setSavedAmount] = useState(0);
   const [trimLoading, setTrimLoading] = useState(false);
-
-  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
-  const currentYearStr = new Date().getFullYear().toString();
-  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
-  const [filterYear, setFilterYear] = useState<string>(currentYearStr);
 
   // Filter type for expenses history
   type ExpenseFilterType = "all" | "puntual" | "recurrente" | "prestamo";

@@ -47,6 +47,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import { getVisualBarWidth } from "@/utils/helpers";
 import { toast } from "sonner";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 const formatDateToISO = (date: Date): string => {
   const year = date.getFullYear();
@@ -138,6 +139,7 @@ type IncomeFilterType = "all" | "active" | "passive";
 
 const IncomePage = () => {
   const navigate = useNavigate();
+  const { filterMonth, filterYear, setFilterMonth, setFilterYear } = useDateFilter();
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [investments, setInvestments] = useState<any[]>([]);
@@ -157,11 +159,6 @@ const IncomePage = () => {
 
   const [filterIncomeType, setFilterIncomeType] = useState<IncomeFilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, "0");
-  const currentYear = new Date().getFullYear().toString();
-  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
-  const [filterYear, setFilterYear] = useState<string>(currentYear);
 
   const [newIncome, setNewIncome] = useState({
     source: "",

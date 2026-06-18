@@ -7,15 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Plus, 
-  Banknote, 
-  User, 
-  TrendingUp, 
-  TrendingDown as TrendingDownIcon, 
-  X, 
-  Pencil, 
-  Trash2, 
+import {
+  Plus,
+  Banknote,
+  User,
+  TrendingUp,
+  TrendingDown as TrendingDownIcon,
+  X,
+  Pencil,
+  Trash2,
   TrendingDown,
   Mail,
   AlertCircle,
@@ -26,6 +26,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import DebtStatusBadge from "@/components/dashboard/DebtStatusBadge";
 import DebtDetailModal from "@/components/dashboard/DebtDetailModal";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe";
@@ -45,6 +46,7 @@ interface Debt {
 
 const DebtsPage = () => {
   const navigate = useNavigate();
+  const { filterMonth, filterYear, setFilterMonth, setFilterYear } = useDateFilter();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,7 +61,7 @@ const DebtsPage = () => {
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i).map(y => y.toString());
   
   const months = [
     { value: "01", label: "Enero" },
@@ -75,11 +77,6 @@ const DebtsPage = () => {
     { value: "11", label: "Noviembre" },
     { value: "12", label: "Diciembre" },
   ];
-
-  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  const currentYearStr = currentYear.toString();
-  const [filterMonth, setFilterMonth] = useState("all");
-  const [filterYear, setFilterYear] = useState("all");
 
   const [newDebt, setNewDebt] = useState({
     person_name: "",

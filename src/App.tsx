@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminAuthProvider } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { DateFilterProvider } from "@/contexts/DateFilterContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -88,33 +89,35 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AdminAuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/subscription-required" element={<SubscriptionRequired />} />
-            
-            {/* Protected routes - require active subscription */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/income" element={<ProtectedRoute><IncomePage /></ProtectedRoute>} />
-            <Route path="/dashboard/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
-            <Route path="/dashboard/debts" element={<ProtectedRoute><DebtsPage /></ProtectedRoute>} />
-            <Route path="/dashboard/loans" element={<ProtectedRoute><LoansPage /></ProtectedRoute>} />
-            <Route path="/dashboard/investments" element={<ProtectedRoute><InvestmentsPage /></ProtectedRoute>} />
-            <Route path="/dashboard/patrimony" element={<ProtectedRoute><PatrimonyPage /></ProtectedRoute>} />
-            <Route path="/dashboard/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            
-            {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/clients" element={<AdminClients />} />
-            <Route path="/admin/clients/:id" element={<AdminClientDetail />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <DateFilterProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/subscription-required" element={<SubscriptionRequired />} />
+              
+              {/* Protected routes - require active subscription */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/income" element={<ProtectedRoute><IncomePage /></ProtectedRoute>} />
+              <Route path="/dashboard/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
+              <Route path="/dashboard/debts" element={<ProtectedRoute><DebtsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/loans" element={<ProtectedRoute><LoansPage /></ProtectedRoute>} />
+              <Route path="/dashboard/investments" element={<ProtectedRoute><InvestmentsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/patrimony" element={<ProtectedRoute><PatrimonyPage /></ProtectedRoute>} />
+              <Route path="/dashboard/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/clients" element={<AdminClients />} />
+              <Route path="/admin/clients/:id" element={<AdminClientDetail />} />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </DateFilterProvider>
       </AdminAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
