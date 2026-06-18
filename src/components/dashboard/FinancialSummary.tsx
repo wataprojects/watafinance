@@ -77,7 +77,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     // Las plantillas recurrentes se excluyen en el filtro del cliente (start_date === date)
     const expensesResult = await supabase
       .from("expenses")
-      .select("amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit")
+      .select("amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit, is_trimmed, is_skipped")
       .eq("user_id", session.user.id)
       .gte("date", startDate)
       .lte("date", endDate);
