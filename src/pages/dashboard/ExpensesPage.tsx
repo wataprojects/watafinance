@@ -729,40 +729,56 @@ const ExpensesPage = () => {
 
   const allCategories = [...expenseCategories, ...customCategories];
 
-  // Filtrar gastos: excluir plantillas recurrentes originales
-  // Las ocurrencias generadas tienen start_date diferente a su date
-    // Las ocurrencias generadas automáticamente tienen start_date diferente a su date
-    const filteredExpenses = expenses.filter((expense) => {
-      if (expense.is_skipped) return false;
-      if (!expense.date) return false;
-      
-      // Excluir plantillas recurrentes: gastos con is_recurring donde start_date === date
-      // Las ocurrencias generadas tienen start_date = fecha de creación de la plantilla (diferente a su date)
-      if (expense.is_recurring) {
-        if (!expense.start_date || expense.start_date === expense.date) {
-          return false; // Es una plantilla original, no incluirla (sus ocurrencias aparecerán)
+  const selectedPeriodExpenses = expenses.filter((expense) => {
+    if (expense.is_skipped) return false;
+    if (!expense.date) return false;
+
+    const expenseDate = new Date(expense.date + "T00:00:00");
+    if (isNaN(expenseDate.getTime())) return false;
+
+    const expenseYear = expenseDate.getFullYear().toString();
+    const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+
+    if (filterYear !== "all" && expenseYear !== filterYear) return false;
+    if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
+
+    return true;
+  });
+
+  // Filtrar gastos para el registro: mostrar gastos puntuales, ocurrencias recurrentes generadas
+  // y también la plantilla recurrente recién creada cuando todavía no existe una ocurrencia para ese mes.
+  const filteredExpenses = selectedPeriodExpenses.filter((expense) => {
+    if (expense.is_recurring) {
+      const isOriginalTemplate = !expense.start_date || expense.start_date === expense.date;
+
+      if (isOriginalTemplate) {
+        const hasGeneratedOccurrenceForSameMonth = selectedPeriodExpenses.some((otherExpense) => {
+          if (otherExpense.id === expense.id) return false;
+          if (!otherExpense.is_recurring) return false;
+          if (!otherExpense.start_date || otherExpense.start_date === otherExpense.date) return false;
+
+          return (
+            otherExpense.description === expense.description &&
+            otherExpense.category === expense.category
+          );
+        });
+
+        if (hasGeneratedOccurrenceForSameMonth) {
+          return false;
         }
-        // Las ocurrencias tienen start_date !== date, se incluyen normalmente
       }
-      
-      const expenseDate = new Date(expense.date + "T00:00:00");
-      if (isNaN(expenseDate.getTime())) return false;
-      const expenseYear = expenseDate.getFullYear().toString();
-      const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
-      if (filterYear !== "all" && expenseYear !== filterYear) return false;
-      if (filterMonth !== "all" && expenseMonth !== filterMonth) return false;
-      
-      // Filtro de búsqueda por descripción o categoría
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesDescription = expense.description?.toLowerCase().includes(query);
-        const categoryInfo = allCategories.find((c) => c.value === expense.category);
-        const matchesCategory = categoryInfo?.label?.toLowerCase().includes(query);
-        if (!matchesDescription && !matchesCategory) return false;
-      }
-      
-      return true;
-    });
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesDescription = expense.description?.toLowerCase().includes(query);
+      const categoryInfo = allCategories.find((c) => c.value === expense.category);
+      const matchesCategory = categoryInfo?.label?.toLowerCase().includes(query);
+      if (!matchesDescription && !matchesCategory) return false;
+    }
+    
+    return true;
+  });
 
   const allSubscriptions = filteredExpenses.filter((e) => e.category === "subscriptions");
   const activeSubscriptions = allSubscriptions.filter((e) => !e.is_trimmed);
