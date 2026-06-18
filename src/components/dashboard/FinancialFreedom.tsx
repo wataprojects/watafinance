@@ -5,13 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Zap, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
-interface FinancialFreedomProps {
-  selectedMonth: string;
-  selectedYear: string;
-}
-
-const FinancialFreedom: React.FC<FinancialFreedomProps> = ({ selectedMonth, selectedYear }) => {
+const FinancialFreedom: React.FC = () => {
+  const { filterMonth: selectedMonth, filterYear: selectedYear } = useDateFilter();
+  
   const [loading, setLoading] = useState(true);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);

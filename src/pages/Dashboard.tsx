@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { runAllAutomations } from "@/utils/automation";
 import { toast } from "sonner";
 import { startOfMonth, subMonths } from "date-fns";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,11 +26,8 @@ const Dashboard = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   
-  // Month/year selector state
-  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-  const currentYear = new Date().getFullYear().toString();
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  // Use global date filter context
+  const { filterMonth: selectedMonth, filterYear: selectedYear } = useDateFilter();
 
   useEffect(() => {
     checkAuth();
@@ -90,15 +88,9 @@ const Dashboard = () => {
           </div>
         )}
         
-        <FinancialSummary
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          setSelectedMonth={setSelectedMonth}
-          setSelectedYear={setSelectedYear}
-          navigate={handleNavigate}
-        />
+        <FinancialSummary navigate={handleNavigate} />
         
-        <FinancialFreedom selectedMonth={selectedMonth} selectedYear={selectedYear} />
+        <FinancialFreedom />
         
         <FinancialHealth />
 

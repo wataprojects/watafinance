@@ -9,12 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import YearMonthPicker from "./YearMonthPicker";
 import { useExpensesTotal } from "@/hooks/useExpensesTotal";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 interface FinancialSummaryProps {
-  selectedMonth: string;
-  selectedYear: string;
-  setSelectedMonth?: (month: string) => void;
-  setSelectedYear?: (year: string) => void;
   navigate?: (path: string) => void;
 }
 
@@ -35,14 +32,13 @@ const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?
 };
 
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({
-  selectedMonth,
-  selectedYear,
-  setSelectedMonth,
-  setSelectedYear,
   navigate,
 }) => {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loadingIncomes, setLoadingIncomes] = useState(true);
+  
+  // Use global date filter context
+  const { filterMonth: selectedMonth, filterYear: selectedYear, setFilterMonth, setFilterYear } = useDateFilter();
   
   // Use the unified hook for expenses and loans calculation
   const { totalWithLoans, loading: loadingExpenses } = useExpensesTotal(selectedMonth, selectedYear);
@@ -118,8 +114,8 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       <YearMonthPicker
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
-        setSelectedMonth={setSelectedMonth}
-        setSelectedYear={setSelectedYear}
+        setSelectedMonth={setFilterMonth}
+        setSelectedYear={setFilterYear}
       />
 
       {/* Fila 2: Botones de Acción */}
