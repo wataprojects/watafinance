@@ -23,10 +23,10 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Plus, Edit, Trash2, DollarSign, CreditCard, Landmark, 
-  PiggyBank, TrendingUp, Home, User, Heart, Settings, 
-  Shield, Zap, AlertTriangle, CheckCircle2
+import {
+  Plus, Edit, Trash2, DollarSign, CreditCard, Landmark,
+  PiggyBank, TrendingUp, Home, User, Heart, Settings,
+  Shield, Zap, AlertTriangle, CheckCircle2, CalendarPlus, Clock, Check
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
 
@@ -63,13 +63,16 @@ export default function ClientDetailTabs({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('health');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [itemToEdit, setItemToEdit] = useState<any>(null);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
-  const [itemType, setItemType] = useState<string>('');
-  const [createType, setCreateType] = useState<string>('');
-  const [formData, setFormData] = useState<Record<string, any>>({});
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+    const [daysToAdd, setDaysToAdd] = useState<number>(30);
+    const [isExtending, setIsExtending] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<any>(null);
+    const [itemToDelete, setItemToDelete] = useState<any>(null);
+    const [itemType, setItemType] = useState<string>('');
+    const [createType, setCreateType] = useState<string>('');
+    const [formData, setFormData] = useState<Record<string, any>>({});
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -100,41 +103,122 @@ export default function ClientDetailTabs({
   };
 
   const handleAction = async (action: 'edit' | 'delete' | 'create') => {
-    try {
-      const { supabaseAdmin } = await import('@/integrations/supabase/admin');
-      const tableMap: Record<string, string> = {
-        income: 'incomes',
-        expense: 'expenses',
-        debt: 'debts',
-        loan: 'loans',
-        investment: 'investments',
-        patrimony: 'patrimony',
-      };
-
-      const type = action === 'create' ? createType : itemType;
-      const table = tableMap[type];
-      if (!table) return;
-
-      let result;
-      if (action === 'edit') {
-        result = await supabaseAdmin.from(table).update(formData).eq('id', itemToEdit.id);
-      } else if (action === 'delete') {
-        result = await supabaseAdmin.from(table).delete().eq('id', itemToDelete.id);
-      } else {
-        result = await supabaseAdmin.from(table).insert({ ...formData, user_id: clientId });
+      try {
+        const { supabaseAdmin } = await import('@/integrations/supabase/admin');
+        const tableMap: Record<string, string> = {
+          income: 'incomes',
+          expense: 'expenses',
+          debt: 'debts',
+          loan: 'loans',
+          investment: 'investments',
+          patrimony: 'patrimony',
+        };
+  
+        const type = action === 'create' ? createType : itemType;
+        const table = tableMap[type];
+        if (!table) return;
+  
+        let result;
+        if (action === 'edit') {
+          result = await supabaseAdmin.from(table).update(formData).eq('id', itemToEdit.id);
+        } else if (action === 'delete') {
+          result = await supabaseAdmin.from(table).delete().eq('id', itemToDelete.id);
+        } else {
+          result = await supabaseAdmin.from(table).insert({ ...formData, user_id: clientId });
+        }
+  
+        if (result.error) throw result.error;
+  
+        toast({ title: 'Éxito', description: `Operación realizada correctamente` });
+        setEditDialogOpen(false);
+        setDeleteDialogOpen(false);
+        setCreateDialogOpen(false);
+        onRefresh();
+      } catch (error: any) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
       }
-
-      if (result.error) throw result.error;
-
-      toast({ title: 'Éxito', description: `Operación realizada correctamente` });
-      setEditDialogOpen(false);
-      setDeleteDialogOpen(false);
-      setCreateDialogOpen(false);
-      onRefresh();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    }
-  };
+    };
+  
+    const handleExtendTrial = async () => {
+      setIsExtending(true);
+      try {
+        const { supabaseAdmin } = await import('@/integrations/supabase/admin');
+        
+        const newTrialEnd = new Date();
+        newTrialEnd.setDate(newTrialEnd.getDate() + daysToAdd);
+        
+        const { error } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            trial_end_date: newTrialEnd.toISOString(),
+            subscription_status: 'trial'
+          })
+          .eq('id', clientId);
+          
+        if (error) throw error;
+        
+        toast({
+          title: 'Trial extendido',
+          description: `Se añadieron ${daysToAdd} días al período de prueba.`,
+          className: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+        });
+        setExtendDialogOpen(false);
+        onRefresh();
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } finally {
+        setIsExtending(false);
+      }
+    };
+  
+    const getSubscriptionStatus = () => {
+      const status = profile?.subscription_status;
+      const trialEndDate = profile?.trial_end_date;
+      
+      if (status === 'active') {
+        return { label: 'Activo', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
+      }
+      
+      if (status === 'trial' && trialEndDate) {
+        const endDate = new Date(trialEndDate);
+        const now = new Date();
+        const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysRemaining > 0) {
+          return {
+            label: `Trial - ${daysRemaining} días restantes`,
+            color: daysRemaining <= 3 ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+          };
+        }
+        return { label: 'Trial Expirado', color: 'bg-red-500/20 text-red-400 border-red-500/30' };
+      }
+      
+      return { label: 'Sin suscripción', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' };
+    };
+  
+    const getTierLabel = (tier: string | null) => {
+      const tiers: Record<string, string> = {
+        basic: 'Básico',
+        premium: 'Premium',
+        none: 'Sin tier'
+      };
+      return tiers[tier || 'none'] || 'Sin suscripción';
+    };
+  
+    const formatTrialEndDate = (dateString: string | null) => {
+      if (!dateString) return 'No definida';
+      return new Date(dateString).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
 
   const renderFormFields = (type: string) => {
     const commonFields = [
@@ -204,28 +288,31 @@ export default function ClientDetailTabs({
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900 border border-slate-800 p-1 h-auto flex-wrap justify-start gap-1">
-          <TabsTrigger value="health" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <Heart className="h-4 w-4" /> Salud
-          </TabsTrigger>
-          <TabsTrigger value="incomes" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <DollarSign className="h-4 w-4" /> Ingresos
-          </TabsTrigger>
-          <TabsTrigger value="expenses" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <CreditCard className="h-4 w-4" /> Gastos
-          </TabsTrigger>
-          <TabsTrigger value="debts" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <Landmark className="h-4 w-4" /> Deudas
-          </TabsTrigger>
-          <TabsTrigger value="loans" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <PiggyBank className="h-4 w-4" /> Préstamos
-          </TabsTrigger>
-          <TabsTrigger value="investments" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <TrendingUp className="h-4 w-4" /> Inversiones
-          </TabsTrigger>
-          <TabsTrigger value="patrimony" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
-            <Home className="h-4 w-4" /> Patrimonio
-          </TabsTrigger>
-        </TabsList>
+                  <TabsTrigger value="health" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <Heart className="h-4 w-4" /> Salud
+                  </TabsTrigger>
+                  <TabsTrigger value="incomes" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <DollarSign className="h-4 w-4" /> Ingresos
+                  </TabsTrigger>
+                  <TabsTrigger value="expenses" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <CreditCard className="h-4 w-4" /> Gastos
+                  </TabsTrigger>
+                  <TabsTrigger value="debts" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <Landmark className="h-4 w-4" /> Deudas
+                  </TabsTrigger>
+                  <TabsTrigger value="loans" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <PiggyBank className="h-4 w-4" /> Préstamos
+                  </TabsTrigger>
+                  <TabsTrigger value="investments" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <TrendingUp className="h-4 w-4" /> Inversiones
+                  </TabsTrigger>
+                  <TabsTrigger value="patrimony" className="data-[state=active]:bg-emerald-500 gap-2 py-2">
+                    <Home className="h-4 w-4" /> Patrimonio
+                  </TabsTrigger>
+                  <TabsTrigger value="subscription" className="data-[state=active]:bg-purple-500 gap-2 py-2">
+                    <CalendarPlus className="h-4 w-4" /> Suscripción
+                  </TabsTrigger>
+                </TabsList>
 
         <TabsContent value="health" className="mt-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -496,40 +583,100 @@ export default function ClientDetailTabs({
         </TabsContent>
 
         <TabsContent value="patrimony" className="mt-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">Activos de Patrimonio</h3>
-            <Button onClick={() => openCreateDialog('patrimony')} className="bg-emerald-500 hover:bg-emerald-600">
-              <Plus className="h-4 w-4 mr-2" /> Nuevo Activo
-            </Button>
-          </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-slate-800">
-                  <TableHead className="text-slate-400">Nombre</TableHead>
-                  <TableHead className="text-slate-400">Categoría</TableHead>
-                  <TableHead className="text-slate-400">Valor</TableHead>
-                  <TableHead className="text-right text-slate-400">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {patrimony.map((item) => (
-                  <TableRow key={item.id} className="border-slate-800">
-                    <TableCell className="text-white font-medium">{item.name}</TableCell>
-                    <TableCell className="text-slate-400">{item.category}</TableCell>
-                    <TableCell className="text-blue-400 font-bold">{formatCurrency(item.value)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(item, 'patrimony')} className="text-slate-400 hover:text-blue-400"><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item, 'patrimony')} className="text-slate-400 hover:text-red-400"><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-white">Activos de Patrimonio</h3>
+                    <Button onClick={() => openCreateDialog('patrimony')} className="bg-emerald-500 hover:bg-emerald-600">
+                      <Plus className="h-4 w-4 mr-2" /> Nuevo Activo
+                    </Button>
+                  </div>
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-slate-800">
+                          <TableHead className="text-slate-400">Nombre</TableHead>
+                          <TableHead className="text-slate-400">Categoría</TableHead>
+                          <TableHead className="text-slate-400">Valor</TableHead>
+                          <TableHead className="text-right text-slate-400">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {patrimony.map((item) => (
+                          <TableRow key={item.id} className="border-slate-800">
+                            <TableCell className="text-white font-medium">{item.name}</TableCell>
+                            <TableCell className="text-slate-400">{item.category}</TableCell>
+                            <TableCell className="text-blue-400 font-bold">{formatCurrency(item.value)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item, 'patrimony')} className="text-slate-400 hover:text-blue-400"><Edit className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item, 'patrimony')} className="text-slate-400 hover:text-red-400"><Trash2 className="h-4 w-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+        
+                <TabsContent value="subscription" className="mt-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="bg-slate-900/50 border-slate-800">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-purple-400" /> Estado de Suscripción
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Badge className={`${getSubscriptionStatus().color} border text-sm px-3 py-1`}>
+                          {getSubscriptionStatus().label}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-slate-900/50 border-slate-800">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-blue-400" /> Fecha Fin de Trial
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg font-semibold text-white">
+                          {formatTrialEndDate(profile?.trial_end_date)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-slate-900/50 border-slate-800">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-amber-400" /> Plan / Tier
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-sm px-3 py-1">
+                          {getTierLabel(profile?.subscription_tier)}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  </div>
+        
+                  <Card className="bg-slate-900/50 border-slate-800">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <CalendarPlus className="h-5 w-5 text-purple-400" /> Gestionar Período de Prueba
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-slate-400 text-sm">
+                        Extiende el período de prueba del usuario. Esto añadirá días adicionales a la fecha actual de fin de trial.
+                      </p>
+                      <Button
+                        onClick={() => setExtendDialogOpen(true)}
+                        className="bg-purple-500 hover:bg-purple-600 gap-2"
+                      >
+                        <CalendarPlus className="h-4 w-4" /> Extender Trial
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
       </Tabs>
 
       {/* Modales de Acción */}
@@ -560,17 +707,90 @@ export default function ClientDetailTabs({
       </Dialog>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white">Nuevo {createType}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">{renderFormFields(createType)}</div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="bg-slate-800 border-slate-700">Cancelar</Button>
-            <Button onClick={() => handleAction('create')} className="bg-emerald-500 hover:bg-emerald-600">Crear Registro</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+              <DialogContent className="bg-slate-900 border-slate-800 max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Nuevo {createType}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">{renderFormFields(createType)}</div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="bg-slate-800 border-slate-700">Cancelar</Button>
+                  <Button onClick={() => handleAction('create')} className="bg-emerald-500 hover:bg-emerald-600">Crear Registro</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+      
+            <Dialog open={extendDialogOpen} onOpenChange={setExtendDialogOpen}>
+              <DialogContent className="bg-slate-900 border-slate-800">
+                <DialogHeader>
+                  <DialogTitle className="text-white flex items-center gap-2">
+                    <CalendarPlus className="h-5 w-5 text-purple-400" /> Extender Período de Prueba
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    Selecciona la cantidad de días que deseas añadir al trial del usuario.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[7, 15, 30, 60].map((days) => (
+                      <Button
+                        key={days}
+                        variant={daysToAdd === days ? "default" : "outline"}
+                        onClick={() => setDaysToAdd(days)}
+                        className={`h-12 text-lg font-semibold ${
+                          daysToAdd === days
+                            ? "bg-purple-500 hover:bg-purple-600"
+                            : "bg-slate-800 border-slate-700 hover:bg-slate-700"
+                        }`}
+                      >
+                        {days} días
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400">Nueva fecha de fin:</span>
+                      <span className="text-white font-medium">
+                        {(() => {
+                          const newDate = new Date();
+                          newDate.setDate(newDate.getDate() + daysToAdd);
+                          return newDate.toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          });
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setExtendDialogOpen(false)}
+                    className="bg-slate-800 border-slate-700"
+                    disabled={isExtending}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleExtendTrial}
+                    className="bg-purple-500 hover:bg-purple-600 gap-2"
+                    disabled={isExtending}
+                  >
+                    {isExtending ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Extendiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" /> Confirmar Extensión
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        );
+      }
