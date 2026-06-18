@@ -82,10 +82,14 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .gte("date", startDate)
       .lte("date", endDate);
     
-    // Filtrar gastos en el cliente para excluir plantillas recurrentes
-    // Las ocurrencias generadas tienen start_date diferente a su date (la fecha de creación de la plantilla)
+    // Filtrar gastos en el cliente para excluir:
+    // - Plantillas recurrentes (start_date === date)
+    // - Gastos recortados (is_trimmed: true)
+    // - Gastos omitidos (is_skipped: true)
     let filteredExpenses = expensesResult.data || [];
     filteredExpenses = filteredExpenses.filter((e: any) => {
+      if (e.is_skipped) return false; // Gastos omitidos, excluir
+      if (e.is_trimmed) return false; // Gastos recortados, excluir
       if (!e.is_recurring) return true; // Gastos no recurrentes siempre incluidos
       if (!e.start_date) return false; // Sin start_date = plantilla original, excluir
       if (e.start_date === e.date) return false; // start_date igual a date = plantilla original, excluir

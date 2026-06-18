@@ -124,6 +124,11 @@ const getCategoryLabel = (category: string) => {
   return labels[category] || category;
 };
 
+interface TopExpensesProps {
+  selectedMonth?: string;
+  selectedYear?: string;
+}
+
 // Función auxiliar para dividir gastos en grupos de 4
 const chunkArray = <T,>(array: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -133,13 +138,13 @@ const chunkArray = <T,>(array: T[], size: number): T[][] => {
   return chunks;
 };
 
-const TopExpenses = () => {
+const TopExpenses: React.FC<TopExpensesProps> = ({ selectedMonth, selectedYear }) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -150,13 +155,34 @@ const TopExpenses = () => {
       return;
     }
 
-    // Fetch regular expenses
+    // Calculate date range based on selected period
+    const year = selectedYear || new Date().getFullYear().toString();
+    const month = selectedMonth || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const startDate = `${year}-${month}-01`;
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    const endDate = `${year}-${month}-${lastDay}`;
+
+    // Fetch expenses for the selected period
     const expensesResult = await supabase
       .from("expenses")
-      .select("amount, category")
+      .select("amount, category, date, is_recurring, start_date")
       .eq("user_id", session.user.id)
-      .order("amount", { ascending: false })
-      .limit(10);
+      .gte("date", startDate)
+      .lte("date", endDate);
+
+    // Filter expenses on client side:
+    // - Exclude is_skipped
+    // - Exclude is_trimmed
+    // - Exclude original recurring templates (start_date === date)
+    let filteredExpenses = expensesResult.data || [];
+    filteredExpenses = filteredExpenses.filter((e: any) => {
+      if (e.is_skipped) return false;
+      if (e.is_trimmed) return false;
+      if (!e.is_recurring) return true;
+      if (!e.start_date) return false;
+      if (e.start_date === e.date) return false;
+      return true;
+    });
 
     // Fetch active loans with monthly payment
     const loansResult = await supabase
@@ -168,8 +194,8 @@ const TopExpenses = () => {
     // Process expenses data
     let allExpenses: any[] = [];
     
-    if (expensesResult.data) {
-      const expenseData = expensesResult.data.map((e: any) => ({
+    if (filteredExpenses) {
+      const expenseData = filteredExpenses.map((e: any) => ({
         amount: parseFloat(e.amount || 0),
         category: e.category,
         description: null

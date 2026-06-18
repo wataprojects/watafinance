@@ -112,7 +112,10 @@ const Dashboard = () => {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TopExpenses />
+          <TopExpenses
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
           <IncomeExpenseChart />
         </div>
       </main>
