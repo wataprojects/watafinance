@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Plus } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 import YearMonthPicker from "./YearMonthPicker";
+import { useExpensesTotal } from "@/hooks/useExpensesTotal";
 
 interface FinancialSummaryProps {
   selectedMonth: string;
@@ -41,20 +42,21 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   navigate,
 }) => {
   const [incomes, setIncomes] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loans, setLoans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingIncomes, setLoadingIncomes] = useState(true);
+  
+  // Use the unified hook for expenses and loans calculation
+  const { totalWithLoans, loading: loadingExpenses } = useExpensesTotal(selectedMonth, selectedYear);
 
   useEffect(() => {
-    fetchData();
+    fetchIncomes();
   }, [selectedMonth, selectedYear]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchIncomes = async () => {
+    setLoadingIncomes(true);
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      setLoading(false);
+      setLoadingIncomes(false);
       return;
     }
 
@@ -72,29 +74,6 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       .eq("user_id", session.user.id)
       .gte("date", startDate)
       .lte("date", endDate);
-
-    // Fetch expenses for the selected month and year (including recurrence fields)
-    // Las plantillas recurrentes se excluyen en el filtro del cliente (start_date === date)
-    const expensesResult = await supabase
-      .from("expenses")
-      .select("amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit, is_trimmed, is_skipped")
-      .eq("user_id", session.user.id)
-      .gte("date", startDate)
-      .lte("date", endDate);
-    
-    // Filtrar gastos en el cliente para excluir:
-    // - Plantillas recurrentes (start_date === date)
-    // - Gastos recortados (is_trimmed: true)
-    // - Gastos omitidos (is_skipped: true)
-    let filteredExpenses = expensesResult.data || [];
-    filteredExpenses = filteredExpenses.filter((e: any) => {
-      if (e.is_skipped) return false; // Gastos omitidos, excluir
-      if (e.is_trimmed) return false; // Gastos recortados, excluir
-      if (!e.is_recurring) return true; // Gastos no recurrentes siempre incluidos
-      if (!e.start_date) return false; // Sin start_date = plantilla original, excluir
-      if (e.start_date === e.date) return false; // start_date igual a date = plantilla original, excluir
-      return true; // Es una ocurrencia generada, incluir
-    });
     
     // Filtrar ingresos en el cliente para excluir solo los saltos (is_skipped)
     // NO filtrar plantillas - IncomePage.tsx tampoco lo hace
@@ -104,18 +83,8 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
       return true;
     });
     
-    setExpenses(filteredExpenses);
     setIncomes(filteredIncomes);
-
-    // Fetch active loans for the user
-    const loansResult = await supabase
-      .from("loans")
-      .select("monthly_payment, status")
-      .eq("user_id", session.user.id)
-      .eq("status", "active");
-
-    if (loansResult.data) setLoans(loansResult.data);
-    setLoading(false);
+    setLoadingIncomes(false);
   };
 
   // Total incomes for the selected month (considering recurrence)
@@ -126,22 +95,8 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     return sum + amount;
   }, 0);
   
-  // Total expenses for the selected month (considering recurrence)
-  const totalExpenses = expenses.reduce((sum, e) => {
-    const amount = e.is_recurring
-      ? getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit)
-      : parseFloat(e.amount);
-    return sum + amount;
-  }, 0);
-  
-  // Total loans monthly payment (only active loans)
-  const totalLoansMonthly = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
-  
-  // Total gastos = expenses + loans monthly payment
-  const totalGastos = totalExpenses + totalLoansMonthly;
-  
-  // Balance = Ingresos - Gastos
-  const balance = totalIncome - totalGastos;
+  // Balance = Ingresos - Gastos (usando totalWithLoans del hook)
+  const balance = totalIncome - totalWithLoans;
   
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
 
@@ -193,7 +148,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
               <span className="text-xs sm:text-sm text-green-400 font-medium">Ingresos</span>
             </div>
-            {loading ? (
+            {loadingIncomes ? (
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
               <p className="text-2xl sm:text-3xl font-bold text-white text-center">
@@ -209,11 +164,11 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
               <span className="text-xs sm:text-sm text-red-400 font-medium">Gastos</span>
             </div>
-            {loading ? (
+            {loadingExpenses ? (
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-red-500"></div>
             ) : (
               <p className="text-2xl sm:text-3xl font-bold text-white text-center">
-                {formatCurrency(totalGastos)}
+                {formatCurrency(totalWithLoans)}
               </p>
             )}
           </CardContent>
@@ -228,7 +183,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <DollarSign className={`w-5 h-5 sm:w-6 sm:h-6 ${balance >= 0 ? "text-green-500" : "text-red-500"}`} />
               <span className={`text-xs sm:text-sm font-medium ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>Balance</span>
             </div>
-            {loading ? (
+            {loadingIncomes || loadingExpenses ? (
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
               <p className={`text-2xl sm:text-3xl font-bold text-center ${balance >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -244,7 +199,7 @@ const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <PiggyBank className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
               <span className="text-xs sm:text-sm text-green-400 font-medium">Tasa de Ahorro</span>
             </div>
-            {loading ? (
+            {loadingIncomes || loadingExpenses ? (
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-green-500"></div>
             ) : (
               <p className="text-2xl sm:text-3xl font-bold text-white text-center">

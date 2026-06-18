@@ -73,6 +73,7 @@ import {
 } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { useDateFilter } from "@/contexts/DateFilterContext";
+import { useExpensesTotal } from "@/hooks/useExpensesTotal";
 
 // Helper function to chunk array into groups of size
 const chunkArray = <T,>(array: T[], size: number): T[][] => {
@@ -235,11 +236,16 @@ const ExpensesPage = () => {
   const navigate = useNavigate();
   const { filterMonth, filterYear, setFilterMonth, setFilterYear } = useDateFilter();
   const [expenses, setExpenses] = useState<any[]>([]);
-  const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [patrimony, setPatrimony] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Use the unified hook for expense totals calculation
+  const { puntualExpenses, recurrentExpenses, totalLoans, totalWithLoans, loading: hookLoading } = useExpensesTotal(filterMonth, filterYear);
+
+  // Local state for loans (needed for loan list display in history)
+  const [loans, setLoans] = useState<any[]>([]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -787,17 +793,8 @@ const ExpensesPage = () => {
     sum + getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit), 0);
   const totalSubscriptions = totalActiveSubscriptions + totalTrimmedSavings;
 
-  const puntualExpenses = filteredExpenses
-    .filter(e => !e.is_recurring && !e.is_trimmed)
-    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
-
-  const recurrentExpenses = filteredExpenses
-    .filter(e => e.is_recurring && !e.is_trimmed)
-    .reduce((sum, e) => sum + getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit), 0);
-
-  const totalLoans = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_payment || 0), 0);
-
-  const totalWithLoans = puntualExpenses + recurrentExpenses + totalLoans;
+  // Note: puntualExpenses, recurrentExpenses, totalLoans, and totalWithLoans
+  // are now provided by the useExpensesTotal hook above
 
   const puntualPercentage = totalWithLoans > 0 ? (puntualExpenses / totalWithLoans) * 100 : 0;
   const recurrentPercentage = totalWithLoans > 0 ? (recurrentExpenses / totalWithLoans) * 100 : 0;
@@ -810,14 +807,6 @@ const ExpensesPage = () => {
     { type: "prestamo", amount: totalLoans, percentage: loansPercentage, color: "bg-blue-500", label: "Préstamos" },
   ].filter(item => item.amount > 0)
     .sort((a, b) => b.amount - a.amount);
-
-  const totalExpenses = filteredExpenses.reduce((sum, e) => {
-    const amount = e.is_recurring
-      ? getMonthlyAmount(parseFloat(e.amount), e.frequency, e.recurrence_interval, e.recurrence_unit)
-      : parseFloat(e.amount);
-    return sum + amount;
-  }, 0);
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
 
   const sortedActiveSubscriptions = [...activeSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
   const sortedTrimmedSubscriptions = [...trimmedSubscriptions].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
