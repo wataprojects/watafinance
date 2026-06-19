@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
-import { getMonthlyAmount } from "@/utils/recurrence";
 import YearMonthPicker from "./YearMonthPicker";
 import { useExpensesTotal } from "@/hooks/useExpensesTotal";
 import { useDateFilter } from "@/contexts/DateFilterContext";
@@ -15,6 +14,22 @@ import { useDateFilter } from "@/contexts/DateFilterContext";
 interface FinancialSummaryProps {
   navigate?: (path: string) => void;
 }
+
+const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?: number, recurrenceUnit?: string): number => {
+  const numAmount = parseFloat(String(amount)) || 0;
+  switch (frequency) {
+    case 'weekly': return numAmount * 4.33;
+    case 'monthly': return numAmount;
+    case 'quarterly': return numAmount / 3;
+    case 'annual': return numAmount / 12;
+    case 'custom':
+      if (recurrenceUnit === 'days') return (numAmount * 30) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'weeks') return (numAmount * 4.33) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'months') return numAmount / (recurrenceInterval || 1);
+      return numAmount;
+    default: return numAmount;
+  }
+};
 
 const FinancialSummary: React.FC<FinancialSummaryProps> = ({
   navigate,

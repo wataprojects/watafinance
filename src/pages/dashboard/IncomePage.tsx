@@ -46,7 +46,6 @@ import BottomNav from "@/components/dashboard/BottomNav";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import { getVisualBarWidth } from "@/utils/helpers";
-import { getMonthlyAmount } from "@/utils/recurrence";
 import { toast } from "sonner";
 import { useDateFilter } from "@/contexts/DateFilterContext";
 
@@ -67,6 +66,22 @@ const formatDateSafe = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "-";
   const date = new Date(dateStr + "T00:00:00");
   return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-ES");
+};
+
+const getMonthlyAmount = (amount: number, frequency: string, recurrenceInterval?: number, recurrenceUnit?: string): number => {
+  const numAmount = parseFloat(String(amount)) || 0;
+  switch (frequency) {
+    case 'weekly': return numAmount * 4.33;
+    case 'monthly': return numAmount;
+    case 'quarterly': return numAmount / 3;
+    case 'annual': return numAmount / 12;
+    case 'custom':
+      if (recurrenceUnit === 'days') return (numAmount * 30) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'weeks') return (numAmount * 4.33) / (recurrenceInterval || 1);
+      if (recurrenceUnit === 'months') return numAmount / (recurrenceInterval || 1);
+      return numAmount;
+    default: return numAmount;
+  }
 };
 
 interface CategoryOption {

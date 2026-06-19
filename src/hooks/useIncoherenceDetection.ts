@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
 import { Asset, Investment, Debt, Incoherence } from '@/types/patrimony';
 
-// Epsilon for floating point comparison
-const EPSILON = 0.001;
-
 interface UseIncoherenceDetectionProps {
   assets: Asset[];
   investments: Investment[];
@@ -125,8 +122,8 @@ export const useIncoherenceDetection = ({
       );
       
       if (maxPercentage > 70) {
-        const dominantAsset = assets.find(a =>
-          Math.abs((Number(a.value) / totalAssets) * 100 - maxPercentage) < EPSILON
+        const dominantAsset = assets.find(a => 
+          (Number(a.value) / totalAssets) * 100 === maxPercentage
         );
         
         if (dominantAsset) {
