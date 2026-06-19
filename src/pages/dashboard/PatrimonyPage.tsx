@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus, Briefcase } from "lucide-react";
@@ -91,7 +91,7 @@ const PatrimonyPage = () => {
   }, [navigate]);
 
   // Calculate evolution when snapshots change
-  const enrichedOverview = useCallback(() => {
+  const enrichedOverview = useMemo(() => {
     const latest = getLatestSnapshot();
     const previous = getPreviousSnapshot();
     const previousNet = previous?.net_patrimony ?? netPatrimony;
@@ -200,7 +200,7 @@ const PatrimonyPage = () => {
         )}
 
         {/* Overview Card */}
-        <PatrimonyOverviewCard overview={enrichedOverview()} />
+        <PatrimonyOverviewCard overview={enrichedOverview} />
 
         {/* Add Asset Button */}
         <Button

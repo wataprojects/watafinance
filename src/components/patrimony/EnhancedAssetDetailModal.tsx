@@ -236,7 +236,7 @@ export const EnhancedAssetDetailModal: React.FC<EnhancedAssetDetailModalProps> =
                       <span className="text-sm text-zinc-300">Deuda asociada</span>
                     </div>
                     <button
-                      onClick={() => onNavigate('/deudas')}
+                      onClick={() => onNavigate('/dashboard/debts')}
                       className="text-xs text-blue-400 hover:underline"
                     >
                       Ver
@@ -257,7 +257,7 @@ export const EnhancedAssetDetailModal: React.FC<EnhancedAssetDetailModalProps> =
                   <RecommendationButton
                     label="Ver Inversiones"
                     icon="📈"
-                    onClick={() => onNavigate('/inversiones')}
+                    onClick={() => onNavigate('/dashboard/investments')}
                     variant="primary"
                   />
                 </div>

@@ -8,6 +8,7 @@ import { es } from "date-fns/locale";
 import { Send, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { showError } from "@/utils/toast";
 
 interface DebtChatProps {
   debtId: string;
@@ -77,27 +78,40 @@ const DebtChat: React.FC<DebtChatProps> = ({ debtId, currentUserId }) => {
     
     setSending(true);
     
-    const { error } = await supabase
-      .from('debt_messages')
-      .insert({
-        debt_id: debtId,
-        sender_id: currentUserId,
-        message: newMessage.trim()
-      });
+    try {
+      const { error } = await supabase
+        .from('debt_messages')
+        .insert({
+          debt_id: debtId,
+          sender_id: currentUserId,
+          message: newMessage.trim()
+        });
 
-    if (!error) {
+      if (error) {
+        showError("Error al enviar el mensaje. Por favor, intenta de nuevo.");
+        setSending(false);
+        return;
+      }
+
       setNewMessage("");
       
       // Also create an event
-      await supabase.from('debt_events').insert({
+      const { error: eventError } = await supabase.from('debt_events').insert({
         debt_id: debtId,
         user_id: currentUserId,
         event_type: 'message',
         event_data: { message: newMessage.trim() }
       });
+
+      if (eventError) {
+        console.error("Error creating debt event:", eventError);
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      showError("Error de conexión. Por favor, intenta de nuevo.");
+    } finally {
+      setSending(false);
     }
-    
-    setSending(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
