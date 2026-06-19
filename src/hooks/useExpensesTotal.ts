@@ -86,7 +86,7 @@ export const useExpensesTotal = (
     };
 
     fetchData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   // Filter expenses by selected period
   const selectedPeriodExpenses = expenses.filter((expense) => {
