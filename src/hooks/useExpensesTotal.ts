@@ -8,6 +8,7 @@ export interface UseExpensesTotalResult {
   totalLoans: number;
   totalWithLoans: number;
   loading: boolean;
+  filteredExpenses: any[];
 }
 
 const getMonthlyAmount = (
@@ -180,5 +181,6 @@ export const useExpensesTotal = (
     totalLoans,
     totalWithLoans,
     loading,
+    filteredExpenses,
   };
 };
