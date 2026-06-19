@@ -638,51 +638,75 @@ const ExpensesPage = () => {
   };
 
   const handleStopRecurrence = async () => {
-    if (!selectedExpense) return;
-    setIsSubmitting(true);
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    // 1. Set end_date for ALL instances of this series (past and future)
-    // This ensures the automation function won't pick it up as a template anymore
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const endDate = formatDateToISO(yesterday);
-
-    const { error: updateError } = await supabase
-      .from("expenses")
-      .update({ 
-        end_date: endDate,
-        is_recurring: false // Also mark as non-recurring to be safe
-      })
-      .eq("user_id", session.user.id)
-      .eq("description", selectedExpense.description)
-      .eq("category", selectedExpense.category)
-      .eq("is_recurring", true);
-
-    if (updateError) {
-      toast.error("Error al detener la serie recurrente");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // 2. Delete the current instance that the user is looking at
-    const { error: deleteError } = await supabase
-      .from("expenses")
-      .delete()
-      .eq("id", selectedExpense.id);
-
-    if (!deleteError) {
+      if (!selectedExpense) return;
+      setIsSubmitting(true);
+  
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const today = new Date();
+      const todayISO = formatDateToISO(today);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayISO = formatDateToISO(yesterday);
+  
+      // 1. Convert the current expense to non-recurring (keeps it as history)
+      await supabase
+        .from("expenses")
+        .update({
+          is_recurring: false,
+          end_date: yesterdayISO
+        })
+        .eq("id", selectedExpense.id);
+  
+      // 2. Delete all future instances of the series
+      await supabase
+        .from("expenses")
+        .delete()
+        .eq("user_id", session.user.id)
+        .eq("description", selectedExpense.description)
+        .eq("category", selectedExpense.category)
+        .eq("is_recurring", true)
+        .gte("date", todayISO);
+  
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
       fetchExpenses(session.user.id);
-      toast.success("Recurrencia detenida permanentemente");
-    } else {
-      toast.error("Error al eliminar la instancia actual");
-    }
-    setIsSubmitting(false);
-  };
+      toast.success("Recurrencia detenida. El gasto actual se ha convertido en puntual.");
+      setIsSubmitting(false);
+    };
+  
+    const handleDeleteCurrentAndFuture = async () => {
+      if (!selectedExpense) return;
+      setIsSubmitting(true);
+  
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+  
+      const today = new Date();
+      const todayISO = formatDateToISO(today);
+  
+      if (selectedExpense.is_recurring) {
+        // Delete current instance and all future ones (date >= today)
+        // Keep past instances (date < today)
+        await supabase
+          .from("expenses")
+          .delete()
+          .eq("user_id", session.user.id)
+          .eq("description", selectedExpense.description)
+          .eq("category", selectedExpense.category)
+          .gte("date", todayISO);
+      } else {
+        // If it's a one-time expense, just delete this one
+        await supabase.from("expenses").delete().eq("id", selectedExpense.id);
+      }
+  
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses(session.user.id);
+      toast.success("Gasto eliminado");
+      setIsSubmitting(false);
+    };
 
   const openEditDialog = (expense: any) => {
     setSelectedExpense(expense);
@@ -1635,66 +1659,117 @@ const ExpensesPage = () => {
       </Dialog>
 
       {/* Modal eliminación */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader><DialogTitle className="text-white">Eliminar Gasto</DialogTitle></DialogHeader>
-          <button onClick={() => setIsDeleteDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
-            <X className="w-4 h-4" />
-          </button>
-          <div className="space-y-4 mt-4">
-            <p className="text-zinc-300 text-sm">
-              {selectedExpense?.is_recurring 
-                ? "Este es un gasto recurrente. ¿Qué deseas hacer?" 
-                : "¿Eliminar este gasto?"}
-            </p>
-            {selectedExpense && (
-              <div className="p-3 bg-zinc-800/50 rounded-lg">
-                <p className="text-white font-medium">{selectedExpense.description}</p>
-                <p className="text-red-400 font-bold">{formatCurrency(selectedExpense.amount)}</p>
-              </div>
-            )}
-            
-            {selectedExpense?.is_recurring ? (
-              <div className="flex flex-col gap-2">
-                <Button 
-                  onClick={handleSkipMonth} 
-                  disabled={isSubmitting}
-                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 flex items-center justify-center gap-2"
-                >
-                  <CalendarOff className="w-4 h-4" />
-                  Eliminar solo este mes
-                </Button>
-                <Button 
-                  onClick={handleStopRecurrence} 
-                  disabled={isSubmitting}
-                  className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 flex items-center justify-center gap-2"
-                >
-                  <Ban className="w-4 h-4" />
-                  Detener recurrencia
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsDeleteDialogOpen(false)} 
-                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsDeleteDialogOpen(false)} 
-                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleDeleteExpense} className="flex-1 bg-red-500 hover:bg-red-600 text-xs">Eliminar</Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogContent className="bg-zinc-900 border-zinc-800">
+                <DialogHeader><DialogTitle className="text-white">Eliminar Gasto</DialogTitle></DialogHeader>
+                <button onClick={() => setIsDeleteDialogOpen(false)} className="absolute right-4 top-4 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="space-y-4 mt-4">
+                  {selectedExpense && (
+                    <div className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                      <p className="text-white font-medium">{selectedExpense.description}</p>
+                      <p className="text-red-400 font-bold">{formatCurrency(selectedExpense.amount)}</p>
+                    </div>
+                  )}
+                  
+                  {selectedExpense?.is_recurring ? (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-zinc-400 text-sm text-center">¿Qué deseas hacer?</p>
+                      
+                      {/* Opción 1: Omitir este mes */}
+                      <button
+                        onClick={handleSkipMonth}
+                        disabled={isSubmitting}
+                        className="w-full p-4 bg-zinc-800/50 hover:bg-zinc-800 border-2 border-zinc-700 hover:border-zinc-600 rounded-xl transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <CalendarOff className="w-5 h-5 text-amber-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-medium group-hover:text-amber-300 transition-colors">Omitir este mes</p>
+                            <p className="text-zinc-500 text-xs">Salta este mes, sigue el próximo</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        </div>
+                      </button>
+                      
+                      {/* Opción 2: Detener recurrencia */}
+                      <button
+                        onClick={handleStopRecurrence}
+                        disabled={isSubmitting}
+                        className="w-full p-4 bg-zinc-800/50 hover:bg-zinc-800 border-2 border-zinc-700 hover:border-purple-500/50 rounded-xl transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                            <Ban className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-medium group-hover:text-purple-300 transition-colors">Detener recurrencia</p>
+                            <p className="text-zinc-500 text-xs">Convierte en gasto único, elimina futuras instancias</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        </div>
+                      </button>
+                      
+                      {/* Opción 3: Eliminar todo */}
+                      <button
+                        onClick={handleDeleteCurrentAndFuture}
+                        disabled={isSubmitting}
+                        className="w-full p-4 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500/30 hover:border-red-500/50 rounded-xl transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                            <Trash2 className="w-5 h-5 text-red-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-red-400 font-medium group-hover:text-red-300 transition-colors">Eliminar</p>
+                            <p className="text-zinc-500 text-xs">Este gasto + futuras instancias (mantiene historial pasado)</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-red-500/50 group-hover:text-red-400 transition-colors" />
+                        </div>
+                      </button>
+                      
+                      <Button
+                        variant="ghost"
+                        onClick={() => setIsDeleteDialogOpen(false)}
+                        disabled={isSubmitting}
+                        className="w-full mt-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-zinc-400 text-sm text-center">¿Eliminar este gasto?</p>
+                      <button
+                        onClick={handleDeleteExpense}
+                        className="w-full p-4 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500/30 hover:border-red-500/50 rounded-xl transition-all text-left group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                            <Trash2 className="w-5 h-5 text-red-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-red-400 font-medium group-hover:text-red-300 transition-colors">Eliminar gasto</p>
+                            <p className="text-zinc-500 text-xs">Eliminar permanentemente</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-red-500/50 group-hover:text-red-400 transition-colors" />
+                        </div>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setIsDeleteDialogOpen(false)}
+                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
 
       <BottomNav />
     </div>
