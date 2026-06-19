@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus,
   Banknote,
@@ -26,7 +25,6 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { formatCurrency } from "@/utils/currency";
 import DebtStatusBadge from "@/components/dashboard/DebtStatusBadge";
 import DebtDetailModal from "@/components/dashboard/DebtDetailModal";
-import { useDateFilter } from "@/contexts/DateFilterContext";
 
 type DebtType = "they_owe" | "i_owe";
 type FilterType = "all" | "they_owe" | "i_owe";
@@ -46,7 +44,6 @@ interface Debt {
 
 const DebtsPage = () => {
   const navigate = useNavigate();
-  const { filterMonth, filterYear, setFilterMonth, setFilterYear } = useDateFilter();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,24 +56,6 @@ const DebtsPage = () => {
   // Detail modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1990 + 1 }, (_, i) => currentYear - i).map(y => y.toString());
-  
-  const months = [
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
 
   const [newDebt, setNewDebt] = useState({
     person_name: "",
@@ -220,26 +199,14 @@ const DebtsPage = () => {
     setDetailModalOpen(true);
   };
 
-  // Filter debts by type AND date
-  const filteredDebts = debts.filter((debt) => {
-    // Filter by type
-    if (filterType !== "all") {
-      if (filterType === "they_owe" && debt.category !== "they_owe") return false;
-      if (filterType === "i_owe" && debt.category !== "i_owe") return false;
-    }
-    
-    // Filter by date (created_at)
-    if (debt.created_at) {
-      const debtDate = new Date(debt.created_at);
-      const debtYear = debtDate.getFullYear().toString();
-      const debtMonth = (debtDate.getMonth() + 1).toString().padStart(2, '0');
-      
-      if (filterYear !== "all" && debtYear !== filterYear) return false;
-      if (filterMonth !== "all" && debtMonth !== filterMonth) return false;
-    }
-    
-    return true;
-  });
+  // Filter debts by type only
+    const filteredDebts = debts.filter((debt) => {
+      if (filterType !== "all") {
+        if (filterType === "they_owe" && debt.category !== "they_owe") return false;
+        if (filterType === "i_owe" && debt.category !== "i_owe") return false;
+      }
+      return true;
+    });
 
   // Calculate totals for filtered debts
   const totalTheyOwe = filteredDebts
@@ -257,42 +224,7 @@ const DebtsPage = () => {
       <DashboardHeader title="Monyro" subtitle="Gestión de Deudas" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Date filters */}
-        <div className="grid grid-cols-2 gap-4">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
-              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Año</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">{filterYear === "all" ? "Todos" : filterYear}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800 max-h-[300px]">
-              <SelectItem value="all" className="text-white">Todos</SelectItem>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()} className="text-white">{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-full p-4 h-auto bg-zinc-800 border-2 border-zinc-700 rounded-xl flex items-center justify-between hover:border-zinc-600 transition-all group">
-              <span className="text-zinc-400 text-sm group-hover:text-zinc-300">Mes</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-semibold text-lg">
-                  {filterMonth === "all" ? "Todos" : months.find(m => m.value === filterMonth)?.label}
-                </span>
-              </div>
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all" className="text-white">Todos</SelectItem>
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value} className="text-white">{month.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Totals - Darker backgrounds with brighter text */}
+              {/* Totals - Darker backgrounds with brighter text */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-[#052e16] border-green-600/50">
             <CardContent className="p-4 text-center">
@@ -493,10 +425,10 @@ const DebtsPage = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
               </div>
             ) : filteredDebts.length === 0 ? (
-              <div className="text-center py-8">
-                <Banknote className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
-                <p className="text-zinc-500 text-sm">No hay deudas en este período</p>
-              </div>
+                          <div className="text-center py-8">
+                            <Banknote className="w-12 h-12 mx-auto mb-3 text-zinc-600" />
+                            <p className="text-zinc-500 text-sm">No hay deudas</p>
+                          </div>
             ) : (
               <div className="space-y-3">
                 {filteredDebts.map((debt) => {
