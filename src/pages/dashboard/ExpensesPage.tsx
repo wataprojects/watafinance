@@ -952,7 +952,7 @@ const ExpensesPage = () => {
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
             <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos</p>
-            <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalExpenses)}</p>
+            <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalWithLoans)}</p>
             
             {totalWithLoans > 0 ? (
               <>
