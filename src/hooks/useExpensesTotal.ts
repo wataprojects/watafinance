@@ -88,31 +88,75 @@ export const useExpensesTotal = (
     fetchData();
   }, [selectedMonth, selectedYear]);
 
-  const isExpenseInSelectedPeriod = (expense: any) => {
-    if (expense.is_skipped) return false;
-    if (!expense.date) return false;
+  const monthIndex = Number(selectedMonth) - 1;
+  const selectedYearNumber = Number(selectedYear);
 
-    const expenseDate = new Date(expense.date + "T00:00:00");
-    if (isNaN(expenseDate.getTime())) return false;
+  const getOccurrenceDate = (expense: any) => {
+    const baseDateValue = expense.start_date || expense.date;
+    if (!baseDateValue) return null;
 
-    const expenseYear = expenseDate.getFullYear().toString();
-    const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+    const baseDate = new Date(baseDateValue + "T00:00:00");
+    if (isNaN(baseDate.getTime())) return null;
 
-    return expenseYear === selectedYear && expenseMonth === selectedMonth;
+    if (!expense.is_recurring) {
+      return baseDate.getFullYear() === selectedYearNumber && baseDate.getMonth() === monthIndex
+        ? baseDate
+        : null;
+    }
+
+    const recurrenceInterval = expense.recurrence_interval || 1;
+    const frequency = expense.frequency || "monthly";
+
+    if (frequency === "monthly") {
+      const diffMonths = (selectedYearNumber - baseDate.getFullYear()) * 12 + (monthIndex - baseDate.getMonth());
+      if (diffMonths < 0 || diffMonths % recurrenceInterval !== 0) return null;
+      return new Date(selectedYearNumber, monthIndex, Math.min(baseDate.getDate(), 31));
+    }
+
+    if (frequency === "quarterly") {
+      const diffMonths = (selectedYearNumber - baseDate.getFullYear()) * 12 + (monthIndex - baseDate.getMonth());
+      if (diffMonths < 0 || diffMonths % (3 * recurrenceInterval) !== 0) return null;
+      return new Date(selectedYearNumber, monthIndex, Math.min(baseDate.getDate(), 31));
+    }
+
+    if (frequency === "annual") {
+      const diffYears = selectedYearNumber - baseDate.getFullYear();
+      if (diffYears < 0 || diffYears % recurrenceInterval !== 0) return null;
+      return monthIndex === baseDate.getMonth() ? new Date(selectedYearNumber, monthIndex, Math.min(baseDate.getDate(), 31)) : null;
+    }
+
+    if (frequency === "weekly") {
+      const diffDays = Math.floor((Date.UTC(selectedYearNumber, monthIndex, 1) - Date.UTC(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate())) / 86400000);
+      if (diffDays < 0 || diffDays % (7 * recurrenceInterval) !== 0) return null;
+      return new Date(selectedYearNumber, monthIndex, 1);
+    }
+
+    if (frequency === "custom" && expense.recurrence_unit === "months") {
+      const diffMonths = (selectedYearNumber - baseDate.getFullYear()) * 12 + (monthIndex - baseDate.getMonth());
+      if (diffMonths < 0 || diffMonths % recurrenceInterval !== 0) return null;
+      return new Date(selectedYearNumber, monthIndex, Math.min(baseDate.getDate(), 31));
+    }
+
+    return null;
   };
 
-  // Filter expenses by selected period
-  const selectedPeriodExpenses = expenses.filter(isExpenseInSelectedPeriod);
+  const filteredExpenses = expenses
+    .filter((expense) => !expense.is_skipped)
+    .map((expense) => ({
+      ...expense,
+      occurrenceDate: getOccurrenceDate(expense),
+    }))
+    .filter((expense) => expense.occurrenceDate !== null)
+    .filter((expense) => !expense.is_trimmed)
+    .map((expense) => ({
+      ...expense,
+      date: expense.occurrenceDate.toISOString().slice(0, 10),
+    }));
 
-  // Keep the full selected-period expense history, excluding only trimmed rows.
-  const filteredExpenses = selectedPeriodExpenses.filter((expense) => !expense.is_trimmed);
-
-  // Calculate puntuales: non-recurring expenses
   const puntualExpenses = filteredExpenses
     .filter((e) => !e.is_recurring)
     .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  // Calculate recurrentes: recurring expenses converted to monthly
   const recurrentExpenses = filteredExpenses
     .filter((e) => e.is_recurring)
     .reduce(
