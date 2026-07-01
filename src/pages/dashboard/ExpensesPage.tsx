@@ -242,7 +242,7 @@ const ExpensesPage = () => {
   const [loading, setLoading] = useState(true);
 
   // Use the unified hook for expense totals calculation
-  const { puntualExpenses, recurrentExpenses, totalLoans, totalWithLoans, loading: hookLoading, filteredExpenses: hookFilteredExpenses } = useExpensesTotal(filterMonth, filterYear);
+  const { puntualExpenses, recurrentExpenses, totalExpenses, totalLoans, totalWithLoans, loading: hookLoading, filteredExpenses: hookFilteredExpenses } = useExpensesTotal(filterMonth, filterYear);
 
   // Local state for loans (needed for loan list display in history)
   const [loans, setLoans] = useState<any[]>([]);
@@ -952,7 +952,7 @@ const ExpensesPage = () => {
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
             <p className="text-zinc-400 text-sm mb-1 text-center">Total de Gastos</p>
-            <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalWithLoans)}</p>
+            <p className="text-4xl font-bold text-white mb-6 text-center">{formatCurrency(totalExpenses)}</p>
             
             {totalWithLoans > 0 ? (
               <>
