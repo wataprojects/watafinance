@@ -104,38 +104,8 @@ export const useExpensesTotal = (
   // Filter expenses by selected period
   const selectedPeriodExpenses = expenses.filter(isExpenseInSelectedPeriod);
 
-  // Filter expenses for display: include puntual expenses, generated recurring occurrences,
-  // and recurring templates that don't have a generated occurrence for the same month
-  const filteredExpenses = selectedPeriodExpenses.filter((expense) => {
-    if (expense.is_trimmed) return false;
-
-    if (expense.is_recurring) {
-      const isOriginalTemplate =
-        !expense.start_date || expense.start_date === expense.date;
-
-      if (isOriginalTemplate) {
-        const hasGeneratedOccurrenceForSameMonth = selectedPeriodExpenses.some(
-          (otherExpense) => {
-            if (otherExpense.id === expense.id) return false;
-            if (!otherExpense.is_recurring) return false;
-            if (!otherExpense.start_date) return false;
-            if (otherExpense.start_date === otherExpense.date) return false;
-
-            return (
-              otherExpense.description === expense.description &&
-              otherExpense.category === expense.category
-            );
-          }
-        );
-
-        if (hasGeneratedOccurrenceForSameMonth) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  });
+  // Keep the full selected-period expense history, excluding only trimmed rows.
+  const filteredExpenses = selectedPeriodExpenses.filter((expense) => !expense.is_trimmed);
 
   // Calculate puntuales: non-recurring expenses
   const puntualExpenses = filteredExpenses
