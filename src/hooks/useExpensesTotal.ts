@@ -91,9 +91,11 @@ export const useExpensesTotal = (
   // Filter expenses by selected period
   const selectedPeriodExpenses = expenses.filter((expense) => {
     if (expense.is_skipped) return false;
-    if (!expense.date) return false;
 
-    const expenseDate = new Date(expense.date + "T00:00:00");
+    const dateValue = expense.start_date || expense.date;
+    if (!dateValue) return false;
+
+    const expenseDate = new Date(dateValue + "T00:00:00");
     if (isNaN(expenseDate.getTime())) return false;
 
     const expenseYear = expenseDate.getFullYear().toString();
