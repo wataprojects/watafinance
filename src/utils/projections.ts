@@ -1,19 +1,18 @@
 "use client";
 
-import { 
-  addDays, 
-  isAfter, 
-  isBefore, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
+import {
+  addDays,
+  isAfter,
+  isBefore,
+  endOfMonth,
+  eachDayOfInterval,
   format,
   getDate,
   isSameDay,
   subDays,
   startOfDay,
   parseISO,
-  startOfToday
+  startOfToday,
 } from "date-fns";
 
 export interface Transaction {
@@ -25,10 +24,15 @@ export interface Transaction {
   is_recurring?: boolean;
   frequency?: string;
   payment_days?: number[];
-  type?: 'income' | 'expense';
+  type?: "income" | "expense";
   is_skipped?: boolean;
   is_trimmed?: boolean;
   end_date?: string | null;
+  start_date?: string | null;
+  recurrence_interval?: number;
+  recurrence_unit?: string;
+  investment_id?: string | null;
+  patrimony_id?: string | null;
 }
 
 export interface ProjectionResult {
@@ -42,10 +46,27 @@ export interface ProjectionResult {
 }
 
 const toDateString = (date: Date | string) => {
-  if (typeof date === 'string') {
-    return date.split('T')[0];
+  if (typeof date === "string") {
+    return date.split("T")[0];
   }
-  return format(date, 'yyyy-MM-dd');
+  return format(date, "yyyy-MM-dd");
+};
+
+const getSeriesKey = (transaction: Transaction) => {
+  return [
+    transaction.description || "",
+    transaction.category || "",
+    transaction.amount || "",
+    transaction.frequency || "monthly",
+    transaction.recurrence_interval || 1,
+    transaction.recurrence_unit || "months",
+    transaction.start_date || transaction.date || "",
+    transaction.investment_id || "none",
+    transaction.patrimony_id || "none",
+    transaction.type || "expense",
+  ]
+    .map((value) => String(value).toLowerCase().trim())
+    .join("|");
 };
 
 export const calculateProjections = (
@@ -56,9 +77,8 @@ export const calculateProjections = (
   endDate: Date = addDays(startDate, 30)
 ): ProjectionResult => {
   const today = startOfToday();
-  const todayStr = toDateString(today);
   const sixtyDaysAgo = subDays(today, 60);
-  
+
   let projectedIncome = 0;
   let projectedExpenses = 0;
   let fixedExpenses = 0;
@@ -66,12 +86,12 @@ export const calculateProjections = (
   const upcomingPayments: Transaction[] = [];
   const riskAlerts: string[] = [];
 
-  // --- 1. PROMEDIOS VARIABLES ---
   const calculateVariableAverage = (transactions: Transaction[]) => {
-    const pastVariable = transactions.filter(t => 
-      !t.is_recurring && 
-      isAfter(startOfDay(parseISO(t.date)), sixtyDaysAgo) && 
-      isBefore(startOfDay(parseISO(t.date)), today)
+    const pastVariable = transactions.filter(
+      (t) =>
+        !t.is_recurring &&
+        isAfter(startOfDay(parseISO(t.date)), sixtyDaysAgo) &&
+        isBefore(startOfDay(parseISO(t.date)), today)
     );
     const total = pastVariable.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     return total / 2;
@@ -80,24 +100,22 @@ export const calculateProjections = (
   const avgVariableIncome = calculateVariableAverage(incomes);
   const avgVariableExpenses = calculateVariableAverage(expenses);
 
-  // --- 2. IDENTIFICAR SERIES ÚNICAS ---
   const getUniqueSeries = (transactions: Transaction[]) => {
     const seriesMap = new Map<string, Transaction>();
     const puntuals: Transaction[] = [];
 
-    transactions.forEach(t => {
+    transactions.forEach((t) => {
       if (!t.is_recurring) {
         const tDateStr = toDateString(t.date);
-        // Incluimos puntuales que caigan dentro del rango solicitado
         if (tDateStr >= toDateString(startDate) && tDateStr <= toDateString(endDate)) {
           puntuals.push(t);
         }
         return;
       }
-      
-      const key = `${(t.description || '').toLowerCase()}-${t.category}`;
+
+      const key = getSeriesKey(t);
       const existing = seriesMap.get(key);
-      if (!existing || t.date > existing.date) {
+      if (!existing || new Date(t.date).getTime() > new Date(existing.date).getTime()) {
         seriesMap.set(key, t);
       }
     });
@@ -108,11 +126,10 @@ export const calculateProjections = (
   const uniqueIncomes = getUniqueSeries(incomes);
   const uniqueExpenses = getUniqueSeries(expenses);
 
-  // Helper para calcular ocurrencias en el rango solicitado
   const getOccurrences = (t: Transaction) => {
     const occurrences: { dateStr: string; amount: number }[] = [];
     const amount = Number(t.amount) || 0;
-    
+
     if (!t.is_recurring) {
       const tDateStr = toDateString(t.date);
       if (tDateStr >= toDateString(startDate) && tDateStr <= toDateString(endDate)) {
@@ -121,22 +138,22 @@ export const calculateProjections = (
       return occurrences;
     }
 
-    const paymentDays = (t.payment_days && t.payment_days.length > 0) 
-      ? t.payment_days 
-      : [parseISO(t.date).getDate()];
-      
+    const paymentDays =
+      t.payment_days && t.payment_days.length > 0
+        ? t.payment_days
+        : [parseISO(t.date).getDate()];
+
     const interval = eachDayOfInterval({ start: startDate, end: endDate });
 
-    interval.forEach(day => {
+    interval.forEach((day) => {
       const dayOfMonth = getDate(day);
       const isLastDayOfMonth = isSameDay(day, endOfMonth(day));
-      const isPaymentDay = paymentDays.includes(dayOfMonth) || (paymentDays.includes(32) && isLastDayOfMonth);
-      
+      const isPaymentDay =
+        paymentDays.includes(dayOfMonth) || (paymentDays.includes(32) && isLastDayOfMonth);
+
       const dayStr = toDateString(day);
       const hasNotEnded = !t.end_date || dayStr <= toDateString(t.end_date);
 
-      // Para recurrentes, solo proyectamos si es hoy o futuro, 
-      // o si es pasado pero no tenemos un registro real (esto es complejo, simplificamos a futuro)
       if (isPaymentDay && hasNotEnded && !t.is_skipped && !t.is_trimmed) {
         occurrences.push({ dateStr: dayStr, amount });
       }
@@ -145,47 +162,47 @@ export const calculateProjections = (
     return occurrences;
   };
 
-  // Procesar Ingresos
-  uniqueIncomes.forEach(income => {
-    getOccurrences(income).forEach(occ => {
+  uniqueIncomes.forEach((income) => {
+    getOccurrences(income).forEach((occ) => {
       projectedIncome += occ.amount;
-      upcomingPayments.push({ ...income, date: occ.dateStr, type: 'income' });
+      upcomingPayments.push({ ...income, date: occ.dateStr, type: "income" });
     });
   });
 
-  // Procesar Gastos
-  uniqueExpenses.forEach(expense => {
-    getOccurrences(expense).forEach(occ => {
+  uniqueExpenses.forEach((expense) => {
+    getOccurrences(expense).forEach((occ) => {
       projectedExpenses += occ.amount;
-      upcomingPayments.push({ ...expense, date: occ.dateStr, type: 'expense' });
-      
-      const isFixed = expense.is_recurring || ['housing', 'loans', 'electricity', 'water', 'internet', 'subscriptions', 'insurance'].includes(expense.category);
+      upcomingPayments.push({ ...expense, date: occ.dateStr, type: "expense" });
+
+      const isFixed =
+        expense.is_recurring ||
+        ["housing", "loans", "electricity", "water", "internet", "subscriptions", "insurance"].includes(
+          expense.category
+        );
       if (isFixed) fixedExpenses += occ.amount;
       else variableExpenses += occ.amount;
     });
   });
 
-  // --- 3. TIMELINE ---
   const timeline: { date: string; balance: number }[] = [];
   let currentBalance = startingBalance;
   const days = eachDayOfInterval({ start: startDate, end: endDate });
-  
+
   const dailyVar = (avgVariableIncome - avgVariableExpenses) / 30;
 
-  days.forEach(day => {
+  days.forEach((day) => {
     const dayStr = toDateString(day);
-    
-    upcomingPayments.filter(t => t.date === dayStr).forEach(t => {
-      if (t.type === 'income') currentBalance += t.amount;
+
+    upcomingPayments.filter((t) => t.date === dayStr).forEach((t) => {
+      if (t.type === "income") currentBalance += t.amount;
       else currentBalance -= t.amount;
     });
 
     currentBalance += dailyVar;
-
     timeline.push({ date: dayStr, balance: currentBalance });
-    
-    if (currentBalance < 0 && !riskAlerts.some(a => a.includes("saldo negativo"))) {
-      riskAlerts.push(`Riesgo de saldo negativo detectado el ${format(day, 'dd/MM')}.`);
+
+    if (currentBalance < 0 && !riskAlerts.some((a) => a.includes("saldo negativo"))) {
+      riskAlerts.push(`Riesgo de saldo negativo detectado el ${format(day, "dd/MM")}.`);
     }
   });
 
@@ -200,6 +217,6 @@ export const calculateProjections = (
     cashFlowTimeline: timeline,
     upcomingPayments: upcomingPayments.sort((a, b) => a.date.localeCompare(b.date)),
     riskAlerts,
-    fixedVsVariable: { fixed: fixedExpenses, variable: variableExpenses }
+    fixedVsVariable: { fixed: fixedExpenses, variable: variableExpenses },
   };
 };

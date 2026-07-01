@@ -18,6 +18,7 @@ const getMonthlyAmount = (
   recurrenceUnit?: string
 ): number => {
   const numAmount = parseFloat(String(amount)) || 0;
+
   switch (frequency) {
     case "weekly":
       return numAmount * 4.33;
@@ -40,6 +41,22 @@ const getMonthlyAmount = (
   }
 };
 
+const getExpenseSeriesKey = (expense: any) => {
+  return [
+    expense.description || "",
+    expense.category || "",
+    expense.amount || "",
+    expense.frequency || "monthly",
+    expense.recurrence_interval || 1,
+    expense.recurrence_unit || "months",
+    expense.start_date || expense.date || "",
+    expense.investment_id || "none",
+    expense.patrimony_id || "none",
+  ]
+    .map((value) => String(value).toLowerCase().trim())
+    .join("|");
+};
+
 export const useExpensesTotal = (
   selectedMonth: string,
   selectedYear: string
@@ -51,18 +68,19 @@ export const useExpensesTotal = (
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session) {
         setLoading(false);
         return;
       }
 
-      // Fetch ALL expenses for the user (no date filter)
       const { data: expensesData } = await supabase
         .from("expenses")
         .select(
-          "amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit, is_trimmed, is_skipped, description, category"
+          "id, amount, date, is_recurring, start_date, frequency, recurrence_interval, recurrence_unit, is_trimmed, is_skipped, description, category, investment_id, patrimony_id, end_date, payment_days"
         )
         .eq("user_id", session.user.id)
         .order("date", { ascending: false });
@@ -71,7 +89,6 @@ export const useExpensesTotal = (
         setExpenses(expensesData);
       }
 
-      // Fetch active loans
       const { data: loansData } = await supabase
         .from("loans")
         .select("monthly_payment, status")
@@ -101,42 +118,40 @@ export const useExpensesTotal = (
     return expenseYear === selectedYear && expenseMonth === selectedMonth;
   };
 
-  // Filter expenses by selected period
   const selectedPeriodExpenses = expenses.filter(isExpenseInSelectedPeriod);
-
-  // Keep the full selected-period expense history, excluding only trimmed rows.
   const filteredExpenses = selectedPeriodExpenses.filter((expense) => !expense.is_trimmed);
 
-  // Calculate puntuales: non-recurring expenses
+  const uniqueRecurringExpenses = Array.from(
+    new Map(
+      filteredExpenses
+        .filter((expense) => expense.is_recurring)
+        .map((expense) => [getExpenseSeriesKey(expense), expense])
+    ).values()
+  );
+
   const puntualExpenses = filteredExpenses
     .filter((e) => !e.is_recurring)
     .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-  // Calculate recurrentes: recurring expenses converted to monthly
-  const recurrentExpenses = filteredExpenses
-    .filter((e) => e.is_recurring)
-    .reduce(
-      (sum, e) =>
-        sum +
-        getMonthlyAmount(
-          parseFloat(e.amount),
-          e.frequency,
-          e.recurrence_interval,
-          e.recurrence_unit
-        ),
-      0
-    );
+  const recurrentExpenses = uniqueRecurringExpenses.reduce(
+    (sum, e) =>
+      sum +
+      getMonthlyAmount(
+        parseFloat(e.amount),
+        e.frequency,
+        e.recurrence_interval,
+        e.recurrence_unit
+      ),
+    0
+  );
 
-  // Total expenses without loans
   const totalExpenses = puntualExpenses + recurrentExpenses;
 
-  // Total loans monthly payment (only active loans)
   const totalLoans = loans.reduce(
     (sum, loan) => sum + parseFloat(loan.monthly_payment || 0),
     0
   );
 
-  // Total with loans (unified total)
   const totalWithLoans = totalExpenses + totalLoans;
 
   return {
