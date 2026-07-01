@@ -88,24 +88,21 @@ export const useExpensesTotal = (
     fetchData();
   }, [selectedMonth, selectedYear]);
 
-  // Filter expenses by selected period
-  const selectedPeriodExpenses = expenses.filter((expense) => {
+  const isExpenseInSelectedPeriod = (expense: any) => {
     if (expense.is_skipped) return false;
+    if (!expense.date) return false;
 
-    const dateValue = expense.start_date || expense.date;
-    if (!dateValue) return false;
-
-    const expenseDate = new Date(dateValue + "T00:00:00");
+    const expenseDate = new Date(expense.date + "T00:00:00");
     if (isNaN(expenseDate.getTime())) return false;
 
     const expenseYear = expenseDate.getFullYear().toString();
     const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
 
-    if (expenseYear !== selectedYear) return false;
-    if (expenseMonth !== selectedMonth) return false;
+    return expenseYear === selectedYear && expenseMonth === selectedMonth;
+  };
 
-    return true;
-  });
+  // Filter expenses by selected period
+  const selectedPeriodExpenses = expenses.filter(isExpenseInSelectedPeriod);
 
   // Filter expenses for display: include puntual expenses, generated recurring occurrences,
   // and recurring templates that don't have a generated occurrence for the same month
@@ -117,16 +114,12 @@ export const useExpensesTotal = (
         !expense.start_date || expense.start_date === expense.date;
 
       if (isOriginalTemplate) {
-        // Check if there's a generated occurrence for the same month
         const hasGeneratedOccurrenceForSameMonth = selectedPeriodExpenses.some(
           (otherExpense) => {
             if (otherExpense.id === expense.id) return false;
             if (!otherExpense.is_recurring) return false;
-            if (
-              !otherExpense.start_date ||
-              otherExpense.start_date === otherExpense.date
-            )
-              return false;
+            if (!otherExpense.start_date) return false;
+            if (otherExpense.start_date === otherExpense.date) return false;
 
             return (
               otherExpense.description === expense.description &&
